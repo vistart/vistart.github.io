@@ -1,0 +1,36 @@
+name: Build and Deploy Vue3 to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+        # 配置 base URL 如果需要
+        # - name: Update base href
+        #   run: |
+        #     find dist -name "*.html" -exec sed -i 's/<base href="\/">/<base href="\/your-repo-name\/">/g' {} \;
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist  # Vue 项目默认编译到 dist 目录
+          branch: gh-pages  # 要部署到的分支
+          clean: true  # 清理 gh-pages 分支上的旧文件

@@ -41,19 +41,19 @@ const form = reactive({
 const periodOptions = [3, 6, 12, 18, 24, 36, 48, 60];
 
 // 表单验证规则
-const rules = {
-  principal: [
-    { required: true, message: () => t('tools.creditCardApr.inputPrincipal'), trigger: 'blur' },
-    { type: 'number', min: 1, message: () => t('tools.creditCardApr.inputPrincipal'), trigger: 'blur' },
-  ],
-  periods: [
-    { required: true, message: () => t('tools.creditCardApr.inputPeriods'), trigger: 'change' },
-  ],
-  feeRate: [
-    { required: true, message: () => t('tools.creditCardApr.inputFeeRate'), trigger: 'blur' },
-    { type: 'number', min: 0, message: () => t('tools.creditCardApr.inputFeeRate'), trigger: 'blur' },
-  ],
-};
+// const rules = {
+//   principal: [
+//     { required: true, message: () => t('tools.creditCardApr.inputPrincipal'), trigger: 'blur' },
+//     { type: 'number', min: 1, message: () => t('tools.creditCardApr.inputPrincipal'), trigger: 'blur' },
+//   ],
+//   periods: [
+//     { required: true, message: () => t('tools.creditCardApr.inputPeriods'), trigger: 'change' },
+//   ],
+//   feeRate: [
+//     { required: true, message: () => t('tools.creditCardApr.inputFeeRate'), trigger: 'blur' },
+//     { type: 'number', min: 0, message: () => t('tools.creditCardApr.inputFeeRate'), trigger: 'blur' },
+//   ],
+// };
 
 // 计算结果
 const result = ref({
