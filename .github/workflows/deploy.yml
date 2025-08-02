@@ -23,10 +23,18 @@ jobs:
       - name: Build
         run: npm run build
 
+      # 新增步骤：复制 examples 目录到构建输出目录
+      - name: Copy examples directory
+        run: |
+          # 创建目标目录（确保存在）
+          mkdir -p dist/examples
+          # 复制整个 examples 目录到 dist
+          cp -R examples/* dist/examples/
+
         # 配置 base URL 如果需要
         # - name: Update base href
         #   run: |
-        #     find dist -name "*.html" -exec sed -i 's/<base href="\/">/<base href="\/your-repo-name\/">/g' {} \;
+        #     find dist -name "*.html" -exec sed -i 's/<base href="\/">/<base href="\/vistart\/vistart.github.io\/">/g' {} \;
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
