@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transformer架构演进可视化 - 增强版</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -966,10 +966,20 @@ class PreNormBlock(nn.Module):
                 document.getElementById(`demo-${currentYear}`).classList.remove('hidden');
                 
                 // 重新渲染MathJax
-                MathJax.typesetPromise().then(() => {
-                    // 初始化对应的可视化
+                if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                    // 渲染MathJax
+                    MathJax.typesetPromise().then(() => {
+                        initVisualization(currentYear);
+                    }).catch(err => {
+                        console.warn('MathJax渲染失败:', err);
+                        // 即使MathJax失败也初始化可视化
+                        initVisualization(currentYear);
+                    });
+                } else {
+                    // 如果MathJax未加载，直接初始化可视化
+                    console.warn('MathJax未完全加载，跳过数学公式渲染');
                     initVisualization(currentYear);
-                });
+                }
             });
         });
         
@@ -1531,12 +1541,34 @@ class PreNormBlock(nn.Module):
         }
         
         // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            // 渲染MathJax
-            MathJax.typesetPromise().then(() => {
+        function initializePage() {
+            // 检查MathJax是否已加载
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                // 渲染MathJax
+                MathJax.typesetPromise().then(() => {
+                    initVisualization(currentYear);
+                }).catch(err => {
+                    console.warn('MathJax渲染失败:', err);
+                    // 即使MathJax失败也初始化可视化
+                    initVisualization(currentYear);
+                });
+            } else {
+                // 如果MathJax未加载，直接初始化可视化
+                console.warn('MathJax未完全加载，跳过数学公式渲染');
                 initVisualization(currentYear);
+            }
+        }
+
+        // 等待页面和所有资源加载完成
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                // 再等一小段时间确保MathJax完全加载
+                setTimeout(initializePage, 500);
             });
-        });
+        } else {
+            // 页面已经加载完成
+            setTimeout(initializePage, 500);
+        }
     </script>
 </body>
 </html>
