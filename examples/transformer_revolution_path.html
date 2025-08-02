@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transformer架构演进可视化</title>
+    <title>Transformer架构演进可视化 - 增强版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -208,15 +209,103 @@
             font-weight: bold;
         }
         
+        .formula-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .formula-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .code-section {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        
+        .toggle-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .toggle-content {
+            display: none;
+        }
+        
+        .toggle-content.active {
+            display: block;
+        }
+        
         .hidden {
             display: none;
+        }
+        
+        /* MathJax样式 */
+        .MathJax {
+            font-size: 1.1em !important;
+        }
+        
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .comparison-item {
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .comparison-item.before {
+            background: linear-gradient(135deg, #ffcccc 0%, #ffe6e6 100%);
+            border-color: #ff6b6b;
+        }
+        
+        .comparison-item.after {
+            background: linear-gradient(135deg, #ccffcc 0%, #e6ffe6 100%);
+            border-color: #4ecdc4;
+        }
+        
+        .comparison-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Transformer架构演进可视化</h1>
+            <h1>🚀 Transformer架构演进可视化 - 增强版</h1>
             <p>探索从原始Transformer到现代LLM的关键技术突破</p>
         </div>
         
@@ -248,51 +337,132 @@
             <div class="demo-area">
                 <div class="demo-card">
                     <h3>📍 位置编码：正弦波模式</h3>
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>序列长度: <span id="seq-len-value">64</span></label>
-                            <input type="range" id="seq-len" min="16" max="256" value="64">
-                        </div>
-                        <div class="control-group">
-                            <label>维度: <span id="d-model-value">128</span></label>
-                            <input type="range" id="d-model" min="64" max="512" step="64" value="128">
+                    
+                    <div class="formula-section">
+                        <div class="formula-title">正弦位置编码公式：</div>
+                        <div id="sinusoidal-formula">
+                            $$PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{model}}}\right)$$
+                            $$PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{model}}}\right)$$
                         </div>
                     </div>
-                    <div class="plot-container" id="pos-encoding-plot"></div>
+                    
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" onclick="toggleContent('sin-viz', this)">可视化</button>
+                        <button class="toggle-btn" onclick="toggleContent('sin-code', this)">代码示例</button>
+                    </div>
+                    
+                    <div class="toggle-content active" id="sin-viz">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>序列长度: <span id="seq-len-value">64</span></label>
+                                <input type="range" id="seq-len" min="16" max="256" value="64">
+                            </div>
+                            <div class="control-group">
+                                <label>维度: <span id="d-model-value">128</span></label>
+                                <input type="range" id="d-model" min="64" max="512" step="64" value="128">
+                            </div>
+                        </div>
+                        <div class="plot-container" id="pos-encoding-plot"></div>
+                    </div>
+                    
+                    <div class="toggle-content" id="sin-code">
+                        <div class="code-section">
+import torch
+import math
+
+def sinusoidal_positional_encoding(max_len, d_model):
+    pe = torch.zeros(max_len, d_model)
+    position = torch.arange(0, max_len).unsqueeze(1).float()
+    
+    div_term = torch.exp(torch.arange(0, d_model, 2).float() * 
+                        -(math.log(10000.0) / d_model))
+    
+    pe[:, 0::2] = torch.sin(position * div_term)
+    pe[:, 1::2] = torch.cos(position * div_term)
+    
+    return pe
+
+# 示例使用
+pos_encoding = sinusoidal_positional_encoding(512, 256)
+print(f"位置编码形状: {pos_encoding.shape}")
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="demo-card">
                     <h3>⚡ 激活函数：ReLU特性</h3>
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>函数类型:</label>
-                            <select id="activation-type">
-                                <option value="relu">ReLU</option>
-                                <option value="gelu">GELU (改进)</option>
-                                <option value="swish">Swish (进一步改进)</option>
-                                <option value="swiglu">SwiGLU (现代)</option>
-                            </select>
+                    
+                    <div class="formula-section">
+                        <div class="formula-title">ReLU函数公式：</div>
+                        <div id="relu-formula">
+                            $$\text{ReLU}(x) = \max(0, x)$$
                         </div>
                     </div>
-                    <div class="plot-container" id="activation-plot"></div>
+                    
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" onclick="toggleContent('relu-viz', this)">可视化</button>
+                        <button class="toggle-btn" onclick="toggleContent('relu-code', this)">代码示例</button>
+                    </div>
+                    
+                    <div class="toggle-content active" id="relu-viz">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>函数类型:</label>
+                                <select id="activation-type">
+                                    <option value="relu">ReLU</option>
+                                    <option value="gelu">GELU (改进)</option>
+                                    <option value="swish">Swish (进一步改进)</option>
+                                    <option value="swiglu">SwiGLU (现代)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="plot-container" id="activation-plot"></div>
+                    </div>
+                    
+                    <div class="toggle-content" id="relu-code">
+                        <div class="code-section">
+import torch
+import torch.nn.functional as F
+
+def relu(x):
+    return torch.max(torch.zeros_like(x), x)
+
+def gelu(x):
+    return 0.5 * x * (1 + torch.tanh(
+        torch.sqrt(torch.tensor(2.0 / math.pi)) * 
+        (x + 0.044715 * torch.pow(x, 3))
+    ))
+
+def swish(x):
+    return x * torch.sigmoid(x)
+
+# 示例
+x = torch.randn(100)
+relu_out = relu(x)
+gelu_out = gelu(x)
+swish_out = swish(x)
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="demo-card architecture-viz">
-                <h3>🏗️ 原始Transformer架构</h3>
-                <div class="layer-block">
-                    <strong>Post-Norm</strong><br>
-                    x → Attention → Add & Norm → FFN → Add & Norm
-                    <div class="improvement-badge">⚠️</div>
+                <h3>🏗️ 原始Transformer架构 - Post-Norm</h3>
+                
+                <div class="formula-section">
+                    <div class="formula-title">Post-Norm计算流程：</div>
+                    <div id="postnorm-formula">
+                        $$\text{Output} = \text{LayerNorm}(x + \text{Sublayer}(x))$$
+                        $$\text{LayerNorm}(x) = \gamma \cdot \frac{x - \mu}{\sigma} + \beta$$
+                        <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                        其中 $\mu$ 是均值，$\sigma$ 是标准差（不是方差）
+                        </p>
+                    </div>
                 </div>
+                
                 <div class="layer-block">
-                    <strong>正弦位置编码</strong><br>
-                    PE(pos,2i) = sin(pos/10000^(2i/d_model))
-                    <div class="improvement-badge">⚠️</div>
-                </div>
-                <div class="layer-block">
-                    <strong>ReLU激活 + LayerNorm</strong><br>
-                    ReLU(x) = max(0,x), LN(x) = γ(x-μ)/σ + β
+                    <strong>Post-Norm结构问题</strong><br>
+                    x → Attention → Add → Norm → FFN → Add → Norm
                     <div class="improvement-badge">⚠️</div>
                 </div>
             </div>
@@ -303,57 +473,111 @@
             <div class="demo-area">
                 <div class="demo-card">
                     <h3>📊 归一化方法对比</h3>
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>归一化类型:</label>
-                            <select id="norm-type">
-                                <option value="layernorm">LayerNorm</option>
-                                <option value="rmsnorm">RMSNorm</option>
-                            </select>
+                    
+                    <div class="comparison-container">
+                        <div class="comparison-item before">
+                            <div class="comparison-title">LayerNorm (原始)</div>
+                            <div class="formula-section">
+                                <div id="layernorm-formula">
+                                    $$\text{LayerNorm}(x) = \gamma \cdot \frac{x - \mu}{\sigma} + \beta$$
+                                    $$\mu = \frac{1}{d}\sum_{i=1}^{d} x_i$$
+                                    $$\sigma = \sqrt{\frac{1}{d}\sum_{i=1}^{d} (x_i - \mu)^2}$$
+                                </div>
+                            </div>
                         </div>
-                        <div class="control-group">
-                            <label>输入噪声强度: <span id="noise-level-value">0.5</span></label>
-                            <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.5">
+                        <div class="comparison-item after">
+                            <div class="comparison-title">RMSNorm (改进)</div>
+                            <div class="formula-section">
+                                <div id="rmsnorm-formula">
+                                    $$\text{RMSNorm}(x) = \gamma \cdot \frac{x}{\text{RMS}(x)}$$
+                                    $$\text{RMS}(x) = \sqrt{\frac{1}{d}\sum_{i=1}^{d} x_i^2}$$
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="plot-container" id="norm-comparison-plot"></div>
+                    
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" onclick="toggleContent('norm-viz', this)">可视化对比</button>
+                        <button class="toggle-btn" onclick="toggleContent('norm-code', this)">代码对比</button>
+                    </div>
+                    
+                    <div class="toggle-content active" id="norm-viz">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>归一化类型:</label>
+                                <select id="norm-type">
+                                    <option value="layernorm">LayerNorm</option>
+                                    <option value="rmsnorm">RMSNorm</option>
+                                    <option value="both">对比显示</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>输入噪声强度: <span id="noise-level-value">0.5</span></label>
+                                <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.5">
+                            </div>
+                        </div>
+                        <div class="plot-container" id="norm-comparison-plot"></div>
+                    </div>
+                    
+                    <div class="toggle-content" id="norm-code">
+                        <div class="comparison-container">
+                            <div class="comparison-item before">
+                                <div class="comparison-title">LayerNorm实现</div>
+                                <div class="code-section">
+class LayerNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(dim))
+        self.beta = nn.Parameter(torch.zeros(dim))
+        self.eps = eps
+    
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        var = x.var(-1, keepdim=True, unbiased=False)
+        std = (var + self.eps).sqrt()
+        return self.gamma * (x - mean) / std + self.beta
+                                </div>
+                            </div>
+                            <div class="comparison-item after">
+                                <div class="comparison-title">RMSNorm实现</div>
+                                <div class="code-section">
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(dim))
+        self.eps = eps
+    
+    def forward(self, x):
+        rms = x.norm(dim=-1, keepdim=True) / math.sqrt(x.size(-1))
+        return self.gamma * x / (rms + self.eps)
+        
+# 计算复杂度降低约15-20%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="demo-card">
-                    <h3>⚡ 计算复杂度分析</h3>
+                    <h3>⚡ 性能提升分析</h3>
                     <div class="comparison-grid">
                         <div class="metric-card">
-                            <div class="metric-value" id="layernorm-ops">100%</div>
+                            <div class="metric-value">100%</div>
                             <div class="metric-label">LayerNorm计算量</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-value" id="rmsnorm-ops">80%</div>
+                            <div class="metric-value">80%</div>
                             <div class="metric-label">RMSNorm计算量</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-value" id="memory-saving">15%</div>
+                            <div class="metric-value">15%</div>
                             <div class="metric-label">内存节省</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-value" id="speed-up">20%</div>
+                            <div class="metric-value">20%</div>
                             <div class="metric-label">速度提升</div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="demo-card architecture-viz">
-                <h3>🔬 RMSNorm改进原理</h3>
-                <div class="layer-block">
-                    <strong>LayerNorm (原始)</strong><br>
-                    LN(x) = γ · (x - μ) / σ + β<br>
-                    需要计算均值μ和方差σ
-                </div>
-                <div class="layer-block">
-                    <strong>RMSNorm (改进)</strong><br>
-                    RMS(x) = γ · x / √(E[x²])<br>
-                    只需计算均方根，无需均值和偏置
-                    <div class="improvement-badge">✨</div>
                 </div>
             </div>
         </div>
@@ -363,18 +587,68 @@
             <div class="demo-area">
                 <div class="demo-card">
                     <h3>🔄 激活函数演进</h3>
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>对比激活函数:</label>
-                            <select id="activation-comparison">
-                                <option value="all">全部对比</option>
-                                <option value="relu-gelu">ReLU vs GELU</option>
-                                <option value="gelu-swish">GELU vs Swish</option>
-                                <option value="swish-swiglu">Swish vs SwiGLU</option>
-                            </select>
+                    
+                    <div class="formula-section">
+                        <div class="formula-title">SwiGLU公式：</div>
+                        <div id="swiglu-formula">
+                            $$\text{SwiGLU}(x) = \text{Swish}(xW_1) \odot (xW_2) \cdot W_3$$
+                            $$\text{Swish}(x) = x \cdot \sigma(x) = \frac{x}{1 + e^{-x}}$$
                         </div>
                     </div>
-                    <div class="plot-container" id="activation-evolution-plot"></div>
+                    
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" onclick="toggleContent('swiglu-viz', this)">演进可视化</button>
+                        <button class="toggle-btn" onclick="toggleContent('swiglu-code', this)">代码对比</button>
+                    </div>
+                    
+                    <div class="toggle-content active" id="swiglu-viz">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>对比激活函数:</label>
+                                <select id="activation-comparison">
+                                    <option value="all">全部对比</option>
+                                    <option value="relu-gelu">ReLU vs GELU</option>
+                                    <option value="gelu-swish">GELU vs Swish</option>
+                                    <option value="swish-swiglu">Swish vs SwiGLU</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="plot-container" id="activation-evolution-plot"></div>
+                    </div>
+                    
+                    <div class="toggle-content" id="swiglu-code">
+                        <div class="comparison-container">
+                            <div class="comparison-item before">
+                                <div class="comparison-title">ReLU FFN (原始)</div>
+                                <div class="code-section">
+class ReLUFFN(nn.Module):
+    def __init__(self, dim, hidden_dim):
+        super().__init__()
+        self.w1 = nn.Linear(dim, hidden_dim)
+        self.w2 = nn.Linear(hidden_dim, dim)
+    
+    def forward(self, x):
+        return self.w2(F.relu(self.w1(x)))
+                                </div>
+                            </div>
+                            <div class="comparison-item after">
+                                <div class="comparison-title">SwiGLU FFN (现代)</div>
+                                <div class="code-section">
+class SwiGLU(nn.Module):
+    def __init__(self, dim, hidden_dim):
+        super().__init__()
+        self.w1 = nn.Linear(dim, hidden_dim, bias=False)
+        self.w2 = nn.Linear(dim, hidden_dim, bias=False)
+        self.w3 = nn.Linear(hidden_dim, dim, bias=False)
+    
+    def forward(self, x):
+        gate = F.silu(self.w1(x))  # Swish激活
+        value = self.w2(x)
+        return self.w3(gate * value)  # 门控机制
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="demo-card">
@@ -388,38 +662,102 @@
                     <div class="plot-container" id="gradient-flow-plot"></div>
                 </div>
             </div>
-            
-            <div class="demo-card architecture-viz">
-                <h3>🧬 SwiGLU门控机制</h3>
-                <div class="layer-block">
-                    <strong>ReLU FFN (原始)</strong><br>
-                    FFN(x) = max(0, xW₁ + b₁)W₂ + b₂
-                </div>
-                <div class="layer-block">
-                    <strong>SwiGLU FFN (改进)</strong><br>
-                    SwiGLU(x) = (Swish(xW₁) ⊙ xW₂)W₃<br>
-                    引入显式门控机制
-                    <div class="improvement-badge">🚀</div>
-                </div>
-            </div>
         </div>
         
         <!-- 2021: RoPE -->
         <div class="demo-section hidden" id="demo-2021">
             <div class="demo-area">
                 <div class="demo-card">
-                    <h3>🌀 旋转位置编码 (RoPE)</h3>
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>序列长度: <span id="rope-seq-len-value">128</span></label>
-                            <input type="range" id="rope-seq-len" min="32" max="512" value="128">
+                    <h3>🌀 位置编码对比：Sinusoidal vs RoPE</h3>
+                    
+                    <div class="comparison-container">
+                        <div class="comparison-item before">
+                            <div class="comparison-title">Sinusoidal (原始)</div>
+                            <div class="formula-section">
+                                <div id="sin-pos-formula">
+                                    $$PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d}}\right)$$
+                                    $$PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d}}\right)$$
+                                </div>
+                            </div>
                         </div>
-                        <div class="control-group">
-                            <label>相对位置距离: <span id="relative-pos-value">10</span></label>
-                            <input type="range" id="relative-pos" min="1" max="50" value="10">
+                        <div class="comparison-item after">
+                            <div class="comparison-title">RoPE (改进)</div>
+                            <div class="formula-section">
+                                <div id="rope-pos-formula">
+                                    $$q_m = R_m \cdot q$$
+                                    $$k_m = R_m \cdot k$$
+                                    $$R_m = \begin{pmatrix} \cos(m\theta) & -\sin(m\theta) \\ \sin(m\theta) & \cos(m\theta) \end{pmatrix}$$
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="plot-container" id="rope-plot"></div>
+                    
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" onclick="toggleContent('rope-viz', this)">对比可视化</button>
+                        <button class="toggle-btn" onclick="toggleContent('rope-code', this)">代码对比</button>
+                    </div>
+                    
+                    <div class="toggle-content active" id="rope-viz">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>位置编码类型:</label>
+                                <select id="pos-encoding-type">
+                                    <option value="sinusoidal">Sinusoidal</option>
+                                    <option value="rope">RoPE</option>
+                                    <option value="both">对比显示</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>序列长度: <span id="rope-seq-len-value">128</span></label>
+                                <input type="range" id="rope-seq-len" min="32" max="512" value="128">
+                            </div>
+                        </div>
+                        <div class="plot-container" id="rope-plot"></div>
+                    </div>
+                    
+                    <div class="toggle-content" id="rope-code">
+                        <div class="comparison-container">
+                            <div class="comparison-item before">
+                                <div class="comparison-title">Sinusoidal实现</div>
+                                <div class="code-section">
+def sinusoidal_pos_encoding(seq_len, d_model):
+    pe = torch.zeros(seq_len, d_model)
+    position = torch.arange(0, seq_len).unsqueeze(1).float()
+    
+    div_term = torch.exp(torch.arange(0, d_model, 2).float() * 
+                        -(math.log(10000.0) / d_model))
+    
+    pe[:, 0::2] = torch.sin(position * div_term)
+    pe[:, 1::2] = torch.cos(position * div_term)
+    
+    return pe
+                                </div>
+                            </div>
+                            <div class="comparison-item after">
+                                <div class="comparison-title">RoPE实现</div>
+                                <div class="code-section">
+def apply_rope(q, k, seq_len):
+    # 计算旋转频率
+    dim = q.size(-1)
+    inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
+    
+    # 生成位置
+    t = torch.arange(seq_len).float()
+    freqs = torch.outer(t, inv_freq)
+    
+    # 生成旋转矩阵
+    cos = freqs.cos()
+    sin = freqs.sin()
+    
+    # 应用旋转
+    q_rot = rotate_half(q) * sin + q * cos
+    k_rot = rotate_half(k) * sin + k * cos
+    
+    return q_rot, k_rot
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="demo-card">
@@ -437,23 +775,6 @@
                     <div class="plot-container" id="extrapolation-plot"></div>
                 </div>
             </div>
-            
-            <div class="demo-card architecture-viz">
-                <h3>🎯 RoPE核心优势</h3>
-                <div class="layer-block">
-                    <strong>正弦位置编码问题</strong><br>
-                    • 绝对位置编码，相对位置信息弱<br>
-                    • 长序列外推能力差<br>
-                    • 位置信息与内容信息分离
-                </div>
-                <div class="layer-block">
-                    <strong>RoPE解决方案</strong><br>
-                    • 相对位置编码，内积保持相对关系<br>
-                    • 优秀的长序列外推能力<br>
-                    • 位置信息融入注意力计算
-                    <div class="improvement-badge">🎯</div>
-                </div>
-            </div>
         </div>
         
         <!-- 2023: 现代LLM -->
@@ -461,20 +782,89 @@
             <div class="demo-area">
                 <div class="demo-card">
                     <h3>🏛️ 架构对比：Post-Norm vs Pre-Norm</h3>
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>架构类型:</label>
-                            <select id="norm-position">
-                                <option value="post">Post-Norm (原始)</option>
-                                <option value="pre">Pre-Norm (现代)</option>
-                            </select>
+                    
+                    <div class="comparison-container">
+                        <div class="comparison-item before">
+                            <div class="comparison-title">Post-Norm (原始)</div>
+                            <div class="formula-section">
+                                <div id="postnorm-arch-formula">
+                                    $$\text{Output} = \text{Norm}(x + \text{Sublayer}(x))$$
+                                </div>
+                            </div>
                         </div>
-                        <div class="control-group">
-                            <label>网络层数: <span id="num-layers-value">12</span></label>
-                            <input type="range" id="num-layers" min="6" max="24" value="12">
+                        <div class="comparison-item after">
+                            <div class="comparison-title">Pre-Norm (现代)</div>
+                            <div class="formula-section">
+                                <div id="prenorm-arch-formula">
+                                    $$\text{Output} = x + \text{Sublayer}(\text{Norm}(x))$$
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="plot-container" id="norm-position-plot"></div>
+                    
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" onclick="toggleContent('arch-viz', this)">训练稳定性</button>
+                        <button class="toggle-btn" onclick="toggleContent('arch-code', this)">架构代码</button>
+                    </div>
+                    
+                    <div class="toggle-content active" id="arch-viz">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>架构类型:</label>
+                                <select id="norm-position">
+                                    <option value="post">Post-Norm (原始)</option>
+                                    <option value="pre">Pre-Norm (现代)</option>
+                                    <option value="both">对比显示</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>网络层数: <span id="num-layers-value">12</span></label>
+                                <input type="range" id="num-layers" min="6" max="24" value="12">
+                            </div>
+                        </div>
+                        <div class="plot-container" id="norm-position-plot"></div>
+                    </div>
+                    
+                    <div class="toggle-content" id="arch-code">
+                        <div class="comparison-container">
+                            <div class="comparison-item before">
+                                <div class="comparison-title">Post-Norm块</div>
+                                <div class="code-section">
+class PostNormBlock(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.attention = MultiHeadAttention(dim)
+        self.ffn = FeedForward(dim)
+        self.norm1 = LayerNorm(dim)
+        self.norm2 = LayerNorm(dim)
+    
+    def forward(self, x):
+        # Post-Norm: 先操作再归一化
+        x = self.norm1(x + self.attention(x))
+        x = self.norm2(x + self.ffn(x))
+        return x
+                                </div>
+                            </div>
+                            <div class="comparison-item after">
+                                <div class="comparison-title">Pre-Norm块</div>
+                                <div class="code-section">
+class PreNormBlock(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.attention = MultiHeadAttention(dim)
+        self.ffn = SwiGLU(dim)
+        self.norm1 = RMSNorm(dim)
+        self.norm2 = RMSNorm(dim)
+    
+    def forward(self, x):
+        # Pre-Norm: 先归一化再操作
+        x = x + self.attention(self.norm1(x))
+        x = x + self.ffn(self.norm2(x))
+        return x
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="demo-card">
@@ -502,9 +892,16 @@
             
             <div class="demo-card architecture-viz">
                 <h3>🎉 现代LLM最终形态</h3>
+                <div class="formula-section">
+                    <div class="formula-title">现代LLM的完整架构：</div>
+                    <div id="modern-llm-formula">
+                        $$x_{l+1} = x_l + \text{SwiGLU}(\text{RMSNorm}(x_l + \text{RoPE-Attention}(\text{RMSNorm}(x_l))))$$
+                    </div>
+                </div>
+                
                 <div class="layer-block">
                     <strong>Pre-Norm + RMSNorm</strong><br>
-                    x → RMSNorm → Attention → Add
+                    更稳定的训练，更快的收敛
                     <div class="improvement-badge">✅</div>
                 </div>
                 <div class="layer-block">
@@ -525,6 +922,33 @@
         // 全局变量
         let currentYear = "2017";
         
+        // MathJax配置
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+        
+        // 切换内容函数
+        function toggleContent(contentId, button) {
+            // 找到父级容器
+            const parent = button.parentElement.parentElement;
+            const contents = parent.querySelectorAll('.toggle-content');
+            const buttons = parent.querySelectorAll('.toggle-btn');
+            
+            // 隐藏所有内容，移除所有按钮活跃状态
+            contents.forEach(content => content.classList.remove('active'));
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // 显示选中内容，激活选中按钮
+            document.getElementById(contentId).classList.add('active');
+            button.classList.add('active');
+        }
+        
         // 时间线切换
         document.querySelectorAll('.timeline-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -541,8 +965,11 @@
                 currentYear = item.dataset.year;
                 document.getElementById(`demo-${currentYear}`).classList.remove('hidden');
                 
-                // 初始化对应的可视化
-                initVisualization(currentYear);
+                // 重新渲染MathJax
+                MathJax.typesetPromise().then(() => {
+                    // 初始化对应的可视化
+                    initVisualization(currentYear);
+                });
             });
         });
         
@@ -671,36 +1098,83 @@
                 const cleanSignal = x.map(i => Math.sin(i * 0.1));
                 const noisySignal = cleanSignal.map(val => val + (Math.random() - 0.5) * noiseLevel);
                 
-                // 归一化处理
-                let normalizedSignal;
-                if (normType === 'layernorm') {
+                let data = [];
+                
+                if (normType === 'both') {
+                    // LayerNorm处理
                     const mean = noisySignal.reduce((a, b) => a + b) / noisySignal.length;
                     const variance = noisySignal.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / noisySignal.length;
                     const std = Math.sqrt(variance);
-                    normalizedSignal = noisySignal.map(val => (val - mean) / (std + 1e-6));
-                } else {
+                    const layernormSignal = noisySignal.map(val => (val - mean) / (std + 1e-6));
+                    
+                    // RMSNorm处理
                     const rms = Math.sqrt(noisySignal.reduce((sum, val) => sum + val * val, 0) / noisySignal.length);
-                    normalizedSignal = noisySignal.map(val => val / (rms + 1e-6));
-                }
-                
-                const data = [
-                    {
-                        x: x,
-                        y: noisySignal,
-                        name: '原始信号',
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: { color: '#ff6b6b', width: 2 }
-                    },
-                    {
-                        x: x,
-                        y: normalizedSignal,
-                        name: `${normType === 'layernorm' ? 'LayerNorm' : 'RMSNorm'} 处理后`,
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: { color: '#4ecdc4', width: 2 }
+                    const rmsnormSignal = noisySignal.map(val => val / (rms + 1e-6));
+                    
+                    data = [
+                        {
+                            x: x,
+                            y: noisySignal,
+                            name: '原始信号',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#666', width: 2 }
+                        },
+                        {
+                            x: x,
+                            y: layernormSignal,
+                            name: 'LayerNorm',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#ff6b6b', width: 2 }
+                        },
+                        {
+                            x: x,
+                            y: rmsnormSignal,
+                            name: 'RMSNorm',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#4ecdc4', width: 2 }
+                        }
+                    ];
+                } else {
+                    // 单独显示
+                    let normalizedSignal;
+                    let color, normName;
+                    
+                    if (normType === 'layernorm') {
+                        const mean = noisySignal.reduce((a, b) => a + b) / noisySignal.length;
+                        const variance = noisySignal.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / noisySignal.length;
+                        const std = Math.sqrt(variance);
+                        normalizedSignal = noisySignal.map(val => (val - mean) / (std + 1e-6));
+                        color = '#ff6b6b';
+                        normName = 'LayerNorm';
+                    } else {
+                        const rms = Math.sqrt(noisySignal.reduce((sum, val) => sum + val * val, 0) / noisySignal.length);
+                        normalizedSignal = noisySignal.map(val => val / (rms + 1e-6));
+                        color = '#4ecdc4';
+                        normName = 'RMSNorm';
                     }
-                ];
+                    
+                    data = [
+                        {
+                            x: x,
+                            y: noisySignal,
+                            name: '原始信号',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#666', width: 2 }
+                        },
+                        {
+                            x: x,
+                            y: normalizedSignal,
+                            name: `${normName} 处理后`,
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: color, width: 2 }
+                        }
+                    ];
+                }
                 
                 Plotly.newPlot('norm-comparison-plot', data, {
                     title: '归一化效果对比',
@@ -816,32 +1290,105 @@
         // 2021: RoPE
         function initRoPE() {
             function updateRoPE() {
+                const posEncodingType = document.getElementById('pos-encoding-type').value;
                 const seqLen = parseInt(document.getElementById('rope-seq-len').value);
-                const relativePos = parseInt(document.getElementById('relative-pos').value);
                 
                 document.getElementById('rope-seq-len-value').textContent = seqLen;
-                document.getElementById('relative-pos-value').textContent = relativePos;
                 
-                // 生成RoPE相关性矩阵
                 const positions = Array.from({length: seqLen}, (_, i) => i);
-                const correlation = positions.map(i => 
-                    positions.map(j => Math.cos(Math.abs(i - j) * Math.PI / 64))
-                );
                 
-                const data = [{
-                    z: correlation,
-                    x: positions,
-                    y: positions,
-                    type: 'heatmap',
-                    colorscale: 'Viridis'
-                }];
-                
-                Plotly.newPlot('rope-plot', data, {
-                    title: 'RoPE位置相关性矩阵',
-                    xaxis: { title: '位置i' },
-                    yaxis: { title: '位置j' },
-                    margin: { t: 40, r: 60, b: 40, l: 40 }
-                });
+                if (posEncodingType === 'both') {
+                    // 生成Sinusoidal相关性矩阵
+                    const sinCorrelation = positions.map(i => 
+                        positions.map(j => Math.cos((i - j) * Math.PI / 64))
+                    );
+                    
+                    // 生成RoPE相关性矩阵 (更好的相对位置建模)
+                    const ropeCorrelation = positions.map(i => 
+                        positions.map(j => Math.cos(Math.abs(i - j) * Math.PI / 128) * Math.exp(-Math.abs(i - j) / 100))
+                    );
+                    
+                    const data = [
+                        {
+                            z: sinCorrelation,
+                            x: positions,
+                            y: positions,
+                            type: 'heatmap',
+                            colorscale: 'Viridis',
+                            name: 'Sinusoidal',
+                            visible: true,
+                            showscale: false
+                        },
+                        {
+                            z: ropeCorrelation,
+                            x: positions,
+                            y: positions,
+                            type: 'heatmap',
+                            colorscale: 'Plasma',
+                            name: 'RoPE',
+                            visible: false,
+                            showscale: false
+                        }
+                    ];
+                    
+                    const layout = {
+                        title: 'Sinusoidal vs RoPE 位置相关性对比',
+                        xaxis: { title: '位置i' },
+                        yaxis: { title: '位置j' },
+                        margin: { t: 60, r: 60, b: 40, l: 40 },
+                        updatemenus: [{
+                            type: 'buttons',
+                            direction: 'left',
+                            buttons: [{
+                                args: [{'visible': [true, false]}],
+                                label: 'Sinusoidal',
+                                method: 'restyle'
+                            }, {
+                                args: [{'visible': [false, true]}],
+                                label: 'RoPE',
+                                method: 'restyle'
+                            }],
+                            x: 0.1,
+                            y: 1.02,
+                            xanchor: 'left',
+                            yanchor: 'top'
+                        }]
+                    };
+                    
+                    Plotly.newPlot('rope-plot', data, layout);
+                } else {
+                    // 单独显示
+                    let correlation, title, colorscale;
+                    
+                    if (posEncodingType === 'sinusoidal') {
+                        correlation = positions.map(i => 
+                            positions.map(j => Math.cos((i - j) * Math.PI / 64))
+                        );
+                        title = 'Sinusoidal 位置相关性矩阵';
+                        colorscale = 'Viridis';
+                    } else {
+                        correlation = positions.map(i => 
+                            positions.map(j => Math.cos(Math.abs(i - j) * Math.PI / 128) * Math.exp(-Math.abs(i - j) / 100))
+                        );
+                        title = 'RoPE 位置相关性矩阵';
+                        colorscale = 'Plasma';
+                    }
+                    
+                    const data = [{
+                        z: correlation,
+                        x: positions,
+                        y: positions,
+                        type: 'heatmap',
+                        colorscale: colorscale
+                    }];
+                    
+                    Plotly.newPlot('rope-plot', data, {
+                        title: title,
+                        xaxis: { title: '位置i' },
+                        yaxis: { title: '位置j' },
+                        margin: { t: 40, r: 60, b: 40, l: 40 }
+                    });
+                }
             }
             
             function updateExtrapolation() {
@@ -868,7 +1415,7 @@
                     {
                         x: positions,
                         y: sinusoidalPerf,
-                        name: '正弦位置编码',
+                        name: 'Sinusoidal 位置编码',
                         type: 'scatter',
                         mode: 'lines',
                         line: { color: '#ff6b6b', width: 3 }
@@ -899,8 +1446,8 @@
                 });
             }
             
+            document.getElementById('pos-encoding-type').addEventListener('change', updateRoPE);
             document.getElementById('rope-seq-len').addEventListener('input', updateRoPE);
-            document.getElementById('relative-pos').addEventListener('input', updateRoPE);
             document.getElementById('train-len').addEventListener('input', updateExtrapolation);
             document.getElementById('test-len').addEventListener('input', updateExtrapolation);
             
@@ -918,47 +1465,59 @@
                 
                 const epochs = Array.from({length: 100}, (_, i) => i + 1);
                 
-                // 模拟训练稳定性
+                // 模拟训练稳定性 - 加入层数影响
+                const layerFactor = Math.log(numLayers) / Math.log(12); // 以12层为基准
+                
                 const postNormLoss = epochs.map(epoch => {
-                    const base = 2.0 * Math.exp(-epoch / 30);
-                    const noise = Math.sin(epoch * 0.3) * 0.2 * Math.exp(-epoch / 20);
+                    const base = 2.0 * Math.exp(-epoch / (30 + layerFactor * 10));
+                    const noise = Math.sin(epoch * 0.3) * 0.2 * Math.exp(-epoch / 20) * (1 + layerFactor * 0.5);
                     return Math.max(0.1, base + noise);
                 });
                 
                 const preNormLoss = epochs.map(epoch => {
-                    const base = 2.0 * Math.exp(-epoch / 20);
-                    const noise = Math.sin(epoch * 0.1) * 0.1 * Math.exp(-epoch / 30);
+                    const base = 2.0 * Math.exp(-epoch / (20 - layerFactor * 2));
+                    const noise = Math.sin(epoch * 0.1) * 0.1 * Math.exp(-epoch / 30) * (1 + layerFactor * 0.2);
                     return Math.max(0.05, base + noise);
                 });
                 
-                const data = [
-                    {
+                let data = [];
+                
+                if (normPosition === 'both') {
+                    data = [
+                        {
+                            x: epochs,
+                            y: postNormLoss,
+                            name: 'Post-Norm',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#ff6b6b', width: 3 }
+                        },
+                        {
+                            x: epochs,
+                            y: preNormLoss,
+                            name: 'Pre-Norm',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#4ecdc4', width: 3 }
+                        }
+                    ];
+                } else {
+                    const isPostNorm = normPosition === 'post';
+                    data = [{
                         x: epochs,
-                        y: normPosition === 'post' ? postNormLoss : preNormLoss,
-                        name: normPosition === 'post' ? 'Post-Norm' : 'Pre-Norm',
+                        y: isPostNorm ? postNormLoss : preNormLoss,
+                        name: isPostNorm ? 'Post-Norm' : 'Pre-Norm',
                         type: 'scatter',
                         mode: 'lines',
                         line: { 
-                            color: normPosition === 'post' ? '#ff6b6b' : '#4ecdc4',
+                            color: isPostNorm ? '#ff6b6b' : '#4ecdc4',
                             width: 3 
                         }
-                    }
-                ];
-                
-                if (normPosition === 'pre') {
-                    data.push({
-                        x: epochs,
-                        y: postNormLoss,
-                        name: 'Post-Norm (对比)',
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: { color: '#ff6b6b', width: 2, dash: 'dash' },
-                        opacity: 0.5
-                    });
+                    }];
                 }
                 
                 Plotly.newPlot('norm-position-plot', data, {
-                    title: '训练稳定性对比',
+                    title: `训练稳定性对比 (${numLayers}层网络)`,
                     xaxis: { title: '训练轮次' },
                     yaxis: { title: '损失值', type: 'log' },
                     margin: { t: 40, r: 20, b: 40, l: 40 }
@@ -973,7 +1532,10 @@
         
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', () => {
-            initVisualization(currentYear);
+            // 渲染MathJax
+            MathJax.typesetPromise().then(() => {
+                initVisualization(currentYear);
+            });
         });
     </script>
 </body>
