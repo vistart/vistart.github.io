@@ -910,8 +910,11 @@ class RMSNorm(nn.Module):
                         </div>
                         <div>
                             <strong>SwiGLU (2020):</strong>
-                            $$\text{SwiGLU}(x) = \text{Swish}(xW_1) \odot (xW_2) \cdot W_3$$
-                            $$= \frac{xW_1}{1 + e^{-xW_1}} \odot (xW_2) \cdot W_3$$
+                            $\text{SwiGLU}(x) = \text{Swish}(xW_1) \odot (xW_2) \cdot W_3$
+                            $= \frac{xW_1}{1 + e^{-xW_1}} \odot (xW_2) \cdot W_3$
+                            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                                其中 $\odot$ 表示<strong>元素级乘法</strong>(Element-wise multiplication)，也称Hadamard积
+                            </p>
                         </div>
                     </div>
                     <div class="explanation-box">
@@ -919,7 +922,7 @@ class RMSNorm(nn.Module):
                         <p><strong>时间复杂度对比:</strong></p>
                         <ul>
                             <li>🔴 <strong>ReLU:</strong> $O(n)$ <span class="complexity-badge">最快</span> - 但功能受限</li>
-                            <li>🟡 <strong>GELU:</strong> $O(n)$ <span class="complexity-badge">中等</span> - 需要erf函数近似</li>
+                            <li>🟡 <strong>GELU:</strong> $O(n)$ <span class="complexity-badge">中等</span> - 需要erf函数计算(复杂积分)或tanh近似</li>
                             <li>🟢 <strong>Swish:</strong> $O(n)$ <span class="complexity-badge">稍慢</span> - 需要sigmoid计算</li>
                             <li>🔵 <strong>SwiGLU:</strong> $O(2n)$ <span class="complexity-badge">双倍参数</span> - 但效果最佳</li>
                         </ul>
@@ -931,6 +934,7 @@ class RMSNorm(nn.Module):
                             </div>
                             <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 8px 0;">
                                 <strong>🟡 GELU图像:</strong> 像一个"平滑的S形弯道"，负值区域有小幅度输出，比ReLU更平滑
+                                <br><small><strong>💡 erf函数的作用:</strong> erf(误差函数)将输入映射到[-1,1]区间，创造了"概率性门控"效果。当输入很负时，erf≈-1，激活值接近0；当输入很正时，erf≈1，激活值接近输入本身；在零附近平滑过渡。</small>
                             </div>
                             <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin: 8px 0;">
                                 <strong>🟢 Swish图像:</strong> 像一个"带凹陷的上坡路"，负值时有轻微下凹，然后平滑上升
@@ -942,7 +946,7 @@ class RMSNorm(nn.Module):
                         
                         <p><strong>演进逻辑:</strong></p>
                         <div class="improvement-indicator">
-                            <strong>ReLU → GELU:</strong> 从硬切换到软切换，解决死神经元问题
+                            <strong>ReLU → GELU:</strong> 从硬切换到软切换，解决死神经元问题。GELU通过erf函数实现"概率性激活"：根据输入的概率分布决定激活程度，而不是简单的0/1开关。
                         </div>
                         <div class="improvement-indicator">
                             <strong>GELU → Swish:</strong> 简化计算，保持平滑特性，添加自门控
@@ -958,6 +962,54 @@ class RMSNorm(nn.Module):
                             <li>📈 <strong>表达能力:</strong> 两个线性变换+门控，表达能力大幅提升</li>
                             <li>🎯 <strong>梯度友好:</strong> 门控设计避免梯度消失</li>
                         </ul>
+                        
+                        <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #2196f3;">
+                            <h5 style="color: #1976d2; margin-bottom: 10px;">🔢 $\odot$ 元素级乘法详解</h5>
+                            <p><strong>什么是元素级乘法？</strong></p>
+                            <p>$\odot$ (Element-wise multiplication) 是两个<strong>相同形状</strong>的向量/矩阵对应位置元素相乘：</p>
+                            
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace;">
+                                <strong>示例1 - 向量情况：</strong><br>
+                                $\mathbf{a} = [2, 3, 4]$<br>
+                                $\mathbf{b} = [5, 1, 2]$<br>
+                                $\mathbf{a} \odot \mathbf{b} = [2×5, 3×1, 4×2] = [10, 3, 8]$
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace;">
+                                <strong>示例2 - SwiGLU中的应用：</strong><br>
+                                门控值: $\text{gate} = [0.8, 0.2, 0.9]$ (经过Swish激活)<br>
+                                数值流: $\text{value} = [10, -5, 7]$ (线性变换结果)<br>
+                                门控结果: $\text{gate} \odot \text{value} = [0.8×10, 0.2×(-5), 0.9×7] = [8.0, -1.0, 6.3]$
+                            </div>
+                            
+                            <p><strong>为什么用元素级乘法？</strong></p>
+                            <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
+                                <li><strong>精确控制:</strong> 每个位置独立决定信息通过量</li>
+                                <li><strong>门控机制:</strong> gate值在[0,1]间，起到"开关"调节作用</li>
+                                <li><strong>保持维度:</strong> 输入输出维度完全一致</li>
+                                <li><strong>可并行化:</strong> 各元素独立计算，GPU友好</li>
+                            </ul>
+                            
+                            <p style="font-style: italic; color: #666; margin-top: 10px;">
+                                💡 <strong>直观理解:</strong> 就像音量调节器，gate决定每个"音轨"(维度)的音量大小！<br>
+                                🔧 <strong>代码实现:</strong> 在Python/PyTorch中，$\odot$ 对应 <code>*</code> 运算符（自动元素级乘法）
+                            </p>
+                        </div>
+                        
+                        <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #2196f3;">
+                            <h5 style="color: #1976d2; margin-bottom: 10px;">📚 erf函数深入理解</h5>
+                            <p><strong>误差函数(Error Function)的直观含义:</strong></p>
+                            <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em;">
+                                <li><strong>数学定义:</strong> $\text{erf}(z) = \frac{2}{\sqrt{\pi}} \int_0^z e^{-t^2} dt$ (正态分布相关的积分)</li>
+                                <li><strong>值域范围:</strong> $\text{erf}(z) \in [-1, 1]$，在0附近平滑过渡</li>
+                                <li><strong>物理意义:</strong> 描述正态分布在某点附近的概率累积</li>
+                                <li><strong>GELU中的作用:</strong> 将输入"概率化"——大的正值激活概率高，负值激活概率低，零附近平滑过渡</li>
+                                <li><strong>为什么需要近似:</strong> erf涉及复杂积分计算，tanh近似可以用简单多项式快速计算</li>
+                            </ul>
+                            <p style="font-style: italic; color: #666; margin-top: 10px;">
+                                💡 简单理解：erf就像一个"概率开关"，不是粗暴的开/关，而是根据输入的"可信度"来决定开启程度。
+                            </p>
+                        </div>
                         
                         <p><strong>网络层配合设计:</strong></p>
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
@@ -1051,7 +1103,7 @@ class SwiGLU(nn.Module):
         # 双路径处理
         gate = F.silu(self.w1(x))  # Swish门控路径
         value = self.w2(x)         # 线性数值路径
-        hidden = gate * value      # 门控调节
+        hidden = gate * value      # 门控调节 (这里的*就是⊙元素级乘法)
         return self.w3(hidden)     # 输出投影
 
 # 现代LLM中的使用
