@@ -897,8 +897,12 @@ class RMSNorm(nn.Module):
                     <div id="activation-formulas">
                         <div style="margin-bottom: 15px;">
                             <strong>GELU (2016):</strong>
-                            $$\text{GELU}(x) = x \cdot \Phi(x) = x \cdot \frac{1}{2}\left[1 + \text{erf}\left(\frac{x}{\sqrt{2}}\right)\right]$$
-                            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">近似版本: $$\text{GELU}(x) \approx 0.5x\left(1 + \tanh\left[\sqrt{\frac{2}{\pi}}(x + 0.044715x^3)\right]\right)$$</p>
+                            $\text{GELU}(x) = x \cdot \Phi(x) = x \cdot \frac{1}{2}\left[1 + \text{erf}\left(\frac{x}{\sqrt{2}}\right)\right]$
+                            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                                其中 $\text{erf}(z)$ 是<strong>误差函数</strong>(Error Function)：$\text{erf}(z) = \frac{2}{\sqrt{\pi}} \int_0^z e^{-t^2} dt$
+                                $\Phi(x)$ 是标准正态分布的累积分布函数(CDF)
+                            </p>
+                            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">近似版本: $\text{GELU}(x) \approx 0.5x\left(1 + \tanh\left[\sqrt{\frac{2}{\pi}}(x + 0.044715x^3)\right]\right)$</p>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong>Swish (2017):</strong>
