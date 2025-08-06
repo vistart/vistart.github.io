@@ -1,0 +1,499 @@
+import React, { useState, useEffect } from 'react';
+import { Play, Code, GitBranch, Brain, Zap } from 'lucide-react';
+
+const TransformerDemo = () => {
+  const [activeTab, setActiveTab] = useState('traditional');
+  const [isRunning, setIsRunning] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [logs, setLogs] = useState([]);
+
+  // 传统Transformer演示数据
+  const traditionalSteps = [
+    {
+      title: "输入嵌入 + 位置编码",
+      description: "词元嵌入与位置编码融合",
+      data: {
+        tokens: ["猫", "坐在", "垫子", "上"],
+        tokenEmbeddings: [
+          [0.2, 0.5, -0.1, 0.8],
+          [0.1, -0.3, 0.6, 0.2],
+          [-0.4, 0.7, 0.3, -0.2],
+          [0.6, 0.1, -0.5, 0.4]
+        ],
+        positionEncoding: [
+          [1.0, 0.0, 0.5, 0.2],
+          [0.5, 0.8, 0.3, 0.1],
+          [0.0, 1.0, 0.1, 0.6],
+          [-0.5, 0.8, 0.2, 0.3]
+        ],
+        fused: [
+          [1.2, 0.5, 0.4, 1.0],
+          [0.6, 0.5, 0.9, 0.3],
+          [-0.4, 1.7, 0.4, 0.4],
+          [0.1, 0.9, -0.3, 0.7]
+        ]
+      }
+    },
+    {
+      title: "第1层处理",
+      description: "位置信息强度: ~90%",
+      data: {
+        output: [
+          [1.1, 0.6, 0.3, 0.9],
+          [0.5, 0.6, 0.8, 0.4],
+          [-0.3, 1.5, 0.5, 0.3],
+          [0.2, 0.8, -0.2, 0.8]
+        ],
+        positionStrength: 0.9
+      }
+    },
+    {
+      title: "第5层处理",
+      description: "位置信息强度: ~60%",
+      data: {
+        output: [
+          [0.8, 0.7, 0.6, 0.7],
+          [0.4, 0.8, 0.7, 0.6],
+          [0.1, 1.2, 0.8, 0.4],
+          [0.4, 0.7, 0.1, 0.9]
+        ],
+        positionStrength: 0.6
+      }
+    },
+    {
+      title: "第12层处理",
+      description: "位置信息强度: ~30% (大部分丢失)",
+      data: {
+        output: [
+          [0.6, 0.8, 0.8, 0.6],
+          [0.5, 0.9, 0.8, 0.7],
+          [0.3, 1.0, 0.9, 0.5],
+          [0.5, 0.8, 0.3, 0.8]
+        ],
+        positionStrength: 0.3
+      }
+    }
+  ];
+
+  // RoPE Transformer演示数据
+  const ropeSteps = [
+    {
+      title: "纯词元嵌入",
+      description: "无位置编码，保持语义纯净",
+      data: {
+        tokens: ["猫", "坐在", "垫子", "上"],
+        embeddings: [
+          [0.2, 0.5, -0.1, 0.8],
+          [0.1, -0.3, 0.6, 0.2],
+          [-0.4, 0.7, 0.3, -0.2],
+          [0.6, 0.1, -0.5, 0.4]
+        ]
+      }
+    },
+    {
+      title: "RoPE频率计算",
+      description: "预计算旋转频率，支持任意长度",
+      data: {
+        frequencies: [1.0, 0.1],
+        angles: [
+          [0, 0],
+          [1.0, 0.1],
+          [2.0, 0.2],
+          [3.0, 0.3]
+        ]
+      }
+    },
+    {
+      title: "第1层 - 动态旋转",
+      description: "位置信息精度: 100%",
+      data: {
+        rotatedQ: [
+          [0.2, 0.5, -0.1, 0.8],
+          [-0.25, 0.35, 0.59, 0.22],
+          [-0.75, -0.2, 0.28, -0.35],
+          [-1.8, -0.4, -0.52, 0.25]
+        ],
+        positionStrength: 1.0
+      }
+    },
+    {
+      title: "所有层保持精度",
+      description: "每层重新计算，位置信息永远100%",
+      data: {
+        layers: [1, 5, 12],
+        positionStrength: 1.0
+      }
+    }
+  ];
+
+  const runDemo = async () => {
+    setIsRunning(true);
+    setCurrentStep(0);
+    setLogs([]);
+    
+    const steps = activeTab === 'traditional' ? traditionalSteps : ropeSteps;
+    
+    for (let i = 0; i < steps.length; i++) {
+      setCurrentStep(i);
+      setLogs(prev => [...prev, `步骤 ${i + 1}: ${steps[i].title}`]);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    
+    setIsRunning(false);
+  };
+
+  const PositionStrengthBar = ({ strength, label }) => (
+    <div className="mb-4">
+      <div className="flex justify-between text-sm text-gray-600 mb-1">
+        <span>{label}</span>
+        <span>{Math.round(strength * 100)}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2">
+        <div 
+          className={`h-2 rounded-full transition-all duration-500 ${
+            strength > 0.7 ? 'bg-green-500' : 
+            strength > 0.4 ? 'bg-yellow-500' : 'bg-red-500'
+          }`}
+          style={{ width: `${strength * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+
+  const MatrixDisplay = ({ data, title, highlight = false }) => (
+    <div className={`p-4 rounded-lg border ${highlight ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+      <h4 className="font-semibold text-sm text-gray-700 mb-2">{title}</h4>
+      <div className="font-mono text-xs">
+        {data.map((row, i) => (
+          <div key={i} className="mb-1">
+            [{row.map(val => typeof val === 'number' ? val.toFixed(2) : val).join(', ')}]
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const TraditionalDemo = () => {
+    const currentData = traditionalSteps[currentStep] || traditionalSteps[0];
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
+            <Brain className="w-5 h-5 mr-2" />
+            传统Transformer处理流程
+          </h3>
+          <p className="text-red-700 text-sm">
+            位置信息与词元嵌入融合后，随着网络深度增加逐渐衰减
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="font-semibold mb-3">当前步骤: {currentData.title}</h4>
+            <p className="text-gray-600 text-sm mb-4">{currentData.description}</p>
+            
+            {currentStep === 0 && (
+              <div className="space-y-4">
+                <MatrixDisplay 
+                  data={currentData.data.tokenEmbeddings} 
+                  title="词元嵌入" 
+                />
+                <MatrixDisplay 
+                  data={currentData.data.positionEncoding} 
+                  title="位置编码" 
+                />
+                <MatrixDisplay 
+                  data={currentData.data.fused} 
+                  title="融合结果 (词元 + 位置)" 
+                  highlight={true}
+                />
+              </div>
+            )}
+            
+            {currentStep > 0 && (
+              <div className="space-y-4">
+                <MatrixDisplay 
+                  data={currentData.data.output} 
+                  title={`第${[1,5,12][currentStep-1]}层输出`}
+                  highlight={true}
+                />
+                <PositionStrengthBar 
+                  strength={currentData.data.positionStrength} 
+                  label="位置信息强度"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="font-semibold text-yellow-800 mb-2">⚠️ 关键问题</h4>
+            <ul className="text-sm text-yellow-700 space-y-2">
+              <li>• 位置信息在输入阶段一次性融合</li>
+              <li>• 随着网络层数增加逐渐丢失</li>
+              <li>• 深层网络主要依赖语义信息</li>
+              <li>• 序列长度受预定义位置表限制</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="bg-gray-100 p-4 rounded-lg">
+          <h4 className="font-semibold mb-2">推理阶段长度限制</h4>
+          <div className="text-sm">
+            <p className="mb-2">训练最大长度: 512 tokens</p>
+            <p className="mb-2">推理输入长度: 1024 tokens</p>
+            <p className="text-red-600 font-medium">❌ 错误: 序列长度超出预定义范围！</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const RopeDemo = () => {
+    const currentData = ropeSteps[currentStep] || ropeSteps[0];
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-green-800 mb-2 flex items-center">
+            <Zap className="w-5 h-5 mr-2" />
+            RoPE Transformer处理流程
+          </h3>
+          <p className="text-green-700 text-sm">
+            语义与位置分离，每层动态计算相对位置关系
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="font-semibold mb-3">当前步骤: {currentData.title}</h4>
+            <p className="text-gray-600 text-sm mb-4">{currentData.description}</p>
+            
+            {currentStep === 0 && (
+              <MatrixDisplay 
+                data={currentData.data.embeddings} 
+                title="纯词元嵌入 (无位置信息)" 
+                highlight={true}
+              />
+            )}
+            
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h5 className="font-medium mb-2">频率计算</h5>
+                  <p className="text-sm">θ = [1.0, 0.1]</p>
+                </div>
+                <MatrixDisplay 
+                  data={currentData.data.angles} 
+                  title="各位置旋转角度" 
+                  highlight={true}
+                />
+              </div>
+            )}
+            
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <MatrixDisplay 
+                  data={currentData.data.rotatedQ} 
+                  title="旋转后的Query矩阵" 
+                  highlight={true}
+                />
+                <PositionStrengthBar 
+                  strength={currentData.data.positionStrength} 
+                  label="位置信息精度"
+                />
+              </div>
+            )}
+            
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-green-600 mb-2">100%</div>
+                  <p className="text-sm text-gray-600">所有层位置精度保持</p>
+                </div>
+                <PositionStrengthBar 
+                  strength={1.0} 
+                  label="位置信息精度 (所有层)"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 className="font-semibold text-green-800 mb-2">✅ 核心优势</h4>
+            <ul className="text-sm text-green-700 space-y-2">
+              <li>• 语义与位置信息完全分离</li>
+              <li>• 每层重新计算位置关系</li>
+              <li>• 位置精度永远保持100%</li>
+              <li>• 支持任意长度序列处理</li>
+              <li>• 基于数学公式，无参数开销</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="bg-gray-100 p-4 rounded-lg">
+          <h4 className="font-semibold mb-2">无缝长度扩展</h4>
+          <div className="text-sm">
+            <p className="mb-2">训练最大长度: 512 tokens</p>
+            <p className="mb-2">推理输入长度: 2048 tokens</p>
+            <p className="text-green-600 font-medium">✅ 成功: 基于数学公式自动扩展！</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          Transformer位置编码对比演示
+        </h1>
+        <p className="text-gray-600 max-w-3xl mx-auto">
+          通过可视化演示了解传统Transformer和RoPE Transformer在位置编码处理上的根本差异
+        </p>
+      </div>
+
+      {/* 标签切换 */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('traditional')}
+            className={`px-6 py-2 rounded-md transition-all ${
+              activeTab === 'traditional' 
+                ? 'bg-white shadow-md text-red-600 font-semibold' 
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            传统Transformer
+          </button>
+          <button
+            onClick={() => setActiveTab('rope')}
+            className={`px-6 py-2 rounded-md transition-all ${
+              activeTab === 'rope' 
+                ? 'bg-white shadow-md text-green-600 font-semibold' 
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            RoPE Transformer
+          </button>
+        </div>
+      </div>
+
+      {/* 控制按钮 */}
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={runDemo}
+          disabled={isRunning}
+          className={`flex items-center px-6 py-3 rounded-lg font-semibold transition-all ${
+            isRunning 
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+              : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg hover:shadow-xl'
+          }`}
+        >
+          <Play className="w-5 h-5 mr-2" />
+          {isRunning ? '演示运行中...' : '开始演示'}
+        </button>
+      </div>
+
+      {/* 进度指示器 */}
+      {isRunning && (
+        <div className="mb-6">
+          <div className="flex justify-center items-center space-x-2 mb-2">
+            {(activeTab === 'traditional' ? traditionalSteps : ropeSteps).map((_, index) => (
+              <div
+                key={index}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index <= currentStep ? 'bg-blue-500' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="text-center text-sm text-gray-600">
+            步骤 {currentStep + 1} / {activeTab === 'traditional' ? traditionalSteps.length : ropeSteps.length}
+          </div>
+        </div>
+      )}
+
+      {/* 演示内容 */}
+      <div className="mb-8">
+        {activeTab === 'traditional' ? <TraditionalDemo /> : <RopeDemo />}
+      </div>
+
+      {/* 日志输出 */}
+      {logs.length > 0 && (
+        <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm mb-6">
+          <h4 className="text-white font-semibold mb-2">演示日志:</h4>
+          {logs.map((log, index) => (
+            <div key={index} className="mb-1">
+              {log}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 代码链接 */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <Code className="w-5 h-5 mr-2" />
+          相关代码实现
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <a
+            href="https://gist.github.com/vistart/1952cf77cbc96913a63f6f452c584d2a"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
+          >
+            <GitBranch className="w-5 h-5 text-gray-500 mr-3" />
+            <div>
+              <h4 className="font-semibold text-gray-800">传统Transformers vs RoPE代码实现对比</h4>
+              <p className="text-sm text-gray-600">完整的Python实现和详细注释</p>
+            </div>
+          </a>
+          <a
+            href="https://gist.github.com/vistart/9a234c7088d0b262e70d2090cccb5d5c"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
+          >
+            <GitBranch className="w-5 h-5 text-gray-500 mr-3" />
+            <div>
+              <h4 className="font-semibold text-gray-800">注意力计算详细对比：传统 vs RoPE</h4>
+              <p className="text-sm text-gray-600">具体的注意力计算步骤和数值对比</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      {/* 总结对比 */}
+      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-800 mb-4">核心差异总结</h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-semibold text-red-700 mb-3">传统Transformer</h4>
+            <ul className="text-sm space-y-2 text-red-600">
+              <li>• 位置信息前置融合到嵌入</li>
+              <li>• 随网络深度逐渐衰减</li>
+              <li>• 序列长度受限制</li>
+              <li>• 间接学习相对位置</li>
+              <li>• 深层网络"忘记"位置关系</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-green-700 mb-3">RoPE Transformer</h4>
+            <ul className="text-sm space-y-2 text-green-600">
+              <li>• 语义与位置完全分离</li>
+              <li>• 每层重新计算位置关系</li>
+              <li>• 支持任意序列长度</li>
+              <li>• 直接计算相对位置</li>
+              <li>• 位置信息永远精确</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TransformerDemo;
