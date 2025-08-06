@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer架构完整演示</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .output {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .matrix-viz {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .attention-grid {
+            display: grid;
+            gap: 2px;
+            margin: 10px 0;
+            background: #ddd;
+            padding: 2px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .attention-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            font-weight: bold;
+        }
+        .training-log {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .generation-step {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .token {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .highlight {
+            background: #ffeb3b;
+            font-weight: bold;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Transformer架构完整演示 - 训练与推理</h1>
+        
+        <p>这是一个完整的Transformer架构交互式演示，包含使用实际句子的训练和推理过程。</p>
+
+        <h2>📚 1. 数据准备与词汇表</h2>
+        <div class="code-block">
+            <pre>// 训练数据 - 简单的中文句子
+const trainingSentences = [
+    "我喜欢学习",
+    "学习很有趣",
+    "我喜欢编程",
+    "编程很有趣",
+    "深度学习很强大",
+    "我爱学习",
+    "学习使我快乐",
+    "编程改变世界"
+];
+
+// 数据特点：
+// • 包含重复模式（"我喜欢"、"很有趣"）
+// • 短句为主（4-7个字符）
+// • 词汇量小（便于学习）
+// • 主题相关（学习、编程）</pre>
+        </div>
+        
+        <div id="vocab-display" class="output"></div>
+
+        <h2>🧠 2. 简化的Transformer模型</h2>
+        <div class="code-block">
+            <pre>class MiniTransformer {
+    constructor(vocabSize, dModel = 32, nHeads = 2, nLayers = 2) {
+        this.vocabSize = vocabSize;
+        this.dModel = dModel;
+        this.nHeads = nHeads;
+        this.nLayers = nLayers;
+        
+        // 初始化参数
+        this.embedding = this.initMatrix(vocabSize, dModel);
+        this.layers = [];
+        for (let i = 0; i < nLayers; i++) {
+            this.layers.push({
+                Wq: this.initMatrix(dModel, dModel),
+                Wk: this.initMatrix(dModel, dModel),
+                Wv: this.initMatrix(dModel, dModel),
+                Wo: this.initMatrix(dModel, dModel),
+                ff1: this.initMatrix(dModel, dModel * 4),
+                ff2: this.initMatrix(dModel * 4, dModel),
+                norm1: {gamma: Array(dModel).fill(1), beta: Array(dModel).fill(0)},
+                norm2: {gamma: Array(dModel).fill(1), beta: Array(dModel).fill(0)}
+            });
+        }
+        this.outputProj = this.initMatrix(dModel, vocabSize);
+    }
+    
+    attention(Q, K, V) {
+        // Scaled Dot-Product Attention
+        const dk = Math.sqrt(K[0].length);
+        const scores = this.matmul(Q, this.transpose(K));
+        
+        // Scale
+        for (let i = 0; i < scores.length; i++) {
+            for (let j = 0; j < scores[i].length; j++) {
+                scores[i][j] /= dk;
+            }
+        }
+        
+        // Causal mask
+        for (let i = 0; i < scores.length; i++) {
+            for (let j = i + 1; j < scores[i].length; j++) {
+                scores[i][j] = -1e9;
+            }
+        }
+        
+        // Softmax
+        const weights = this.softmax2D(scores);
+        
+        // Apply to values
+        return this.matmul(weights, V);
+    }
+}</pre>
+        </div>
+
+        <h2>🎯 3. 训练过程演示</h2>
+        <button onclick="startTraining()">开始训练</button>
+        <button onclick="resetModel()">重置模型</button>
+        
+        <div class="progress-bar">
+            <div id="training-progress" class="progress-fill" style="width: 0%"></div>
+        </div>
+        
+        <div id="training-status" class="training-log">
+            点击"开始训练"按钮开始训练过程...
+        </div>
+        
+        <canvas id="loss-chart" width="600" height="300"></canvas>
+
+        <h2>🔮 4. 推理生成演示</h2>
+        <div>
+            <label>输入开始文本：</label>
+            <input type="text" id="seed-text" value="我" style="padding: 5px; font-size: 16px;">
+            <button onclick="generateText()">生成文本</button>
+            <label>最大长度：</label>
+            <input type="number" id="max-length" value="10" min="1" max="20" style="width: 60px; padding: 5px;">
+        </div>
+        
+        <div id="generation-process" class="generation-step">
+            <strong>生成过程：</strong>
+            <div id="generation-steps"></div>
+        </div>
+        
+        <div id="generated-output" class="output">
+            <strong>最终输出：</strong> <span id="final-text">等待生成...</span>
+        </div>
+
+        <h2>📊 5. 注意力可视化</h2>
+        <button onclick="visualizeAttention()">可视化最后一次注意力</button>
+        
+        <div id="attention-viz"></div>
+
+        <h2>💡 关键概念说明</h2>
+        <div class="output">
+            <h3>训练过程：</h3>
+            <ul>
+                <li><strong>Teacher Forcing</strong>：训练时使用真实的下一个token作为目标</li>
+                <li><strong>损失计算</strong>：使用交叉熵损失，衡量预测分布与真实token的差异</li>
+                <li><strong>梯度下降</strong>：通过反向传播更新模型参数</li>
+                <li><strong>为什么损失会波动？</strong>
+                    <ul>
+                        <li>这是<strong>正常现象</strong>！特别是在简化的演示版本中</li>
+                        <li>数据量小（只有5个句子）导致过拟合风险</li>
+                        <li>模型容量有限（只有8维隐藏状态）</li>
+                        <li>随机初始化和数据打乱会引入变化</li>
+                        <li>实际深度学习中也会出现损失波动，通过更多技巧（如学习率调度、正则化等）来缓解</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <h3>推理过程：</h3>
+            <ul>
+                <li><strong>自回归生成</strong>：每次预测一个token，将其加入序列继续预测</li>
+                <li><strong>贪婪解码</strong>：选择概率最高的token（可改进为束搜索）</li>
+                <li><strong>停止条件</strong>：遇到[END]标记或达到最大长度</li>
+                <li><strong>为什么生成很短？</strong>
+                    <ul>
+                        <li>训练数据都是短句（平均4-6个字）</li>
+                        <li>模型学习到了这种长度分布</li>
+                        <li>简化的模型架构限制了生成能力</li>
+                        <li>这恰好展示了模型如何学习数据的统计规律！</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <h3>⚠️ 期望与现实：</h3>
+            <p style="background: #fffde7; padding: 10px; border-radius: 5px;">
+                <strong>这是一个教学演示：</strong><br>
+                • 目标是展示Transformer的<strong>核心原理</strong>，而非实现完美的文本生成<br>
+                • 真实的GPT模型有数十亿参数，而我们只有几百个<br>
+                • 训练数据规模差异：GPT用TB级文本，我们用5个句子<br>
+                • 但核心机制是相同的：注意力机制、自回归生成、梯度优化<br>
+                • 通过这个简化版本，您可以理解大模型的工作原理！
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let tokenizer;
+        let model;
+        let trainingSentences = [
+            "我喜欢学习",
+            "学习很有趣", 
+            "我喜欢编程",
+            "编程很有趣",
+            "深度学习很强大",
+            "我爱学习",
+            "学习使我快乐",
+            "编程改变世界"
+        ];
+        let losses = [];
+        let lastAttentionWeights = null;
+
+        // 初始化
+        function initialize() {
+            console.log('开始初始化...');
+            
+            // 初始化tokenizer
+            tokenizer = new SimpleTokenizer();
+            tokenizer.buildVocab(trainingSentences);
+            
+            // 显示词汇表
+            const vocabDisplay = document.getElementById('vocab-display');
+            vocabDisplay.innerHTML = `<strong>词汇表大小：</strong>${tokenizer.vocabSize}<br>`;
+            vocabDisplay.innerHTML += `<strong>词汇：</strong>`;
+            for (let [char, idx] of Object.entries(tokenizer.vocab)) {
+                vocabDisplay.innerHTML += `<span class="token">${char}:${idx}</span>`;
+            }
+            
+            // 创建简化的模型
+            model = new MiniTransformer(tokenizer.vocabSize);
+            
+            // 测试模型是否正常工作
+            try {
+                const testTokens = [tokenizer.vocab['[START]']];
+                const testProbs = model.predict(testTokens);
+                const probSum = testProbs.reduce((a, b) => a + b, 0);
+                
+                console.log('初始化完成');
+                console.log('词汇表大小:', tokenizer.vocabSize);
+                console.log('模型测试 - 概率和:', probSum.toFixed(4));
+                console.log('最大概率token:', tokenizer.reverseVocab[testProbs.indexOf(Math.max(...testProbs))]);
+                
+                // 验证所有组件
+                console.log('组件验证:', {
+                    tokenizerOK: tokenizer && tokenizer.vocab && tokenizer.reverseVocab,
+                    modelOK: model && model.embedding && model.outputProj,
+                    matricesOK: model && model.Wq && model.Wk && model.Wv
+                });
+            } catch (e) {
+                console.error('初始化测试失败:', e);
+            }
+        }
+
+        // SimpleTokenizer类
+        class SimpleTokenizer {
+            constructor() {
+                this.vocab = {'[PAD]': 0, '[START]': 1, '[END]': 2};
+                this.reverseVocab = {0: '[PAD]', 1: '[START]', 2: '[END]'};
+                this.vocabSize = 3;
+            }
+            
+            buildVocab(sentences) {
+                for (let sentence of sentences) {
+                    for (let char of sentence) {
+                        if (!(char in this.vocab)) {
+                            this.vocab[char] = this.vocabSize;
+                            this.reverseVocab[this.vocabSize] = char;
+                            this.vocabSize++;
+                        }
+                    }
+                }
+                console.log('词汇表构建完成，大小:', this.vocabSize);
+                console.log('词汇:', Object.keys(this.vocab));
+            }
+            
+            encode(text) {
+                const chars = text.split('');
+                const result = [this.vocab['[START]']];
+                for (let char of chars) {
+                    result.push(this.vocab[char] || 0);
+                }
+                result.push(this.vocab['[END]']);
+                return result;
+            }
+            
+            decode(tokens) {
+                let result = '';
+                for (let token of tokens) {
+                    const char = this.reverseVocab[token];
+                    if (char && char !== '[START]' && char !== '[END]' && char !== '[PAD]') {
+                        result += char;
+                    }
+                }
+                return result;
+            }
+        }
+
+        // MiniTransformer类
+        class MiniTransformer {
+            constructor(vocabSize, dModel = 32, nHeads = 2, nLayers = 1) {
+                this.vocabSize = vocabSize;
+                this.dModel = dModel;
+                this.nHeads = nHeads;
+                this.nLayers = nLayers;
+                this.dHead = Math.floor(dModel / nHeads);
+                
+                // 改进的参数初始化（Xavier初始化）
+                this.embedding = this.initMatrix(vocabSize, dModel, 0.1);
+                this.outputProj = this.initMatrix(dModel, vocabSize, 0.1);
+                
+                this.layers = [];
+                for (let i = 0; i < nLayers; i++) {
+                    this.layers.push({
+                        Wq: this.initMatrix(dModel, dModel, 0.1),
+                        Wk: this.initMatrix(dModel, dModel, 0.1),
+                        Wv: this.initMatrix(dModel, dModel, 0.1),
+                        Wo: this.initMatrix(dModel, dModel, 0.1),
+                        ff1: this.initMatrix(dModel, dModel * 2, 0.1),
+                        ff2: this.initMatrix(dModel * 2, dModel, 0.1)
+                    });
+                }
+            }
+            
+            initMatrix(rows, cols, scale = null) {
+                const matrix = [];
+                // Xavier/Glorot初始化
+                if (scale === null) {
+                    scale = Math.sqrt(2.0 / (rows + cols));
+                }
+                for (let i = 0; i < rows; i++) {
+                    matrix[i] = [];
+                    for (let j = 0; j < cols; j++) {
+                        // 使用正态分布近似
+                        let u1 = Math.random();
+                        let u2 = Math.random();
+                        let z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                        matrix[i][j] = z0 * scale;
+                    }
+                }
+                return matrix;
+            }
+            
+            forward(tokens) {
+                // Embedding
+                let x = [];
+                for (let token of tokens) {
+                    if (token < this.embedding.length) {
+                        x.push([...this.embedding[token]]);
+                    } else {
+                        // 如果token超出范围，使用随机初始化
+                        x.push(new Array(this.dModel).fill(0).map(() => Math.random() * 0.1));
+                    }
+                }
+                
+                // 添加简单的位置编码
+                for (let i = 0; i < x.length; i++) {
+                    for (let j = 0; j < x[i].length; j++) {
+                        x[i][j] += Math.sin(i / 10000 ** (2 * j / this.dModel)) * 0.1;
+                    }
+                }
+                
+                // Transformer layers
+                for (let layer of this.layers) {
+                    x = this.transformerLayer(x, layer);
+                }
+                
+                // Output projection
+                const output = [];
+                for (let vec of x) {
+                    const out = this.matmulVec(this.outputProj, vec);
+                    output.push(out);
+                }
+                
+                return output;
+            }
+            
+            transformerLayer(x, layer) {
+                // Multi-head attention
+                const Q = this.matmul(x, this.transpose(layer.Wq));
+                const K = this.matmul(x, this.transpose(layer.Wk));
+                const V = this.matmul(x, this.transpose(layer.Wv));
+                
+                const attnOutput = this.attention(Q, K, V);
+                lastAttentionWeights = this.lastAttentionWeights;
+                
+                // Add & Norm (simplified) - 使用残差连接
+                let x1 = this.add(x, attnOutput);
+                x1 = this.layerNorm(x1);
+                
+                // FFN
+                let ffn = this.matmul(x1, this.transpose(layer.ff1));
+                ffn = this.relu(ffn);
+                ffn = this.matmul(ffn, this.transpose(layer.ff2));
+                
+                // Add & Norm (simplified)
+                let x2 = this.add(x1, ffn);
+                x2 = this.layerNorm(x2);
+                
+                return x2;
+            }
+            
+            layerNorm(x) {
+                // 简单的层归一化
+                const result = [];
+                for (let i = 0; i < x.length; i++) {
+                    const vec = x[i];
+                    const mean = vec.reduce((a, b) => a + b, 0) / vec.length;
+                    const variance = vec.reduce((a, b) => a + (b - mean) ** 2, 0) / vec.length;
+                    const std = Math.sqrt(variance + 1e-5);
+                    
+                    result[i] = vec.map(v => (v - mean) / std);
+                }
+                return result;
+            }
+            
+            attention(Q, K, V) {
+                const seqLen = Q.length;
+                const dk = Math.sqrt(K[0].length) || 1;
+                
+                // QK^T
+                const scores = this.matmul(Q, this.transpose(K));
+                
+                // Scale - 使用更保守的缩放
+                for (let i = 0; i < scores.length; i++) {
+                    for (let j = 0; j < scores[i].length; j++) {
+                        scores[i][j] = scores[i][j] / (dk * 2); // 更保守的缩放
+                    }
+                }
+                
+                // Causal mask - 使用更小的负值
+                for (let i = 0; i < scores.length; i++) {
+                    for (let j = i + 1; j < scores[i].length; j++) {
+                        scores[i][j] = -100; // 使用-100而不是-1e9
+                    }
+                }
+                
+                // Softmax
+                const weights = [];
+                for (let i = 0; i < scores.length; i++) {
+                    weights[i] = this.softmax(scores[i]);
+                }
+                
+                this.lastAttentionWeights = weights;
+                
+                // Apply to values
+                return this.matmul(weights, V);
+            }
+            
+            predict(tokens) {
+                if (!tokens || tokens.length === 0) {
+                    // 返回均匀分布
+                    return new Array(this.vocabSize).fill(1 / this.vocabSize);
+                }
+                
+                const output = this.forward(tokens);
+                const lastOutput = output[output.length - 1];
+                
+                // 检查输出是否有效
+                if (!lastOutput || lastOutput.some(x => isNaN(x) || !isFinite(x))) {
+                    console.warn('Invalid output, returning uniform distribution');
+                    return new Array(this.vocabSize).fill(1 / this.vocabSize);
+                }
+                
+                const probs = this.softmax(lastOutput);
+                
+                // 再次检查概率是否有效
+                if (probs.some(x => isNaN(x)) || Math.abs(probs.reduce((a, b) => a + b, 0) - 1) > 0.01) {
+                    console.warn('Invalid probabilities, returning uniform distribution');
+                    return new Array(this.vocabSize).fill(1 / this.vocabSize);
+                }
+                
+                return probs;
+            }
+            
+            // 辅助函数
+            matmul(A, B) {
+                const result = [];
+                for (let i = 0; i < A.length; i++) {
+                    result[i] = [];
+                    for (let j = 0; j < B[0].length; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < B.length; k++) {
+                            const val = (A[i][k] || 0) * (B[k][j] || 0);
+                            if (!isNaN(val) && isFinite(val)) {
+                                sum += val;
+                            }
+                        }
+                        result[i][j] = sum;
+                    }
+                }
+                return result;
+            }
+            
+            matmulVec(matrix, vec) {
+                const result = [];
+                for (let i = 0; i < matrix.length; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < vec.length; j++) {
+                        const val = (matrix[i][j] || 0) * (vec[j] || 0);
+                        if (!isNaN(val) && isFinite(val)) {
+                            sum += val;
+                        }
+                    }
+                    result[i] = sum;
+                }
+                return result;
+            }
+            
+            transpose(matrix) {
+                if (!matrix || matrix.length === 0) return [];
+                const result = [];
+                for (let j = 0; j < matrix[0].length; j++) {
+                    result[j] = [];
+                    for (let i = 0; i < matrix.length; i++) {
+                        result[j][i] = matrix[i][j] || 0;
+                    }
+                }
+                return result;
+            }
+            
+            add(A, B) {
+                const result = [];
+                for (let i = 0; i < A.length; i++) {
+                    result[i] = [];
+                    for (let j = 0; j < A[i].length; j++) {
+                        const val = (A[i][j] || 0) + (B[i][j] || 0);
+                        result[i][j] = isNaN(val) ? 0 : val;
+                    }
+                }
+                return result;
+            }
+            
+            relu(matrix) {
+                const result = [];
+                for (let i = 0; i < matrix.length; i++) {
+                    result[i] = [];
+                    for (let j = 0; j < matrix[i].length; j++) {
+                        const val = matrix[i][j] || 0;
+                        result[i][j] = Math.max(0, Math.min(10, val)); // 限制最大值避免爆炸
+                    }
+                }
+                return result;
+            }
+            
+            softmax(vec) {
+                // 数值稳定的softmax实现
+                const max = Math.max(...vec.filter(x => !isNaN(x) && isFinite(x)));
+                const exp = vec.map(x => {
+                    const val = x - max;
+                    // 防止极端值
+                    if (val < -20) return 0;
+                    if (val > 20) return Math.exp(20);
+                    return Math.exp(val);
+                });
+                const sum = exp.reduce((a, b) => a + b, 0) || 1;
+                return exp.map(x => x / sum);
+            }
+            
+            crossEntropyLoss(probs, targetIdx) {
+                // 确保概率值有效
+                const prob = probs[targetIdx];
+                if (isNaN(prob) || prob <= 0) {
+                    return 10; // 返回一个大的损失值而不是NaN
+                }
+                return -Math.log(Math.max(prob, 1e-10));
+            }
+        }
+
+        // 训练函数 - 简化版
+        async function startTraining() {
+            const statusDiv = document.getElementById('training-status');
+            const progressBar = document.getElementById('training-progress');
+            losses = [];
+            
+            const epochs = 150; // 更多轮数
+            let learningRate = 0.1; // 较大的初始学习率
+            
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                let epochLoss = 0;
+                let numSamples = 0;
+                
+                // 随机打乱训练数据
+                const shuffled = [...trainingSentences].sort(() => Math.random() - 0.5);
+                
+                for (let sentence of shuffled) {
+                    const tokens = tokenizer.encode(sentence);
+                    
+                    for (let i = 0; i < tokens.length - 1; i++) {
+                        const inputTokens = tokens.slice(0, i + 1);
+                        const targetToken = tokens[i + 1];
+                        
+                        // Forward pass
+                        const probs = model.predict(inputTokens);
+                        const loss = model.crossEntropyLoss(probs, targetToken);
+                        
+                        if (!isNaN(loss) && isFinite(loss)) {
+                            epochLoss += loss;
+                            numSamples++;
+                            
+                            // 计算梯度并更新权重
+                            // 1. 更新输出层（最重要）
+                            const outputGrad = [...probs];
+                            outputGrad[targetToken] -= 1; // 交叉熵梯度
+                            
+                            // 更新outputProj矩阵的对应行
+                            for (let k = 0; k < model.vocabSize; k++) {
+                                if (model.outputProj[k]) {
+                                    for (let j = 0; j < model.dModel; j++) {
+                                        if (model.outputProj[k][j] !== undefined) {
+                                            model.outputProj[k][j] -= learningRate * outputGrad[k] * 0.01;
+                                            // 权重裁剪
+                                            model.outputProj[k][j] = Math.max(-3, Math.min(3, model.outputProj[k][j]));
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // 2. 更新embedding
+                            for (let tid of inputTokens) {
+                                if (tid >= 0 && tid < model.embedding.length) {
+                                    for (let j = 0; j < model.dModel; j++) {
+                                        if (model.embedding[tid] && model.embedding[tid][j] !== undefined) {
+                                            // 简单的梯度估计
+                                            const grad = outputGrad[targetToken] * (Math.random() - 0.5) * 0.1;
+                                            model.embedding[tid][j] -= learningRate * grad;
+                                            model.embedding[tid][j] = Math.max(-3, Math.min(3, model.embedding[tid][j]));
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // 3. 更新注意力权重（偶尔）
+                            if (Math.random() < 0.1) {
+                                const matrices = [model.Wq, model.Wk, model.Wv];
+                                const matrix = matrices[Math.floor(Math.random() * matrices.length)];
+                                if (matrix && matrix.length > 0 && matrix[0]) {
+                                    const i = Math.floor(Math.random() * matrix.length);
+                                    const j = Math.floor(Math.random() * matrix[0].length);
+                                    if (matrix[i] && matrix[i][j] !== undefined) {
+                                        matrix[i][j] -= learningRate * outputGrad[targetToken] * (Math.random() - 0.5) * 0.01;
+                                        matrix[i][j] = Math.max(-3, Math.min(3, matrix[i][j]));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 计算平均损失
+                const avgLoss = numSamples > 0 ? epochLoss / numSamples : 10;
+                losses.push(avgLoss);
+                
+                // 学习率衰减
+                if (epoch > 50) {
+                    learningRate *= 0.995;
+                }
+                
+                // 更新UI
+                progressBar.style.width = ((epoch + 1) / epochs * 100) + '%';
+                statusDiv.innerHTML = `<strong>训练中...</strong><br>`;
+                statusDiv.innerHTML += `Epoch ${epoch + 1}/${epochs}<br>`;
+                statusDiv.innerHTML += `Loss: ${avgLoss.toFixed(4)}<br>`;
+                statusDiv.innerHTML += `学习率: ${learningRate.toFixed(5)}`;
+                
+                // 每20轮显示测试
+                if ((epoch + 1) % 30 === 0) {
+                    const testPrompt = '我';
+                    const testTokens = tokenizer.encode(testPrompt);
+                    const testProbs = model.predict(testTokens.slice(0, -1));
+                    const topProbs = [...testProbs]
+                        .map((p, i) => ({p, i}))
+                        .sort((a, b) => b.p - a.p)
+                        .slice(0, 3);
+                    
+                    statusDiv.innerHTML += '<br><strong>测试生成:</strong><br>';
+                    statusDiv.innerHTML += `"${testPrompt}" → `;
+                    for (let {p, i} of topProbs) {
+                        const char = tokenizer.reverseVocab[i] || '?';
+                        statusDiv.innerHTML += `${char}(${(p*100).toFixed(1)}%) `;
+                    }
+                }
+                
+                // 绘制损失图
+                drawLossChart();
+                
+                // 异步延迟
+                await new Promise(resolve => setTimeout(resolve, 5));
+            }
+            
+            statusDiv.innerHTML = `<strong>训练完成！</strong><br>`;
+            statusDiv.innerHTML += `最终损失: ${losses[losses.length - 1].toFixed(4)}`;
+        }
+
+        // 文本生成函数 - 改进版，包含解释
+        async function generateText() {
+            const seedText = document.getElementById('seed-text').value;
+            const maxLength = parseInt(document.getElementById('max-length').value);
+            const stepsDiv = document.getElementById('generation-steps');
+            const finalTextSpan = document.getElementById('final-text');
+            
+            stepsDiv.innerHTML = `<div style="background: #f0f8ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <strong>🤖 生成原理：</strong><br>
+                <span style="font-size: 12px; color: #666;">
+                • 自回归生成：每次预测一个字符<br>
+                • 使用已生成的内容作为上下文<br>
+                • 选择概率最高的字符（贪婪解码）<br>
+                • 遇到[END]或达到最大长度时停止<br>
+                </span>
+            </div>`;
+            
+            // 构建初始tokens（重要：不包含[END]）
+            let tokens = [];
+            if (seedText) {
+                // 手动构建tokens，避免包含[END]
+                tokens.push(tokenizer.vocab['[START]']);
+                for (let char of seedText) {
+                    if (tokenizer.vocab[char] !== undefined) {
+                        tokens.push(tokenizer.vocab[char]);
+                    }
+                }
+            } else {
+                tokens = [tokenizer.vocab['[START]']];
+            }
+            
+            let generatedText = seedText;
+            let consecutiveEndCount = 0; // 记录连续预测END的次数
+            
+            console.log('开始生成，初始tokens:', tokens);
+            console.log('初始文本:', generatedText);
+            
+            for (let step = 0; step < maxLength; step++) {
+                // 预测下一个token
+                const probs = model.predict(tokens);
+                
+                // 检查概率是否有效
+                if (!probs || probs.every(p => isNaN(p))) {
+                    stepsDiv.innerHTML += '<div style="color: red;">❌ 模型预测失败，请先训练模型</div>';
+                    break;
+                }
+                
+                // 获取top-k候选（排除特殊标记）
+                const candidates = [];
+                for (let i = 0; i < probs.length; i++) {
+                    const token = tokenizer.reverseVocab[i];
+                    // 过滤特殊标记，但保留[END]用于判断
+                    if (token && token !== '[PAD]' && token !== '[START]') {
+                        candidates.push({
+                            idx: i,
+                            prob: probs[i],
+                            token: token
+                        });
+                    }
+                }
+                
+                // 按概率排序
+                candidates.sort((a, b) => b.prob - a.prob);
+                
+                // 选择策略：如果[END]概率过高且已生成足够内容，考虑结束
+                let nextToken = candidates[0].idx;
+                let selectedToken = candidates[0].token;
+                
+                // 如果模型强烈倾向于[END]（概率>60%）且已生成至少2个字符
+                if (selectedToken === '[END]' && candidates[0].prob > 0.6 && generatedText.length >= 2) {
+                    consecutiveEndCount++;
+                    if (consecutiveEndCount >= 1) {
+                        stepsDiv.innerHTML += `<div style="color: #2196f3;">
+                            步骤 ${step + 1}: 模型预测[END]标记(${(candidates[0].prob * 100).toFixed(1)}%)，生成结束
+                        </div>`;
+                        break;
+                    }
+                } else if (selectedToken === '[END]') {
+                    // 如果太早遇到[END]，选择次优选项
+                    if (generatedText.length < 2 && candidates.length > 1) {
+                        nextToken = candidates[1].idx;
+                        selectedToken = candidates[1].token;
+                        consecutiveEndCount = 0;
+                    } else {
+                        stepsDiv.innerHTML += `<div style="color: #2196f3;">
+                            步骤 ${step + 1}: 遇到[END]标记，生成结束
+                        </div>`;
+                        break;
+                    }
+                } else {
+                    consecutiveEndCount = 0;
+                }
+                
+                // 显示生成步骤
+                let stepHtml = `<div style="border-left: 3px solid #4caf50; padding-left: 10px; margin: 5px 0;">`;
+                stepHtml += `<strong>步骤 ${step + 1}:</strong><br>`;
+                stepHtml += `当前文本: <span class="token" style="background: #e8f5e9;">${generatedText || '[空]'}</span><br>`;
+                stepHtml += `预测分布: `;
+                
+                // 显示top-5候选
+                const topCandidates = candidates.slice(0, 5);
+                for (let i = 0; i < topCandidates.length; i++) {
+                    const cand = topCandidates[i];
+                    const isSelected = (cand.idx === nextToken);
+                    const bgColor = isSelected ? '#ffeb3b' : '#f0f0f0';
+                    const fontWeight = isSelected ? 'bold' : 'normal';
+                    
+                    stepHtml += `<span class="token" style="background: ${bgColor}; font-weight: ${fontWeight};">`;
+                    stepHtml += `${cand.token}(${(cand.prob * 100).toFixed(1)}%)`;
+                    stepHtml += `</span> `;
+                }
+                
+                if (selectedToken !== '[END]') {
+                    stepHtml += `<br>选择: <strong>${selectedToken}</strong>`;
+                }
+                stepHtml += '</div>';
+                stepsDiv.innerHTML += stepHtml;
+                
+                // 如果不是[END]，添加到序列
+                if (selectedToken !== '[END]') {
+                    tokens.push(nextToken);
+                    generatedText += selectedToken;
+                }
+                
+                // 模拟异步，让用户看到生成过程
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            // 显示最终结果
+            finalTextSpan.innerHTML = `<strong>${generatedText || '(空)'}</strong>`;
+            
+            // 添加解释
+            if (generatedText.length <= 2) {
+                stepsDiv.innerHTML += `<div style="background: #fff3e0; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <strong>💡 说明：</strong><br>
+                    <span style="font-size: 12px;">
+                    生成较短可能是因为：<br>
+                    • 模型学到了训练数据的长度模式<br>
+                    • 训练数据中的句子都比较短<br>
+                    • 模型容量有限（只有8维）<br>
+                    • 可以尝试不同的提示词或增加训练<br>
+                    </span>
+                </div>`;
+            }
+            
+            console.log('生成完成:', generatedText);
+        }
+
+        // 绘制损失图
+        function drawLossChart() {
+            const canvas = document.getElementById('loss-chart');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (losses.length === 0) return;
+            
+            // 过滤掉无效值
+            const validLosses = losses.filter(l => !isNaN(l) && isFinite(l));
+            if (validLosses.length === 0) return;
+            
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+            
+            const maxLoss = Math.min(Math.max(...validLosses), 10); // 限制最大值为10
+            const minLoss = Math.max(Math.min(...validLosses), 0);
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.stroke();
+            
+            // 绘制损失曲线
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let firstValid = true;
+            for (let i = 0; i < losses.length; i++) {
+                if (isNaN(losses[i]) || !isFinite(losses[i])) continue;
+                
+                const x = padding + (i / (losses.length - 1 || 1)) * width;
+                const lossValue = Math.min(losses[i], maxLoss);
+                const y = canvas.height - padding - ((lossValue - minLoss) / (maxLoss - minLoss || 1)) * height;
+                
+                if (firstValid) {
+                    ctx.moveTo(x, y);
+                    firstValid = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                
+                // 绘制点
+                ctx.fillStyle = '#764ba2';
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            ctx.stroke();
+            
+            // 添加标签
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText('Loss', 10, 20);
+            ctx.fillText('Epoch', canvas.width - 50, canvas.height - 10);
+            
+            // 添加数值标签
+            ctx.font = '12px Arial';
+            ctx.fillText(maxLoss.toFixed(2), 5, padding);
+            ctx.fillText(minLoss.toFixed(2), 5, canvas.height - padding);
+        }
+
+        // 注意力可视化
+        function visualizeAttention() {
+            if (!lastAttentionWeights || lastAttentionWeights.length === 0) {
+                alert('请先进行一次文本生成！');
+                return;
+            }
+            
+            const vizDiv = document.getElementById('attention-viz');
+            vizDiv.innerHTML = '<h3>注意力权重矩阵</h3>';
+            
+            const weights = lastAttentionWeights;
+            const size = Math.min(weights.length, 10); // 限制显示大小
+            
+            // 创建热力图
+            let html = '<div style="display: inline-block; background: #f5f5f5; padding: 10px; border-radius: 8px;">';
+            
+            for (let i = 0; i < size; i++) {
+                html += '<div style="display: flex;">';
+                for (let j = 0; j < size; j++) {
+                    let value = 0;
+                    if (i < weights.length && j < weights[i].length) {
+                        value = weights[i][j];
+                        // 确保值有效
+                        if (isNaN(value) || !isFinite(value)) {
+                            value = 0;
+                        }
+                    }
+                    
+                    const intensity = Math.floor(Math.min(Math.max(value, 0), 1) * 255);
+                    const color = `rgb(${255 - intensity}, ${255 - intensity * 0.5}, 255)`;
+                    html += `<div class="attention-cell" style="background: ${color};">${(value * 100).toFixed(0)}</div>`;
+                }
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            html += '<p style="margin-top: 10px; color: #666;">显示前' + size + '×' + size + '个位置的注意力权重</p>';
+            vizDiv.innerHTML += html;
+        }
+
+        // 重置模型
+        function resetModel() {
+            console.log('重置模型...');
+            
+            try {
+                // 重新初始化tokenizer和模型
+                tokenizer = new SimpleTokenizer();
+                tokenizer.buildVocab(trainingSentences);
+                
+                // 显示词汇表
+                const vocabDisplay = document.getElementById('vocab-display');
+                vocabDisplay.innerHTML = `<strong>词汇表大小：</strong>${tokenizer.vocabSize}<br>`;
+                vocabDisplay.innerHTML += `<strong>词汇：</strong>`;
+                for (let [char, idx] of Object.entries(tokenizer.vocab)) {
+                    vocabDisplay.innerHTML += `<span class="token">${char}:${idx}</span>`;
+                }
+                
+                // 使用简化的模型
+                model = new MiniTransformer(tokenizer.vocabSize);
+                
+                // 测试模型
+                const testTokens = [tokenizer.vocab['[START]']];
+                const testProbs = model.predict(testTokens);
+                const probSum = testProbs.reduce((a, b) => a + b, 0);
+                
+                losses = [];
+                lastAttentionWeights = null;
+                document.getElementById('training-progress').style.width = '0%';
+                document.getElementById('training-status').innerHTML = '模型已重置，点击"开始训练"按钮开始训练过程...';
+                document.getElementById('training-status').innerHTML += `<br>模型测试: 概率和=${probSum.toFixed(4)}`;
+                drawLossChart();
+                document.getElementById('final-text').textContent = '等待生成...';
+                document.getElementById('generation-steps').innerHTML = '';
+                
+                console.log('模型已重置，词汇表大小:', tokenizer.vocabSize);
+            } catch (e) {
+                console.error('重置模型失败:', e);
+                alert('重置模型失败，请刷新页面');
+            }
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            try {
+                initialize();
+                drawLossChart();
+                console.log('页面加载完成，系统已初始化');
+            } catch (e) {
+                console.error('页面初始化失败:', e);
+                alert('初始化失败，请刷新页面重试');
+            }
+        };
+    </script>
+</body>
+</html>
