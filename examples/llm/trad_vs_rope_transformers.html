@@ -1,499 +1,1238 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Code, GitBranch, Brain, Zap } from 'lucide-react';
-
-const TransformerDemo = () => {
-  const [activeTab, setActiveTab] = useState('traditional');
-  const [isRunning, setIsRunning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [logs, setLogs] = useState([]);
-
-  // 传统Transformer演示数据
-  const traditionalSteps = [
-    {
-      title: "输入嵌入 + 位置编码",
-      description: "词元嵌入与位置编码融合",
-      data: {
-        tokens: ["猫", "坐在", "垫子", "上"],
-        tokenEmbeddings: [
-          [0.2, 0.5, -0.1, 0.8],
-          [0.1, -0.3, 0.6, 0.2],
-          [-0.4, 0.7, 0.3, -0.2],
-          [0.6, 0.1, -0.5, 0.4]
-        ],
-        positionEncoding: [
-          [1.0, 0.0, 0.5, 0.2],
-          [0.5, 0.8, 0.3, 0.1],
-          [0.0, 1.0, 0.1, 0.6],
-          [-0.5, 0.8, 0.2, 0.3]
-        ],
-        fused: [
-          [1.2, 0.5, 0.4, 1.0],
-          [0.6, 0.5, 0.9, 0.3],
-          [-0.4, 1.7, 0.4, 0.4],
-          [0.1, 0.9, -0.3, 0.7]
-        ]
-      }
-    },
-    {
-      title: "第1层处理",
-      description: "位置信息强度: ~90%",
-      data: {
-        output: [
-          [1.1, 0.6, 0.3, 0.9],
-          [0.5, 0.6, 0.8, 0.4],
-          [-0.3, 1.5, 0.5, 0.3],
-          [0.2, 0.8, -0.2, 0.8]
-        ],
-        positionStrength: 0.9
-      }
-    },
-    {
-      title: "第5层处理",
-      description: "位置信息强度: ~60%",
-      data: {
-        output: [
-          [0.8, 0.7, 0.6, 0.7],
-          [0.4, 0.8, 0.7, 0.6],
-          [0.1, 1.2, 0.8, 0.4],
-          [0.4, 0.7, 0.1, 0.9]
-        ],
-        positionStrength: 0.6
-      }
-    },
-    {
-      title: "第12层处理",
-      description: "位置信息强度: ~30% (大部分丢失)",
-      data: {
-        output: [
-          [0.6, 0.8, 0.8, 0.6],
-          [0.5, 0.9, 0.8, 0.7],
-          [0.3, 1.0, 0.9, 0.5],
-          [0.5, 0.8, 0.3, 0.8]
-        ],
-        positionStrength: 0.3
-      }
-    }
-  ];
-
-  // RoPE Transformer演示数据
-  const ropeSteps = [
-    {
-      title: "纯词元嵌入",
-      description: "无位置编码，保持语义纯净",
-      data: {
-        tokens: ["猫", "坐在", "垫子", "上"],
-        embeddings: [
-          [0.2, 0.5, -0.1, 0.8],
-          [0.1, -0.3, 0.6, 0.2],
-          [-0.4, 0.7, 0.3, -0.2],
-          [0.6, 0.1, -0.5, 0.4]
-        ]
-      }
-    },
-    {
-      title: "RoPE频率计算",
-      description: "预计算旋转频率，支持任意长度",
-      data: {
-        frequencies: [1.0, 0.1],
-        angles: [
-          [0, 0],
-          [1.0, 0.1],
-          [2.0, 0.2],
-          [3.0, 0.3]
-        ]
-      }
-    },
-    {
-      title: "第1层 - 动态旋转",
-      description: "位置信息精度: 100%",
-      data: {
-        rotatedQ: [
-          [0.2, 0.5, -0.1, 0.8],
-          [-0.25, 0.35, 0.59, 0.22],
-          [-0.75, -0.2, 0.28, -0.35],
-          [-1.8, -0.4, -0.52, 0.25]
-        ],
-        positionStrength: 1.0
-      }
-    },
-    {
-      title: "所有层保持精度",
-      description: "每层重新计算，位置信息永远100%",
-      data: {
-        layers: [1, 5, 12],
-        positionStrength: 1.0
-      }
-    }
-  ];
-
-  const runDemo = async () => {
-    setIsRunning(true);
-    setCurrentStep(0);
-    setLogs([]);
-    
-    const steps = activeTab === 'traditional' ? traditionalSteps : ropeSteps;
-    
-    for (let i = 0; i < steps.length; i++) {
-      setCurrentStep(i);
-      setLogs(prev => [...prev, `步骤 ${i + 1}: ${steps[i].title}`]);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-    
-    setIsRunning(false);
-  };
-
-  const PositionStrengthBar = ({ strength, label }) => (
-    <div className="mb-4">
-      <div className="flex justify-between text-sm text-gray-600 mb-1">
-        <span>{label}</span>
-        <span>{Math.round(strength * 100)}%</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div 
-          className={`h-2 rounded-full transition-all duration-500 ${
-            strength > 0.7 ? 'bg-green-500' : 
-            strength > 0.4 ? 'bg-yellow-500' : 'bg-red-500'
-          }`}
-          style={{ width: `${strength * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-
-  const MatrixDisplay = ({ data, title, highlight = false }) => (
-    <div className={`p-4 rounded-lg border ${highlight ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
-      <h4 className="font-semibold text-sm text-gray-700 mb-2">{title}</h4>
-      <div className="font-mono text-xs">
-        {data.map((row, i) => (
-          <div key={i} className="mb-1">
-            [{row.map(val => typeof val === 'number' ? val.toFixed(2) : val).join(', ')}]
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const TraditionalDemo = () => {
-    const currentData = traditionalSteps[currentStep] || traditionalSteps[0];
-    
-    return (
-      <div className="space-y-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
-            <Brain className="w-5 h-5 mr-2" />
-            传统Transformer处理流程
-          </h3>
-          <p className="text-red-700 text-sm">
-            位置信息与词元嵌入融合后，随着网络深度增加逐渐衰减
-          </p>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer位置编码对比演示 - 完整版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #1a202c;
+            margin-bottom: 16px;
+        }
+        
+        .header p {
+            color: #718096;
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .tabs-container {
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab-button.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button.traditional.active {
+            color: #e53e3e;
+        }
+        
+        .tab-button.rope.active {
+            color: #38a169;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #3182ce;
+        }
+        
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #4a5568;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .token-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .token-selector select {
+            border: none;
+            background: transparent;
+            font-weight: 600;
+        }
+        
+        .progress-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            transition: all 0.3s;
+        }
+        
+        .progress-dot.active {
+            background: #4299e1;
+        }
+        
+        .demo-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .demo-header {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .demo-header.traditional {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+        }
+        
+        .demo-header.rope {
+            background: #c6f6d5;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .demo-header h3 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .demo-header.traditional h3 {
+            color: #c53030;
+        }
+        
+        .demo-header.rope h3 {
+            color: #2f855a;
+        }
+        
+        .step-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .step-content h4 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: #2d3748;
+        }
+        
+        .step-description {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .matrix-display {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .matrix-display.highlight {
+            background: #ebf8ff;
+            border-color: #90cdf4;
+        }
+        
+        .matrix-title {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+        
+        .matrix-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .token-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .token-label {
+            width: 80px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .token-values {
+            flex: 1;
+            color: #4a5568;
+        }
+        
+        .formula-box {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .formula-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .angle-visualization {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            position: relative;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+            background: #f8f9fa;
+        }
+        
+        .angle-line {
+            position: absolute;
+            width: 80px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0 50%;
+            transition: transform 0.5s ease;
+        }
+        
+        .angle-line.traditional {
+            background: #e53e3e;
+        }
+        
+        .angle-line.rope {
+            background: #38a169;
+        }
+        
+        .angle-center {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #2d3748;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .angle-label {
+            position: absolute;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .angle-label.traditional {
+            color: #e53e3e;
+        }
+        
+        .angle-label.rope {
+            color: #38a169;
+        }
+        
+        .comparison-panel {
+            background: #fff8e1;
+            border: 1px solid #ffcc02;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .comparison-title {
+            font-weight: 600;
+            color: #b7791f;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .comparison-item {
+            background: white;
+            padding: 16px;
+            border-radius: 6px;
+            border-left: 3px solid #ffcc02;
+        }
+        
+        .two-token-demo {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .two-token-title {
+            font-weight: 600;
+            color: #2f855a;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .token-pair {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 16px 0;
+        }
+        
+        .token-box {
+            background: white;
+            border: 2px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        .token-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .token-pos {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .arrow {
+            font-size: 1.5rem;
+            color: #38a169;
+        }
+        
+        .relative-distance {
+            background: #e6fffa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .info-panel {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .info-panel.warning {
+            background: #fffaf0;
+            border-color: #f6e05e;
+        }
+        
+        .info-panel.success {
+            background: #f0fff4;
+            border-color: #9ae6b4;
+        }
+        
+        .info-panel h4 {
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        
+        .info-panel.warning h4 {
+            color: #b7791f;
+        }
+        
+        .info-panel.success h4 {
+            color: #2f855a;
+        }
+        
+        .info-list {
+            list-style: none;
+            font-size: 0.9rem;
+        }
+        
+        .info-list li {
+            margin-bottom: 8px;
+            padding-left: 8px;
+        }
+        
+        .info-panel.warning .info-list {
+            color: #b7791f;
+        }
+        
+        .info-panel.success .info-list {
+            color: #2f855a;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .step-container,
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Transformer位置编码对比演示</h1>
+            <p>深入理解传统Transformer和RoPE Transformer在位置编码处理上的本质差异，包括词嵌入计算、位置编码生成和相对位置关系建模</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-semibold mb-3">当前步骤: {currentData.title}</h4>
-            <p className="text-gray-600 text-sm mb-4">{currentData.description}</p>
-            
-            {currentStep === 0 && (
-              <div className="space-y-4">
-                <MatrixDisplay 
-                  data={currentData.data.tokenEmbeddings} 
-                  title="词元嵌入" 
-                />
-                <MatrixDisplay 
-                  data={currentData.data.positionEncoding} 
-                  title="位置编码" 
-                />
-                <MatrixDisplay 
-                  data={currentData.data.fused} 
-                  title="融合结果 (词元 + 位置)" 
-                  highlight={true}
-                />
-              </div>
-            )}
-            
-            {currentStep > 0 && (
-              <div className="space-y-4">
-                <MatrixDisplay 
-                  data={currentData.data.output} 
-                  title={`第${[1,5,12][currentStep-1]}层输出`}
-                  highlight={true}
-                />
-                <PositionStrengthBar 
-                  strength={currentData.data.positionStrength} 
-                  label="位置信息强度"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-800 mb-2">⚠️ 关键问题</h4>
-            <ul className="text-sm text-yellow-700 space-y-2">
-              <li>• 位置信息在输入阶段一次性融合</li>
-              <li>• 随着网络层数增加逐渐丢失</li>
-              <li>• 深层网络主要依赖语义信息</li>
-              <li>• 序列长度受预定义位置表限制</li>
-            </ul>
-          </div>
+        <div class="tabs">
+            <div class="tabs-container">
+                <button class="tab-button traditional active" onclick="switchTab('traditional')">
+                    传统Transformer
+                </button>
+                <button class="tab-button rope" onclick="switchTab('rope')">
+                    RoPE Transformer
+                </button>
+            </div>
         </div>
 
-        <div className="bg-gray-100 p-4 rounded-lg">
-          <h4 className="font-semibold mb-2">推理阶段长度限制</h4>
-          <div className="text-sm">
-            <p className="mb-2">训练最大长度: 512 tokens</p>
-            <p className="mb-2">推理输入长度: 1024 tokens</p>
-            <p className="text-red-600 font-medium">❌ 错误: 序列长度超出预定义范围！</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const RopeDemo = () => {
-    const currentData = ropeSteps[currentStep] || ropeSteps[0];
-    
-    return (
-      <div className="space-y-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-green-800 mb-2 flex items-center">
-            <Zap className="w-5 h-5 mr-2" />
-            RoPE Transformer处理流程
-          </h3>
-          <p className="text-green-700 text-sm">
-            语义与位置分离，每层动态计算相对位置关系
-          </p>
+        <div class="controls">
+            <button class="btn btn-primary" onclick="startDemo()" id="startBtn">
+                ▶️ 开始演示
+            </button>
+            <button class="btn btn-secondary" onclick="resetDemo()" id="resetBtn">
+                🔄 重置
+            </button>
+            <div class="token-selector">
+                <label>关注词对:</label>
+                <select id="tokenPairSelect" onchange="updateTokenPair()">
+                    <option value="0,1">猫 → 坐在</option>
+                    <option value="0,2">猫 → 垫子</option>
+                    <option value="0,3">猫 → 上</option>
+                    <option value="1,2">坐在 → 垫子</option>
+                    <option value="1,3">坐在 → 上</option>
+                    <option value="2,3">垫子 → 上</option>
+                </select>
+            </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-semibold mb-3">当前步骤: {currentData.title}</h4>
-            <p className="text-gray-600 text-sm mb-4">{currentData.description}</p>
-            
-            {currentStep === 0 && (
-              <MatrixDisplay 
-                data={currentData.data.embeddings} 
-                title="纯词元嵌入 (无位置信息)" 
-                highlight={true}
-              />
-            )}
-            
-            {currentStep === 1 && (
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h5 className="font-medium mb-2">频率计算</h5>
-                  <p className="text-sm">θ = [1.0, 0.1]</p>
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-dots" id="progressDots"></div>
+            <div id="progressText">步骤 1 / 5</div>
+        </div>
+
+        <div class="demo-content">
+            <!-- 传统Transformer演示 -->
+            <div id="traditionalDemo" class="demo-section">
+                <div class="demo-header traditional">
+                    <h3>🧠 传统Transformer处理流程</h3>
+                    <p>基于三角函数的绝对位置编码，在输入层融合后随网络深度逐渐衰减</p>
                 </div>
-                <MatrixDisplay 
-                  data={currentData.data.angles} 
-                  title="各位置旋转角度" 
-                  highlight={true}
-                />
-              </div>
-            )}
-            
-            {currentStep === 2 && (
-              <div className="space-y-4">
-                <MatrixDisplay 
-                  data={currentData.data.rotatedQ} 
-                  title="旋转后的Query矩阵" 
-                  highlight={true}
-                />
-                <PositionStrengthBar 
-                  strength={currentData.data.positionStrength} 
-                  label="位置信息精度"
-                />
-              </div>
-            )}
-            
-            {currentStep === 3 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-green-600 mb-2">100%</div>
-                  <p className="text-sm text-gray-600">所有层位置精度保持</p>
+
+                <div class="step-container">
+                    <div class="step-content">
+                        <h4 id="traditionalStepTitle">步骤1: 词嵌入表查找</h4>
+                        <div class="step-description">
+                            <div id="traditionalStepDescription">从预训练的词嵌入表中查找每个词的语义向量表示</div>
+                        </div>
+                        
+                        <div id="traditionalCalculation"></div>
+                        <div id="traditionalVisualization"></div>
+                    </div>
+
+                    <div class="info-panel warning">
+                        <h4>⚠️ 关键问题</h4>
+                        <ul class="info-list">
+                            <li>• 位置信息在输入阶段一次性融合</li>
+                            <li>• 随着网络层数增加逐渐丢失</li>
+                            <li>• 深层网络主要依赖语义信息</li>
+                            <li>• 序列长度受预定义位置表限制</li>
+                            <li>• 相对位置关系需要间接学习</li>
+                        </ul>
+                    </div>
                 </div>
-                <PositionStrengthBar 
-                  strength={1.0} 
-                  label="位置信息精度 (所有层)"
-                />
-              </div>
-            )}
-          </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h4 className="font-semibold text-green-800 mb-2">✅ 核心优势</h4>
-            <ul className="text-sm text-green-700 space-y-2">
-              <li>• 语义与位置信息完全分离</li>
-              <li>• 每层重新计算位置关系</li>
-              <li>• 位置精度永远保持100%</li>
-              <li>• 支持任意长度序列处理</li>
-              <li>• 基于数学公式，无参数开销</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="bg-gray-100 p-4 rounded-lg">
-          <h4 className="font-semibold mb-2">无缝长度扩展</h4>
-          <div className="text-sm">
-            <p className="mb-2">训练最大长度: 512 tokens</p>
-            <p className="mb-2">推理输入长度: 2048 tokens</p>
-            <p className="text-green-600 font-medium">✅ 成功: 基于数学公式自动扩展！</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto p-6 bg-white">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Transformer位置编码对比演示
-        </h1>
-        <p className="text-gray-600 max-w-3xl mx-auto">
-          通过可视化演示了解传统Transformer和RoPE Transformer在位置编码处理上的根本差异
-        </p>
-      </div>
-
-      {/* 标签切换 */}
-      <div className="flex justify-center mb-6">
-        <div className="bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('traditional')}
-            className={`px-6 py-2 rounded-md transition-all ${
-              activeTab === 'traditional' 
-                ? 'bg-white shadow-md text-red-600 font-semibold' 
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            传统Transformer
-          </button>
-          <button
-            onClick={() => setActiveTab('rope')}
-            className={`px-6 py-2 rounded-md transition-all ${
-              activeTab === 'rope' 
-                ? 'bg-white shadow-md text-green-600 font-semibold' 
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            RoPE Transformer
-          </button>
-        </div>
-      </div>
-
-      {/* 控制按钮 */}
-      <div className="flex justify-center mb-6">
-        <button
-          onClick={runDemo}
-          disabled={isRunning}
-          className={`flex items-center px-6 py-3 rounded-lg font-semibold transition-all ${
-            isRunning 
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-              : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg hover:shadow-xl'
-          }`}
-        >
-          <Play className="w-5 h-5 mr-2" />
-          {isRunning ? '演示运行中...' : '开始演示'}
-        </button>
-      </div>
-
-      {/* 进度指示器 */}
-      {isRunning && (
-        <div className="mb-6">
-          <div className="flex justify-center items-center space-x-2 mb-2">
-            {(activeTab === 'traditional' ? traditionalSteps : ropeSteps).map((_, index) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index <= currentStep ? 'bg-blue-500' : 'bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-          <div className="text-center text-sm text-gray-600">
-            步骤 {currentStep + 1} / {activeTab === 'traditional' ? traditionalSteps.length : ropeSteps.length}
-          </div>
-        </div>
-      )}
-
-      {/* 演示内容 */}
-      <div className="mb-8">
-        {activeTab === 'traditional' ? <TraditionalDemo /> : <RopeDemo />}
-      </div>
-
-      {/* 日志输出 */}
-      {logs.length > 0 && (
-        <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm mb-6">
-          <h4 className="text-white font-semibold mb-2">演示日志:</h4>
-          {logs.map((log, index) => (
-            <div key={index} className="mb-1">
-              {log}
+                <div class="two-token-demo" id="traditionalTokenDemo">
+                    <div class="two-token-title">🔗 词对相对位置分析</div>
+                    <div id="traditionalTokenPair"></div>
+                </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* 代码链接 */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <Code className="w-5 h-5 mr-2" />
-          相关代码实现
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <a
-            href="https://gist.github.com/vistart/1952cf77cbc96913a63f6f452c584d2a"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
-          >
-            <GitBranch className="w-5 h-5 text-gray-500 mr-3" />
-            <div>
-              <h4 className="font-semibold text-gray-800">传统Transformers vs RoPE代码实现对比</h4>
-              <p className="text-sm text-gray-600">完整的Python实现和详细注释</p>
-            </div>
-          </a>
-          <a
-            href="https://gist.github.com/vistart/9a234c7088d0b262e70d2090cccb5d5c"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
-          >
-            <GitBranch className="w-5 h-5 text-gray-500 mr-3" />
-            <div>
-              <h4 className="font-semibold text-gray-800">注意力计算详细对比：传统 vs RoPE</h4>
-              <p className="text-sm text-gray-600">具体的注意力计算步骤和数值对比</p>
-            </div>
-          </a>
-        </div>
-      </div>
+            <!-- RoPE Transformer演示 -->
+            <div id="ropeDemo" class="demo-section hidden">
+                <div class="demo-header rope">
+                    <h3>⚡ RoPE Transformer处理流程</h3>
+                    <p>基于复数旋转的相对位置编码，语义与位置完全分离，每层动态计算位置关系</p>
+                </div>
 
-      {/* 总结对比 */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-800 mb-4">核心差异总结</h3>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-semibold text-red-700 mb-3">传统Transformer</h4>
-            <ul className="text-sm space-y-2 text-red-600">
-              <li>• 位置信息前置融合到嵌入</li>
-              <li>• 随网络深度逐渐衰减</li>
-              <li>• 序列长度受限制</li>
-              <li>• 间接学习相对位置</li>
-              <li>• 深层网络"忘记"位置关系</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold text-green-700 mb-3">RoPE Transformer</h4>
-            <ul className="text-sm space-y-2 text-green-600">
-              <li>• 语义与位置完全分离</li>
-              <li>• 每层重新计算位置关系</li>
-              <li>• 支持任意序列长度</li>
-              <li>• 直接计算相对位置</li>
-              <li>• 位置信息永远精确</li>
-            </ul>
-          </div>
+                <div class="step-container">
+                    <div class="step-content">
+                        <h4 id="ropeStepTitle">步骤1: 纯词嵌入查找</h4>
+                        <div class="step-description">
+                            <div id="ropeStepDescription">仅从词嵌入表获取语义信息，保持位置信息的纯净分离</div>
+                        </div>
+                        
+                        <div id="ropeCalculation"></div>
+                        <div id="ropeVisualization"></div>
+                    </div>
+
+                    <div class="info-panel success">
+                        <h4>✅ 核心优势</h4>
+                        <ul class="info-list">
+                            <li>• 语义与位置信息完全分离</li>
+                            <li>• 每层重新计算位置关系</li>
+                            <li>• 位置精度永远保持100%</li>
+                            <li>• 支持任意长度序列处理</li>
+                            <li>• 基于数学公式，无参数开销</li>
+                            <li>• 直接建模相对位置关系</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="two-token-demo" id="ropeTokenDemo">
+                    <div class="two-token-title">🔗 词对相对位置分析</div>
+                    <div id="ropeTokenPair"></div>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div class="comparison-panel">
+            <div class="comparison-title">
+                ⚖️ 核心差异对比
+            </div>
+            <div class="comparison-grid">
+                <div class="comparison-item">
+                    <h4 style="color: #c53030; margin-bottom: 8px;">传统Transformer</h4>
+                    <div style="font-size: 0.9rem;">
+                        • 使用sin/cos三角函数生成位置编码<br>
+                        • 位置信息与语义信息输入时融合<br>
+                        • 位置信息随层数增加而衰减<br>
+                        • 序列长度受预训练限制
+                    </div>
+                </div>
+                <div class="comparison-item">
+                    <h4 style="color: #2f855a; margin-bottom: 8px;">RoPE Transformer</h4>
+                    <div style="font-size: 0.9rem;">
+                        • 使用复数旋转表示位置关系<br>
+                        • 位置信息在注意力层动态计算<br>
+                        • 每层位置信息精度保持100%<br>
+                        • 支持任意长度序列处理
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  );
-};
 
-export default TransformerDemo;
+    <script>
+        // 全局状态
+        var currentTab = 'traditional';
+        var isRunning = false;
+        var currentStep = 0;
+        var selectedTokenPair = [0, 1];
+
+        // 示例数据 - 句子 "猫坐在垫子上"
+        var tokens = ["猫", "坐在", "垫子", "上"];
+        var vocab = {"猫": 0, "坐在": 1, "垫子": 2, "上": 3};
+        
+        // 模拟的词嵌入向量 (简化为4维便于展示)
+        var tokenEmbeddings = [
+            [0.2, 0.5, -0.1, 0.8],   // 猫
+            [0.1, -0.3, 0.6, 0.2],   // 坐在  
+            [-0.4, 0.7, 0.3, -0.2],  // 垫子
+            [0.6, 0.1, -0.5, 0.4]    // 上
+        ];
+
+        // 传统Transformer演示步骤
+        var traditionalSteps = [
+            {
+                title: "词嵌入表查找",
+                description: "从预训练的词嵌入表中查找每个词的语义向量表示",
+                showEmbedding: true
+            },
+            {
+                title: "绝对位置编码计算", 
+                description: "使用sin/cos三角函数为每个位置生成固定的位置编码",
+                showPositional: true
+            },
+            {
+                title: "输入融合",
+                description: "将词嵌入与位置编码相加，形成包含语义和位置的混合表示",
+                showFusion: true
+            },
+            {
+                title: "多层处理",
+                description: "通过多个Transformer层处理，位置信息逐渐衰减",
+                showDecay: true
+            },
+            {
+                title: "注意力计算",
+                description: "基于融合表示计算注意力，相对位置关系需要间接学习",
+                showAttention: true
+            }
+        ];
+
+        // RoPE Transformer演示步骤  
+        var ropeSteps = [
+            {
+                title: "纯词嵌入查找",
+                description: "仅从词嵌入表获取语义信息，保持位置信息的纯净分离",
+                showEmbedding: true
+            },
+            {
+                title: "RoPE频率预计算",
+                description: "基于数学公式计算旋转频率，支持任意长度序列",
+                showFrequency: true
+            },
+            {
+                title: "位置角度计算",
+                description: "为每个位置计算对应的旋转角度，角度在整个训练过程中保持一致",
+                showAngles: true
+            },
+            {
+                title: "动态旋转编码",
+                description: "在注意力计算时对Q、K向量应用旋转变换",
+                showRotation: true
+            },
+            {
+                title: "相对位置注意力",
+                description: "直接从旋转后的向量计算相对位置关系，精度始终100%",
+                showRelativeAttention: true
+            }
+        ];
+
+        // 切换标签页
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // 更新标签按钮状态
+            var buttons = document.querySelectorAll('.tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            document.querySelector('.tab-button.' + tab).classList.add('active');
+            
+            // 切换演示内容
+            document.getElementById('traditionalDemo').classList.toggle('hidden', tab !== 'traditional');
+            document.getElementById('ropeDemo').classList.toggle('hidden', tab !== 'rope');
+            
+            // 重置状态
+            resetDemo();
+        }
+
+        // 更新选中的词对
+        function updateTokenPair() {
+            var select = document.getElementById('tokenPairSelect');
+            var value = select.value;
+            selectedTokenPair = value.split(',').map(Number);
+            
+            // 如果正在演示中，更新词对显示
+            if (currentStep > 0) {
+                updateTokenPairDisplay();
+            }
+        }
+
+        // 开始演示
+        function startDemo() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            currentStep = 0;
+            
+            var startBtn = document.getElementById('startBtn');
+            var progressContainer = document.getElementById('progressContainer');
+            
+            startBtn.disabled = true;
+            startBtn.innerHTML = '⏳ 运行中...';
+            progressContainer.style.display = 'block';
+            
+            var steps = currentTab === 'traditional' ? traditionalSteps : ropeSteps;
+            
+            // 创建进度点
+            var progressDots = document.getElementById('progressDots');
+            progressDots.innerHTML = '';
+            for (var i = 0; i < steps.length; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                progressDots.appendChild(dot);
+            }
+            
+            // 逐步执行演示
+            runSteps(0, steps);
+        }
+
+        function runSteps(stepIndex, steps) {
+            if (stepIndex >= steps.length) {
+                // 演示完成
+                isRunning = false;
+                var startBtn = document.getElementById('startBtn');
+                startBtn.disabled = false;
+                startBtn.innerHTML = '▶️ 开始演示';
+                return;
+            }
+            
+            currentStep = stepIndex;
+            updateProgress();
+            updateStepContent();
+            updateTokenPairDisplay();
+            
+            setTimeout(function() {
+                runSteps(stepIndex + 1, steps);
+            }, 2500);
+        }
+
+        // 重置演示
+        function resetDemo() {
+            isRunning = false;
+            currentStep = 0;
+            
+            var startBtn = document.getElementById('startBtn');
+            var progressContainer = document.getElementById('progressContainer');
+            
+            startBtn.disabled = false;
+            startBtn.innerHTML = '▶️ 开始演示';
+            progressContainer.style.display = 'none';
+            
+            // 重置步骤内容
+            updateStepContent();
+            updateTokenPairDisplay();
+        }
+
+        // 更新进度
+        function updateProgress() {
+            var dots = document.querySelectorAll('.progress-dot');
+            var progressText = document.getElementById('progressText');
+            var steps = currentTab === 'traditional' ? traditionalSteps : ropeSteps;
+            
+            for (var i = 0; i < dots.length; i++) {
+                if (i <= currentStep) {
+                    dots[i].classList.add('active');
+                } else {
+                    dots[i].classList.remove('active');
+                }
+            }
+            
+            progressText.textContent = '步骤 ' + (currentStep + 1) + ' / ' + steps.length;
+        }
+
+        // 更新步骤内容
+        function updateStepContent() {
+            var steps = currentTab === 'traditional' ? traditionalSteps : ropeSteps;
+            var step = steps[currentStep] || steps[0];
+            
+            var titleId = currentTab === 'traditional' ? 'traditionalStepTitle' : 'ropeStepTitle';
+            var descId = currentTab === 'traditional' ? 'traditionalStepDescription' : 'ropeStepDescription';
+            var calcId = currentTab === 'traditional' ? 'traditionalCalculation' : 'ropeCalculation';
+            var vizId = currentTab === 'traditional' ? 'traditionalVisualization' : 'ropeVisualization';
+            
+            document.getElementById(titleId).textContent = '步骤' + (currentStep + 1) + ': ' + step.title;
+            document.getElementById(descId).textContent = step.description;
+            
+            // 更新计算和可视化内容
+            if (currentTab === 'traditional') {
+                updateTraditionalContent(calcId, vizId, step);
+            } else {
+                updateRopeContent(calcId, vizId, step);
+            }
+        }
+
+        // 更新传统Transformer内容
+        function updateTraditionalContent(calcId, vizId, step) {
+            var calcElement = document.getElementById(calcId);
+            var vizElement = document.getElementById(vizId);
+            
+            if (step.showEmbedding) {
+                // 显示词嵌入查找过程
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">词嵌入查找公式:</div>' +
+                    'embedding = W_embed[token_id]<br>' +
+                    '其中 W_embed 是预训练的词嵌入矩阵' +
+                    '</div>';
+                
+                var tokenRows = '';
+                for (var i = 0; i < tokens.length; i++) {
+                    tokenRows += '<div class="token-row">' +
+                        '<div class="token-label">' + tokens[i] + '(id=' + vocab[tokens[i]] + '):</div>' +
+                        '<div class="token-values">[' + tokenEmbeddings[i].map(x => x.toFixed(2)).join(', ') + ']</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display highlight">' +
+                    '<div class="matrix-title">词嵌入向量 (语义表示)</div>' +
+                    '<div class="matrix-content">' + tokenRows + '</div>' +
+                    '</div>';
+                    
+            } else if (step.showPositional) {
+                // 显示位置编码计算
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">位置编码公式:</div>' +
+                    'PE(pos, 2i) = sin(pos / 10000^(2i/d_model))<br>' +
+                    'PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))' +
+                    '</div>';
+                
+                var posEncoding = calculateTraditionalPositionalEncoding();
+                var posRows = '';
+                for (var i = 0; i < tokens.length; i++) {
+                    posRows += '<div class="token-row">' +
+                        '<div class="token-label">位置' + i + ':</div>' +
+                        '<div class="token-values">[' + posEncoding[i].map(x => x.toFixed(3)).join(', ') + ']</div>' +
+                        '</div>';
+                }
+                
+                // 添加角度可视化
+                var angleViz = '';
+                for (var i = 0; i < Math.min(tokens.length, 2); i++) {
+                    var angle = i * 30; // 简化的角度表示
+                    angleViz += 
+                        '<div style="display: inline-block; margin: 10px;">' +
+                        '<div class="angle-visualization" style="width: 120px; height: 120px;">' +
+                        '<div class="angle-center"></div>' +
+                        '<div class="angle-line traditional" style="transform: rotate(' + angle + 'deg);"></div>' +
+                        '<div class="angle-label traditional" style="top: 5px; right: 5px;">位置' + i + '</div>' +
+                        '</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display">' +
+                    '<div class="matrix-title">位置编码 (基于三角函数)</div>' +
+                    '<div class="matrix-content">' + posRows + '</div>' +
+                    '</div>' +
+                    '<div style="text-align: center;">' +
+                    '<div style="margin-bottom: 10px; font-weight: 600;">位置角度可视化:</div>' +
+                    angleViz +
+                    '</div>';
+                    
+            } else if (step.showFusion) {
+                // 显示融合过程
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">输入融合公式:</div>' +
+                    'input = token_embedding + positional_encoding<br>' +
+                    '(语义信息与位置信息混合)' +
+                    '</div>';
+                
+                var posEncoding = calculateTraditionalPositionalEncoding();
+                var fusedRows = '';
+                for (var i = 0; i < tokens.length; i++) {
+                    var fused = [];
+                    for (var j = 0; j < tokenEmbeddings[i].length; j++) {
+                        fused.push(tokenEmbeddings[i][j] + posEncoding[i][j]);
+                    }
+                    fusedRows += '<div class="token-row">' +
+                        '<div class="token-label">' + tokens[i] + ':</div>' +
+                        '<div class="token-values">[' + fused.map(x => x.toFixed(2)).join(', ') + ']</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display highlight">' +
+                    '<div class="matrix-title">融合输入 (语义 + 位置)</div>' +
+                    '<div class="matrix-content">' + fusedRows + '</div>' +
+                    '</div>';
+                    
+            } else if (step.showDecay) {
+                // 显示信息衰减
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">多层处理效果:</div>' +
+                    'Layer_n(x) = Attention(x) + FFN(x)<br>' +
+                    '位置信息强度 ≈ 0.95^n (逐层衰减)' +
+                    '</div>';
+                
+                var layerInfo = '';
+                var layers = [1, 6, 12];
+                var strengths = [0.95, 0.60, 0.35];
+                
+                for (var i = 0; i < layers.length; i++) {
+                    var strengthClass = strengths[i] > 0.7 ? 'strength-high' : strengths[i] > 0.4 ? 'strength-medium' : 'strength-low';
+                    layerInfo += 
+                        '<div style="display: flex; align-items: center; margin: 8px 0;">' +
+                        '<div style="width: 80px;">第' + layers[i] + '层:</div>' +
+                        '<div style="flex: 1; background: #e2e8f0; height: 20px; border-radius: 10px; overflow: hidden;">' +
+                        '<div style="background: ' + (strengthClass === 'strength-high' ? '#48bb78' : strengthClass === 'strength-medium' ? '#ed8936' : '#f56565') + 
+                        '; height: 100%; width: ' + (strengths[i] * 100) + '%; transition: all 0.5s;"></div>' +
+                        '</div>' +
+                        '<div style="width: 60px; text-align: right;">' + Math.round(strengths[i] * 100) + '%</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display">' +
+                    '<div class="matrix-title">位置信息强度变化</div>' +
+                    '<div class="matrix-content">' + layerInfo + '</div>' +
+                    '</div>';
+                    
+            } else if (step.showAttention) {
+                // 显示注意力计算
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">注意力计算:</div>' +
+                    'Attention(Q,K,V) = softmax(QK^T/√d_k)V<br>' +
+                    '相对位置关系需要从融合表示中间接学习' +
+                    '</div>';
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display">' +
+                    '<div class="matrix-title">注意力模式 (位置信息衰减后)</div>' +
+                    '<div class="matrix-content">' +
+                    '• 主要依赖语义相似性<br>' +
+                    '• 位置关系变得模糊<br>' +
+                    '• 长距离依赖捕获困难' +
+                    '</div>' +
+                    '</div>';
+            }
+        }
+
+        // 更新RoPE内容
+        function updateRopeContent(calcId, vizId, step) {
+            var calcElement = document.getElementById(calcId);
+            var vizElement = document.getElementById(vizId);
+            
+            if (step.showEmbedding) {
+                // 显示纯词嵌入
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">纯语义嵌入:</div>' +
+                    'input = W_embed[token_id]<br>' +
+                    '(仅包含语义信息，位置信息将在注意力层动态计算)' +
+                    '</div>';
+                
+                var tokenRows = '';
+                for (var i = 0; i < tokens.length; i++) {
+                    tokenRows += '<div class="token-row">' +
+                        '<div class="token-label">' + tokens[i] + ':</div>' +
+                        '<div class="token-values">[' + tokenEmbeddings[i].map(x => x.toFixed(2)).join(', ') + ']</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display highlight">' +
+                    '<div class="matrix-title">纯词嵌入 (无位置信息)</div>' +
+                    '<div class="matrix-content">' + tokenRows + '</div>' +
+                    '</div>';
+                    
+            } else if (step.showFrequency) {
+                // 显示频率计算
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">RoPE频率计算:</div>' +
+                    'θ_i = 1 / (10000^(2i/d_model))<br>' +
+                    '支持任意长度序列，无预定义限制' +
+                    '</div>';
+                
+                var freqs = calculateRopeFrequencies();
+                var freqRows = '';
+                for (var i = 0; i < freqs.length; i++) {
+                    freqRows += '<div class="token-row">' +
+                        '<div class="token-label">θ_' + i + ':</div>' +
+                        '<div class="token-values">' + freqs[i].toFixed(4) + '</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display">' +
+                    '<div class="matrix-title">旋转频率 (数学公式生成)</div>' +
+                    '<div class="matrix-content">' + freqRows + '</div>' +
+                    '</div>';
+                    
+            } else if (step.showAngles) {
+                // 显示角度计算和可视化
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">位置角度计算:</div>' +
+                    'angle(pos, i) = pos × θ_i<br>' +
+                    '每个位置的旋转角度在训练过程中保持一致' +
+                    '</div>';
+                
+                var freqs = calculateRopeFrequencies();
+                var angleRows = '';
+                for (var i = 0; i < tokens.length; i++) {
+                    var angles = [];
+                    for (var j = 0; j < freqs.length; j++) {
+                        angles.push((i * freqs[j]).toFixed(3));
+                    }
+                    angleRows += '<div class="token-row">' +
+                        '<div class="token-label">' + tokens[i] + '(pos=' + i + '):</div>' +
+                        '<div class="token-values">[' + angles.join(', ') + ']</div>' +
+                        '</div>';
+                }
+                
+                // RoPE角度可视化
+                var angleViz = '';
+                for (var i = 0; i < Math.min(tokens.length, 4); i++) {
+                    var angle = i * freqs[0] * 180 / Math.PI; // 转换为度数显示
+                    angleViz += 
+                        '<div style="display: inline-block; margin: 10px;">' +
+                        '<div class="angle-visualization" style="width: 100px; height: 100px;">' +
+                        '<div class="angle-center"></div>' +
+                        '<div class="angle-line rope" style="transform: rotate(' + (angle * 10) + 'deg);"></div>' +
+                        '<div class="angle-label rope" style="top: 5px; right: 5px;">' + tokens[i] + '</div>' +
+                        '</div>' +
+                        '</div>';
+                }
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display">' +
+                    '<div class="matrix-title">各位置旋转角度</div>' +
+                    '<div class="matrix-content">' + angleRows + '</div>' +
+                    '</div>' +
+                    '<div style="text-align: center;">' +
+                    '<div style="margin-bottom: 10px; font-weight: 600;">RoPE旋转角度可视化:</div>' +
+                    angleViz +
+                    '</div>';
+                    
+            } else if (step.showRotation) {
+                // 显示旋转变换
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">旋转变换公式:</div>' +
+                    'q_rotated = q × [cos(θ), -sin(θ); sin(θ), cos(θ)]<br>' +
+                    'k_rotated = k × [cos(θ), -sin(θ); sin(θ), cos(θ)]' +
+                    '</div>';
+                
+                vizElement.innerHTML = 
+                    '<div class="matrix-display highlight">' +
+                    '<div class="matrix-title">旋转后的Q、K矩阵</div>' +
+                    '<div class="matrix-content">' +
+                    '每个位置应用对应的旋转变换<br>' +
+                    '位置信息被编码到向量的旋转角度中<br>' +
+                    '相对位置 = 角度差值' +
+                    '</div>' +
+                    '</div>';
+                    
+            } else if (step.showRelativeAttention) {
+                // 显示相对位置注意力
+                calcElement.innerHTML = 
+                    '<div class="formula-box">' +
+                    '<div class="formula-title">相对位置计算:</div>' +
+                    'relative_pos = cos((pos_i - pos_j) × θ)<br>' +
+                    '直接从旋转角度计算相对位置关系' +
+                    '</div>';
+                
+                vizElement.innerHTML = 
+                    '<div style="text-align: center; padding: 40px;">' +
+                    '<div style="font-size: 3rem; font-weight: bold; color: #38a169; margin-bottom: 16px;">100%</div>' +
+                    '<div style="font-size: 1.1rem; color: #2d3748; margin-bottom: 20px;">位置精度始终保持</div>' +
+                    '<div class="matrix-display">' +
+                    '<div class="matrix-title">每层位置信息强度</div>' +
+                    '<div class="matrix-content">' +
+                    '第1层: 100% ✓<br>' +
+                    '第6层: 100% ✓<br>' +
+                    '第12层: 100% ✓<br>' +
+                    '第N层: 100% ✓' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+        }
+
+        // 更新词对显示
+        function updateTokenPairDisplay() {
+            var traditionalContainer = document.getElementById('traditionalTokenPair');
+            var ropeContainer = document.getElementById('ropeTokenPair');
+            
+            var token1 = tokens[selectedTokenPair[0]];
+            var token2 = tokens[selectedTokenPair[1]];
+            var distance = Math.abs(selectedTokenPair[1] - selectedTokenPair[0]);
+            
+            var tokenPairHtml = 
+                '<div class="token-pair">' +
+                '<div class="token-box">' +
+                '<div class="token-name">' + token1 + '</div>' +
+                '<div class="token-pos">位置 ' + selectedTokenPair[0] + '</div>' +
+                '</div>' +
+                '<div class="arrow">→</div>' +
+                '<div class="token-box">' +
+                '<div class="token-name">' + token2 + '</div>' +
+                '<div class="token-pos">位置 ' + selectedTokenPair[1] + '</div>' +
+                '</div>' +
+                '<div class="relative-distance">相对距离: ' + distance + '</div>' +
+                '</div>';
+            
+            if (currentTab === 'traditional') {
+                var traditionalAnalysis = '';
+                if (currentStep >= 2) { // 融合后
+                    traditionalAnalysis = 
+                        '<div style="margin-top: 16px; padding: 12px; background: #fed7d7; border-radius: 6px;">' +
+                        '<div style="font-weight: 600; color: #c53030;">传统方法位置关系:</div>' +
+                        '<div style="font-size: 0.9rem;">• 位置信息已与语义信息混合</div>' +
+                        '<div style="font-size: 0.9rem;">• 随层数增加，位置关系逐渐模糊</div>' +
+                        '<div style="font-size: 0.9rem;">• 需要从混合表示中间接学习相对位置</div>' +
+                        '</div>';
+                }
+                traditionalContainer.innerHTML = tokenPairHtml + traditionalAnalysis;
+            } else {
+                var ropeAnalysis = '';
+                if (currentStep >= 2) { // 角度计算后
+                    var freqs = calculateRopeFrequencies();
+                    var angle1 = selectedTokenPair[0] * freqs[0];
+                    var angle2 = selectedTokenPair[1] * freqs[0];
+                    var relativeAngle = Math.abs(angle2 - angle1);
+                    
+                    ropeAnalysis = 
+                        '<div style="margin-top: 16px; padding: 12px; background: #c6f6d5; border-radius: 6px;">' +
+                        '<div style="font-weight: 600; color: #2f855a;">RoPE相对位置:</div>' +
+                        '<div style="font-size: 0.9rem;">• ' + token1 + '角度: ' + angle1.toFixed(3) + '</div>' +
+                        '<div style="font-size: 0.9rem;">• ' + token2 + '角度: ' + angle2.toFixed(3) + '</div>' +
+                        '<div style="font-size: 0.9rem;">• 相对角度: ' + relativeAngle.toFixed(3) + '</div>' +
+                        '<div style="font-size: 0.9rem;">• 精确的数学关系，永不衰减</div>' +
+                        '</div>';
+                }
+                ropeContainer.innerHTML = tokenPairHtml + ropeAnalysis;
+            }
+        }
+
+        // 辅助函数
+        function calculateTraditionalPositionalEncoding() {
+            var d_model = 4;
+            var max_len = tokens.length;
+            var encoding = [];
+            
+            for (var pos = 0; pos < max_len; pos++) {
+                var row = [];
+                for (var i = 0; i < d_model; i++) {
+                    if (i % 2 === 0) {
+                        row.push(Math.sin(pos / Math.pow(10000, i / d_model)));
+                    } else {
+                        row.push(Math.cos(pos / Math.pow(10000, (i-1) / d_model)));
+                    }
+                }
+                encoding.push(row);
+            }
+            return encoding;
+        }
+
+        function calculateRopeFrequencies() {
+            var d_model = 4;
+            var freqs = [];
+            for (var i = 0; i < d_model / 2; i++) {
+                freqs.push(1.0 / Math.pow(10000, 2 * i / d_model));
+            }
+            return freqs;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStepContent();
+            updateTokenPairDisplay();
+        });
+    </script>
+</body>
+</html>
