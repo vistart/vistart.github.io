@@ -256,12 +256,551 @@
             <li><a href="#gqa">GQA</a></li>
             <li><a href="#mqa">MQA</a></li>
             <li><a href="#flash-attention">Flash</a></li>
+            <li style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <a href="#training-inference">训练vs推理</a>
+            </li>
+            <li><a href="#model-scale">模型规模</a></li>
         </ul>
     </div>
     
     <div class="container">
         <h1>🚀 大语言模型注意力机制详解</h1>
         <p class="subtitle">深入理解Transformer的核心：从数学原理到代码实现</p>
+        
+        <!-- 训练与推理详解 -->
+        <div class="attention-type" id="training-inference">
+            <h2><span class="icon">🔄</span> 训练与推理详解</h2>
+            
+            <h3>📚 QKV的本质含义</h3>
+            <div class="math-section">
+                <p><strong>Query (Q)：查询向量</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>代表"我在找什么信息"</li>
+                    <li>每个位置的token生成一个Query，用于查询其他位置的信息</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>Key (K)：键向量</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>代表"我能提供什么信息"</li>
+                    <li>每个位置的token生成一个Key，供其他位置查询</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>Value (V)：值向量</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>代表"我的实际信息内容"</li>
+                    <li>根据Query-Key的匹配度，Value被加权聚合</li>
+                </ul>
+                
+                <div class="step-box">
+                    <strong>注意力输出的含义：</strong>
+                    <p>Attention输出是所有位置Value的加权和，权重由Query与Key的相似度决定。</p>
+                    <p>本质上是：<em>"根据当前位置的需求(Q)，从所有位置中按相关性(K)提取信息(V)"</em></p>
+                </div>
+            </div>
+            
+            <h3>🚀 训练：并行计算所有位置</h3>
+            <div class="visualization">
+                <svg viewBox="0 0 1200 600">
+                    <text x="600" y="30" text-anchor="middle" font-weight="bold" font-size="18">训练时的并行计算（Teacher Forcing）</text>
+                    
+                    <!-- 输入序列 -->
+                    <g transform="translate(100, 80)">
+                        <text x="200" y="-10" text-anchor="middle" font-weight="bold">输入序列："我爱北京天安门"</text>
+                        
+                        <!-- Token嵌入 -->
+                        <g>
+                            <rect x="0" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
+                            <text x="30" y="25" text-anchor="middle" fill="white">我</text>
+                            
+                            <rect x="70" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
+                            <text x="100" y="25" text-anchor="middle" fill="white">爱</text>
+                            
+                            <rect x="140" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
+                            <text x="170" y="25" text-anchor="middle" fill="white">北京</text>
+                            
+                            <rect x="210" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
+                            <text x="240" y="25" text-anchor="middle" fill="white">天安</text>
+                            
+                            <rect x="280" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
+                            <text x="310" y="25" text-anchor="middle" fill="white">门</text>
+                            
+                            <rect x="350" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
+                            <text x="380" y="25" text-anchor="middle" fill="white">[EOS]</text>
+                        </g>
+                        
+                        <!-- 并行箭头 -->
+                        <g stroke="#333" stroke-width="2" marker-end="url(#arrowhead)">
+                            <path d="M 30 45 L 30 75"/>
+                            <path d="M 100 45 L 100 75"/>
+                            <path d="M 170 45 L 170 75"/>
+                            <path d="M 240 45 L 240 75"/>
+                            <path d="M 310 45 L 310 75"/>
+                            <path d="M 380 45 L 380 75"/>
+                        </g>
+                        
+                        <!-- QKV生成（并行） -->
+                        <text x="200" y="100" text-anchor="middle" font-size="12">所有位置同时生成Q、K、V</text>
+                        
+                        <g transform="translate(0, 110)">
+                            <rect x="0" y="0" width="420" height="30" fill="#f093fb" opacity="0.5"/>
+                            <text x="210" y="20" text-anchor="middle">Q: [6×d_model] 并行计算</text>
+                            
+                            <rect x="0" y="35" width="420" height="30" fill="#764ba2" opacity="0.5"/>
+                            <text x="210" y="55" text-anchor="middle">K: [6×d_model] 并行计算</text>
+                            
+                            <rect x="0" y="70" width="420" height="30" fill="#4facfe" opacity="0.5"/>
+                            <text x="210" y="90" text-anchor="middle">V: [6×d_model] 并行计算</text>
+                        </g>
+                        
+                        <!-- 因果掩码 -->
+                        <g transform="translate(0, 230)">
+                            <text x="210" y="0" text-anchor="middle" font-weight="bold">因果掩码（Causal Mask）</text>
+                            <rect x="50" y="10" width="300" height="300" fill="none" stroke="#333" stroke-width="2"/>
+                            
+                            <!-- 下三角掩码 -->
+                            <g opacity="0.7">
+                                <!-- 第1行：只能看到"我" -->
+                                <rect x="50" y="10" width="50" height="50" fill="#00cc00"/>
+                                
+                                <!-- 第2行：能看到"我爱" -->
+                                <rect x="50" y="60" width="50" height="50" fill="#00cc00"/>
+                                <rect x="100" y="60" width="50" height="50" fill="#00cc00"/>
+                                
+                                <!-- 第3行：能看到"我爱北京" -->
+                                <rect x="50" y="110" width="50" height="50" fill="#00cc00"/>
+                                <rect x="100" y="110" width="50" height="50" fill="#00cc00"/>
+                                <rect x="150" y="110" width="50" height="50" fill="#00cc00"/>
+                                
+                                <!-- 第4行：能看到"我爱北京天安" -->
+                                <rect x="50" y="160" width="50" height="50" fill="#00cc00"/>
+                                <rect x="100" y="160" width="50" height="50" fill="#00cc00"/>
+                                <rect x="150" y="160" width="50" height="50" fill="#00cc00"/>
+                                <rect x="200" y="160" width="50" height="50" fill="#00cc00"/>
+                                
+                                <!-- 第5行：能看到"我爱北京天安门" -->
+                                <rect x="50" y="210" width="50" height="50" fill="#00cc00"/>
+                                <rect x="100" y="210" width="50" height="50" fill="#00cc00"/>
+                                <rect x="150" y="210" width="50" height="50" fill="#00cc00"/>
+                                <rect x="200" y="210" width="50" height="50" fill="#00cc00"/>
+                                <rect x="250" y="210" width="50" height="50" fill="#00cc00"/>
+                                
+                                <!-- 第6行：能看到所有 -->
+                                <rect x="50" y="260" width="50" height="50" fill="#00cc00"/>
+                                <rect x="100" y="260" width="50" height="50" fill="#00cc00"/>
+                                <rect x="150" y="260" width="50" height="50" fill="#00cc00"/>
+                                <rect x="200" y="260" width="50" height="50" fill="#00cc00"/>
+                                <rect x="250" y="260" width="50" height="50" fill="#00cc00"/>
+                                <rect x="300" y="260" width="50" height="50" fill="#00cc00"/>
+                            </g>
+                            
+                            <text x="200" y="340" text-anchor="middle" font-size="11" fill="#666">
+                                绿色=可见，白色=被掩码（防止看到未来）
+                            </text>
+                        </g>
+                    </g>
+                    
+                    <!-- 并行优势说明 -->
+                    <g transform="translate(650, 80)">
+                        <rect x="0" y="0" width="450" height="200" fill="#e8f5e9" stroke="#4caf50" stroke-width="2" rx="10"/>
+                        <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#2e7d32">为什么训练可以并行？</text>
+                        
+                        <text x="20" y="60" font-size="13">1. <strong>Teacher Forcing</strong>：训练时知道完整答案</text>
+                        <text x="20" y="85" font-size="13">2. <strong>因果掩码</strong>：确保每个位置只看到之前的内容</text>
+                        <text x="20" y="110" font-size="13">3. <strong>矩阵运算</strong>：所有位置的注意力一次计算</text>
+                        <text x="20" y="135" font-size="13">4. <strong>GPU并行</strong>：充分利用GPU的并行计算能力</text>
+                        
+                        <rect x="20" y="150" width="410" height="40" fill="#fff3cd" stroke="#ffc107" rx="5"/>
+                        <text x="30" y="170" font-size="12">💡 一次前向传播处理整个序列，</text>
+                        <text x="30" y="185" font-size="12">    而不是逐个token计算</text>
+                    </g>
+                    
+                    <!-- 目标输出 -->
+                    <g transform="translate(650, 320)">
+                        <text x="225" y="0" text-anchor="middle" font-weight="bold">训练目标（右移一位）</text>
+                        
+                        <g transform="translate(0, 20)">
+                            <rect x="0" y="0" width="60" height="40" fill="#ff6b6b" opacity="0.7" stroke="#333"/>
+                            <text x="30" y="25" text-anchor="middle">爱</text>
+                            
+                            <rect x="70" y="0" width="60" height="40" fill="#ff6b6b" opacity="0.7" stroke="#333"/>
+                            <text x="100" y="25" text-anchor="middle">北京</text>
+                            
+                            <rect x="140" y="0" width="60" height="40" fill="#ff6b6b" opacity="0.7" stroke="#333"/>
+                            <text x="170" y="25" text-anchor="middle">天安</text>
+                            
+                            <rect x="210" y="0" width="60" height="40" fill="#ff6b6b" opacity="0.7" stroke="#333"/>
+                            <text x="240" y="25" text-anchor="middle">门</text>
+                            
+                            <rect x="280" y="0" width="60" height="40" fill="#ff6b6b" opacity="0.7" stroke="#333"/>
+                            <text x="310" y="25" text-anchor="middle">[EOS]</text>
+                            
+                            <rect x="350" y="0" width="60" height="40" fill="#ff6b6b" opacity="0.7" stroke="#333"/>
+                            <text x="380" y="25" text-anchor="middle">-</text>
+                        </g>
+                        
+                        <text x="225" y="90" text-anchor="middle" font-size="12" fill="#666">
+                            Loss = CrossEntropy(预测输出, 目标输出)
+                        </text>
+                    </g>
+                </svg>
+            </div>
+            
+            <h3>🔮 推理：逐个生成Token</h3>
+            <div class="visualization">
+                <svg viewBox="0 0 1200 700">
+                    <text x="600" y="30" text-anchor="middle" font-weight="bold" font-size="18">推理时的自回归生成（Auto-regressive）</text>
+                    
+                    <!-- Step 1 -->
+                    <g transform="translate(50, 80)">
+                        <rect x="0" y="0" width="250" height="140" fill="#f0f0f0" stroke="#667eea" stroke-width="2" rx="10"/>
+                        <text x="125" y="20" text-anchor="middle" font-weight="bold" fill="#667eea">Step 1: 输入"我"</text>
+                        
+                        <rect x="20" y="35" width="50" height="30" fill="#667eea" opacity="0.7"/>
+                        <text x="45" y="55" text-anchor="middle" fill="white" font-size="12">我</text>
+                        
+                        <path d="M 45 70 L 45 90" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <text x="45" y="110" text-anchor="middle" font-size="11">生成Q₁,K₁,V₁</text>
+                        <text x="45" y="130" text-anchor="middle" font-size="11">Attn → FFN</text>
+                        
+                        <rect x="150" y="70" width="50" height="30" fill="#00cc00" opacity="0.7"/>
+                        <text x="175" y="90" text-anchor="middle" font-size="12">爱</text>
+                        
+                        <text x="125" y="160" text-anchor="middle" font-size="11">输出: "爱"</text>
+                        <text x="125" y="180" text-anchor="middle" font-size="11" fill="#666">KV Cache: [K₁,V₁]</text>
+                    </g>
+                    
+                    <!-- Step 2 -->
+                    <g transform="translate(320, 80)">
+                        <rect x="0" y="0" width="250" height="140" fill="#f0f0f0" stroke="#667eea" stroke-width="2" rx="10"/>
+                        <text x="125" y="20" text-anchor="middle" font-weight="bold" fill="#667eea">Step 2: 输入"我爱"</text>
+                        
+                        <rect x="20" y="35" width="50" height="30" fill="#667eea" opacity="0.5"/>
+                        <text x="45" y="55" text-anchor="middle" fill="white" font-size="12">我</text>
+                        <rect x="75" y="35" width="50" height="30" fill="#667eea" opacity="0.7"/>
+                        <text x="100" y="55" text-anchor="middle" fill="white" font-size="12">爱</text>
+                        
+                        <path d="M 100 70 L 100 90" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <text x="75" y="110" text-anchor="middle" font-size="11">复用K₁,V₁</text>
+                        <text x="75" y="130" text-anchor="middle" font-size="11">只算Q₂,K₂,V₂</text>
+                        
+                        <rect x="150" y="70" width="50" height="30" fill="#00cc00" opacity="0.7"/>
+                        <text x="175" y="90" text-anchor="middle" font-size="12">北京</text>
+                        
+                        <text x="125" y="160" text-anchor="middle" font-size="11">输出: "北京"</text>
+                        <text x="125" y="180" text-anchor="middle" font-size="11" fill="#666">KV Cache: [K₁,V₁,K₂,V₂]</text>
+                    </g>
+                    
+                    <!-- Step 3 -->
+                    <g transform="translate(590, 80)">
+                        <rect x="0" y="0" width="280" height="140" fill="#f0f0f0" stroke="#667eea" stroke-width="2" rx="10"/>
+                        <text x="140" y="20" text-anchor="middle" font-weight="bold" fill="#667eea">Step 3: 输入"我爱北京"</text>
+                        
+                        <rect x="20" y="35" width="50" height="30" fill="#667eea" opacity="0.3"/>
+                        <text x="45" y="55" text-anchor="middle" fill="white" font-size="12">我</text>
+                        <rect x="75" y="35" width="50" height="30" fill="#667eea" opacity="0.5"/>
+                        <text x="100" y="55" text-anchor="middle" fill="white" font-size="12">爱</text>
+                        <rect x="130" y="35" width="50" height="30" fill="#667eea" opacity="0.7"/>
+                        <text x="155" y="55" text-anchor="middle" fill="white" font-size="12">北京</text>
+                        
+                        <path d="M 155 70 L 155 90" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <text x="100" y="110" text-anchor="middle" font-size="11">复用K₁,V₁,K₂,V₂</text>
+                        <text x="100" y="130" text-anchor="middle" font-size="11">只算Q₃,K₃,V₃</text>
+                        
+                        <rect x="200" y="70" width="50" height="30" fill="#00cc00" opacity="0.7"/>
+                        <text x="225" y="90" text-anchor="middle" font-size="12">天安</text>
+                        
+                        <text x="140" y="160" text-anchor="middle" font-size="11">输出: "天安"</text>
+                        <text x="140" y="180" text-anchor="middle" font-size="11" fill="#666">KV Cache持续增长...</text>
+                    </g>
+                    
+                    <!-- KV Cache说明 -->
+                    <g transform="translate(100, 270)">
+                        <rect x="0" y="0" width="1000" height="180" fill="#fff3cd" stroke="#ffc107" stroke-width="2" rx="10"/>
+                        <text x="500" y="30" text-anchor="middle" font-weight="bold" fill="#856404">KV Cache机制</text>
+                        
+                        <g transform="translate(50, 50)">
+                            <text x="0" y="0" font-size="13">• 每步只需计算新位置的Q、K、V</text>
+                            <text x="0" y="25" font-size="13">• 之前位置的K、V保存在缓存中复用</text>
+                            <text x="0" y="50" font-size="13">• 注意力计算: Q_new × [K_cache; K_new]ᵀ</text>
+                            <text x="0" y="75" font-size="13">• 内存需求: 2 × n_layers × seq_len × n_heads × d_head</text>
+                            
+                            <rect x="400" y="-10" width="500" height="90" fill="white" stroke="#856404" rx="5"/>
+                            <text x="410" y="10" font-size="12" font-weight="bold">计算示例（单个token）：</text>
+                            <text x="410" y="30" font-size="11">1. 输入embedding: [1 × d_model]</text>
+                            <text x="410" y="48" font-size="11">2. 生成Q_new: [1 × n_heads × d_head]</text>
+                            <text x="410" y="66" font-size="11">3. Attention: Q_new × K_cache^T → [1 × seq_len]</text>
+                        </g>
+                    </g>
+                    
+                    <!-- 推理特点 -->
+                    <g transform="translate(100, 480)">
+                        <rect x="0" y="0" width="450" height="150" fill="#ffe0e0" stroke="#ff0000" stroke-width="2" rx="10"/>
+                        <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#cc0000">推理瓶颈</text>
+                        
+                        <text x="20" y="60" font-size="13">❌ <strong>顺序依赖</strong>：必须等前一个token生成完</text>
+                        <text x="20" y="85" font-size="13">❌ <strong>内存瓶颈</strong>：KV Cache随序列长度线性增长</text>
+                        <text x="20" y="110" font-size="13">❌ <strong>低GPU利用率</strong>：每步只处理1个token</text>
+                        
+                        <text x="225" y="140" text-anchor="middle" font-size="11" fill="#666">这就是为什么需要GQA/MQA优化！</text>
+                    </g>
+                    
+                    <g transform="translate(580, 480)">
+                        <rect x="0" y="0" width="450" height="150" fill="#e0ffe0" stroke="#00cc00" stroke-width="2" rx="10"/>
+                        <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#00aa00">优化方案</text>
+                        
+                        <text x="20" y="60" font-size="13">✓ <strong>批处理</strong>：同时处理多个序列</text>
+                        <text x="20" y="85" font-size="13">✓ <strong>GQA/MQA</strong>：减少KV Cache内存</text>
+                        <text x="20" y="110" font-size="13">✓ <strong>投机解码</strong>：小模型预测，大模型验证</text>
+                        
+                        <text x="225" y="140" text-anchor="middle" font-size="11" fill="#666">Flash Attention也能加速推理！</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- 模型规模详解 -->
+        <div class="attention-type" id="model-scale">
+            <h2><span class="icon">📏</span> 主流模型规模详解</h2>
+            
+            <h3>🎯 典型模型参数配置</h3>
+            <table class="complexity-table">
+                <thead>
+                    <tr>
+                        <th>模型</th>
+                        <th>参数量</th>
+                        <th>层数</th>
+                        <th>隐藏维度</th>
+                        <th>注意力头数</th>
+                        <th>头维度</th>
+                        <th>词表大小</th>
+                        <th>最大序列长度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>GPT-3</strong></td>
+                        <td>175B</td>
+                        <td>96</td>
+                        <td>12,288</td>
+                        <td>96</td>
+                        <td>128</td>
+                        <td>50,257</td>
+                        <td>2,048</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Llama 2-7B</strong></td>
+                        <td>7B</td>
+                        <td>32</td>
+                        <td>4,096</td>
+                        <td>32 (Q) / 8 (KV)</td>
+                        <td>128</td>
+                        <td>32,000</td>
+                        <td>4,096</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Llama 2-70B</strong></td>
+                        <td>70B</td>
+                        <td>80</td>
+                        <td>8,192</td>
+                        <td>64 (Q) / 8 (KV)</td>
+                        <td>128</td>
+                        <td>32,000</td>
+                        <td>4,096</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mistral-7B</strong></td>
+                        <td>7B</td>
+                        <td>32</td>
+                        <td>4,096</td>
+                        <td>32 (Q) / 8 (KV)</td>
+                        <td>128</td>
+                        <td>32,000</td>
+                        <td>32,768</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PaLM</strong></td>
+                        <td>540B</td>
+                        <td>118</td>
+                        <td>18,432</td>
+                        <td>48 (MQA)</td>
+                        <td>256</td>
+                        <td>256,000</td>
+                        <td>2,048</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Claude 3</strong></td>
+                        <td>~100B</td>
+                        <td>~80</td>
+                        <td>~12,288</td>
+                        <td>~96</td>
+                        <td>128</td>
+                        <td>~100,000</td>
+                        <td>200,000</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>📊 矩阵规模计算示例（以Llama 2-7B为例）</h3>
+            <div class="math-section">
+                <p><strong>单层注意力矩阵规模：</strong></p>
+                
+                <div class="step-box">
+                    <p><strong>参数设置：</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>d_model = 4,096（隐藏维度）</li>
+                        <li>n_heads = 32（查询头数）</li>
+                        <li>n_kv_heads = 8（KV头数，GQA）</li>
+                        <li>d_head = 128（每个头的维度）</li>
+                        <li>seq_len = 4,096（序列长度）</li>
+                    </ul>
+                </div>
+                
+                <p style="margin-top: 20px;"><strong>权重矩阵大小：</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>W_q: [4096 × 4096] = 16.8M参数</li>
+                    <li>W_k: [4096 × 1024] = 4.2M参数（GQA优化）</li>
+                    <li>W_v: [4096 × 1024] = 4.2M参数（GQA优化）</li>
+                    <li>W_o: [4096 × 4096] = 16.8M参数</li>
+                    <li><strong>单层注意力总计：42M参数</strong></li>
+                </ul>
+                
+                <p style="margin-top: 20px;"><strong>运行时矩阵大小（批次=1）：</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Q: [4096 × 32 × 128] = 16MB（FP32）</li>
+                    <li>K: [4096 × 8 × 128] = 4MB（GQA优化）</li>
+                    <li>V: [4096 × 8 × 128] = 4MB（GQA优化）</li>
+                    <li>注意力分数: [32 × 4096 × 4096] = 2.1GB（如不用Flash）</li>
+                </ul>
+            </div>
+            
+            <h3>💾 内存需求分析</h3>
+            <div class="visualization">
+                <svg viewBox="0 0 1200 500">
+                    <text x="600" y="30" text-anchor="middle" font-weight="bold" font-size="18">不同模型的显存需求对比</text>
+                    
+                    <!-- 训练内存 -->
+                    <g transform="translate(100, 80)">
+                        <text x="250" y="0" text-anchor="middle" font-weight="bold">训练时显存需求（混合精度）</text>
+                        
+                        <!-- 7B模型 -->
+                        <g transform="translate(0, 20)">
+                            <rect x="0" y="0" width="500" height="40" fill="#e0e0e0" stroke="#333"/>
+                            <rect x="0" y="0" width="140" height="40" fill="#667eea" opacity="0.7"/>
+                            <text x="10" y="25" fill="white" font-weight="bold">7B模型</text>
+                            <text x="510" y="25" font-size="12">~56GB（参数14GB + 梯度14GB + 优化器28GB）</text>
+                        </g>
+                        
+                        <!-- 13B模型 -->
+                        <g transform="translate(0, 70)">
+                            <rect x="0" y="0" width="500" height="40" fill="#e0e0e0" stroke="#333"/>
+                            <rect x="0" y="0" width="260" height="40" fill="#764ba2" opacity="0.7"/>
+                            <text x="10" y="25" fill="white" font-weight="bold">13B模型</text>
+                            <text x="510" y="25" font-size="12">~104GB（参数26GB + 梯度26GB + 优化器52GB）</text>
+                        </g>
+                        
+                        <!-- 70B模型 -->
+                        <g transform="translate(0, 120)">
+                            <rect x="0" y="0" width="500" height="40" fill="#e0e0e0" stroke="#333"/>
+                            <rect x="0" y="0" width="500" height="40" fill="#f093fb" opacity="0.7"/>
+                            <text x="10" y="25" fill="white" font-weight="bold">70B模型</text>
+                            <text x="510" y="25" font-size="12">~560GB（需要多卡并行）</text>
+                        </g>
+                        
+                        <text x="250" y="200" text-anchor="middle" font-size="11" fill="#666">
+                            规则：训练显存 ≈ 模型参数 × 8（混合精度）
+                        </text>
+                    </g>
+                    
+                    <!-- 推理内存 -->
+                    <g transform="translate(100, 320)">
+                        <text x="250" y="0" text-anchor="middle" font-weight="bold">推理时显存需求（FP16）</text>
+                        
+                        <!-- 基础模型内存 -->
+                        <g transform="translate(0, 20)">
+                            <rect x="0" y="0" width="200" height="30" fill="#00cc00" opacity="0.7"/>
+                            <text x="100" y="20" text-anchor="middle" fill="white">模型权重</text>
+                            <text x="210" y="20" font-size="12">7B: 14GB</text>
+                        </g>
+                        
+                        <!-- KV Cache -->
+                        <g transform="translate(0, 60)">
+                            <rect x="0" y="0" width="300" height="30" fill="#ff6b6b" opacity="0.7"/>
+                            <text x="150" y="20" text-anchor="middle" fill="white">KV Cache（seq=4096）</text>
+                            <text x="310" y="20" font-size="12">标准: 16GB</text>
+                        </g>
+                        
+                        <g transform="translate(0, 100)">
+                            <rect x="0" y="0" width="75" height="30" fill="#ffc107" opacity="0.7"/>
+                            <text x="37" y="20" text-anchor="middle">GQA</text>
+                            <text x="85" y="20" font-size="12">4GB（节省75%）</text>
+                        </g>
+                        
+                        <g transform="translate(0, 140)">
+                            <rect x="0" y="0" width="37" height="30" fill="#4caf50" opacity="0.7"/>
+                            <text x="18" y="20" text-anchor="middle" font-size="11">MQA</text>
+                            <text x="47" y="20" font-size="12">2GB（节省87.5%）</text>
+                        </g>
+                    </g>
+                    
+                    <!-- GPU配置建议 -->
+                    <g transform="translate(650, 80)">
+                        <rect x="0" y="0" width="450" height="380" fill="#f8f9fa" stroke="#667eea" stroke-width="2" rx="10"/>
+                        <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#667eea">GPU配置建议</text>
+                        
+                        <g transform="translate(20, 50)">
+                            <text x="0" y="20" font-size="14" font-weight="bold">推理部署：</text>
+                            <text x="20" y="45" font-size="12">• 7B模型：RTX 4090 (24GB)</text>
+                            <text x="20" y="70" font-size="12">• 13B模型：A100 40GB 或 2×RTX 4090</text>
+                            <text x="20" y="95" font-size="12">• 70B模型：4×A100 80GB</text>
+                            
+                            <text x="0" y="140" font-size="14" font-weight="bold">训练微调：</text>
+                            <text x="20" y="165" font-size="12">• 7B模型：A100 80GB</text>
+                            <text x="20" y="190" font-size="12">• 13B模型：2×A100 80GB</text>
+                            <text x="20" y="215" font-size="12">• 70B模型：8×A100 80GB</text>
+                            
+                            <text x="0" y="260" font-size="14" font-weight="bold">优化技巧：</text>
+                            <text x="20" y="285" font-size="12">• 使用GQA/MQA减少KV Cache</text>
+                            <text x="20" y="310" font-size="12">• 量化（INT8/INT4）减少权重内存</text>
+                            <text x="20" y="335" font-size="12">• Flash Attention减少激活内存</text>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            
+            <div class="code-ref">
+                <h4>📝 内存计算公式</h4>
+                <pre>
+<span class="code-comment"># 训练时内存需求（Adam优化器）</span>
+training_memory = (
+    model_params * 2 +     <span class="code-comment"># FP16模型权重</span>
+    model_params * 2 +     <span class="code-comment"># FP16梯度</span>  
+    model_params * 4 * 2   <span class="code-comment"># FP32 Adam状态（m和v）</span>
+)
+
+<span class="code-comment"># 推理时内存需求</span>
+inference_memory = (
+    model_params * 2 +     <span class="code-comment"># FP16模型权重</span>
+    kv_cache_memory        <span class="code-comment"># KV缓存</span>
+)
+
+<span class="code-comment"># KV Cache计算</span>
+<span class="code-comment"># 标准MHA:</span>
+kv_cache = 2 * n_layers * seq_len * n_heads * d_head * batch_size * 2  <span class="code-comment"># FP16</span>
+
+<span class="code-comment"># GQA (n_kv_heads < n_heads):</span>
+kv_cache_gqa = 2 * n_layers * seq_len * n_kv_heads * d_head * batch_size * 2
+
+<span class="code-comment"># MQA (n_kv_heads = 1):</span>
+kv_cache_mqa = 2 * n_layers * seq_len * 1 * d_head * batch_size * 2
+
+<span class="code-comment"># 示例：Llama 2-7B，seq_len=4096, batch=1</span>
+<span class="code-comment"># 标准：2 * 32 * 4096 * 32 * 128 * 1 * 2 = 2GB</span>
+<span class="code-comment"># GQA： 2 * 32 * 4096 * 8 * 128 * 1 * 2 = 512MB（节省75%）</span></pre>
+            </div>
+        </div>
         
         <!-- 1. 全注意力 -->
         <div class="attention-type" id="full-attention">
@@ -475,6 +1014,42 @@ output = torch.matmul(attn_weights, V)  <span class="code-comment"># [batch, hea
                 <div class="feature-card">
                     <h4>💡 应用</h4>
                     <p>GPT-3, BERT, 标准Transformer</p>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 40px;">🏆 主流模型采用情况</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; border-left: 4px solid #4caf50;">
+                    <h4 style="color: #2e7d32; margin-bottom: 10px;">GPT系列</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>GPT-3: Full Attention</li>
+                        <li>GPT-4: Flash Attention + Sparse</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; border-left: 4px solid #2196f3;">
+                    <h4 style="color: #1565c0; margin-bottom: 10px;">Llama系列</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>Llama 1: Full Attention</li>
+                        <li>Llama 2/3: GQA + RoPE</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #fce4ec; padding: 15px; border-radius: 10px; border-left: 4px solid #e91e63;">
+                    <h4 style="color: #880e4f; margin-bottom: 10px;">Google系列</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>PaLM: MQA</li>
+                        <li>Gemini: Flash + GQA混合</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 10px; border-left: 4px solid #9c27b0;">
+                    <h4 style="color: #6a1b9a; margin-bottom: 10px;">其他模型</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>Mistral/Mixtral: GQA (4头)</li>
+                        <li>Falcon: MQA</li>
+                        <li>Claude: Flash Attention</li>
+                    </ul>
                 </div>
             </div>
         </div>
