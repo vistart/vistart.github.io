@@ -574,6 +574,21 @@ scores = torch.matmul(Q, K.transpose(-2, -1))  <span class="code-comment"># 块�
 <span class="code-comment"># - 局部注意力: O(n × window_size × d) 而非 O(n² × d)</span>
 <span class="code-comment"># - 块稀疏: O(n × block_size × d) 而非 O(n² × d)</span></pre>
             </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>✅ 优势</h4>
+                    <p>线性复杂度，长序列高效</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚠️ 劣势</h4>
+                    <p>可能丢失长距离依赖</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💡 应用</h4>
+                    <p>Longformer, BigBird, Sparse Transformer</p>
+                </div>
+            </div>
         </div>
         
         <!-- 3. 线性注意力 -->
@@ -729,6 +744,21 @@ output = torch.matmul(Q, KV) * Z.unsqueeze(-1)  <span class="code-comment"># [n,
 <span class="code-comment"># - 当d << n时，效率提升巨大</span>
 <span class="code-comment"># - 需要特征映射φ来保证非负性</span></pre>
             </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>✅ 优势</h4>
+                    <p>O(n)复杂度，适合超长序列(>32K)</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚠️ 劣势</h4>
+                    <p>可能损失表达能力，精度略低</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💡 应用</h4>
+                    <p>Performer, Linformer, Linear Transformer, Nyström</p>
+                </div>
+            </div>
         </div>
         
         <!-- 4. GQA -->
@@ -868,6 +898,21 @@ class GroupedQueryAttention(nn.Module):
         attn = F.softmax(attn, dim=-1)
         output = torch.matmul(attn, V)</pre>
             </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>✅ 优势</h4>
+                    <p>减少KV缓存50-75%，保持模型质量</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚠️ 劣势</h4>
+                    <p>需要调整KV头数量的超参数</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💡 应用</h4>
+                    <p>Llama 2, Llama 3, Mistral, Mixtral</p>
+                </div>
+            </div>
         </div>
         
         <!-- 5. MQA -->
@@ -974,6 +1019,21 @@ class MultiQueryAttention(nn.Module):
 <span class="code-comment"># MHA KV缓存: 2 × 8 × 2048 × 64 × 4B = 8MB</span>
 <span class="code-comment"># MQA KV缓存: 2 × 1 × 2048 × 64 × 4B = 1MB</span>
 <span class="code-comment"># 节省: 87.5%！</span></pre>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>✅ 优势</h4>
+                    <p>最小KV缓存(节省87.5%)，推理最快</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚠️ 劣势</h4>
+                    <p>可能降低模型性能，训练不稳定</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💡 应用</h4>
+                    <p>PaLM, Falcon, StarCoder, SantaCoder</p>
+                </div>
             </div>
         </div>
         
@@ -1138,6 +1198,21 @@ def flash_attention_forward(Q, K, V):
 <span class="code-comment"># 2. 分块计算，每块都在SRAM中</span>
 <span class="code-comment"># 3. IO复杂度从O(N²) → O(N²/M)，M是SRAM大小</span></pre>
             </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>✅ 优势</h4>
+                    <p>2-4倍速度提升，O(n)内存，数值稳定</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚠️ 劣势</h4>
+                    <p>需要CUDA kernel优化，实现复杂</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💡 应用</h4>
+                    <p>GPT-4, Claude, Gemini, 现代大模型标配</p>
+                </div>
+            </div>
         </div>
         
         <!-- 性能对比表格 -->
@@ -1200,15 +1275,99 @@ def flash_attention_forward(Q, K, V):
                 </tbody>
             </table>
             
+            <h3 style="margin-top: 40px;">🔍 特性对比</h3>
+            <table class="complexity-table">
+                <thead>
+                    <tr>
+                        <th>特性</th>
+                        <th>Full</th>
+                        <th>Sparse</th>
+                        <th>Linear</th>
+                        <th>GQA</th>
+                        <th>MQA</th>
+                        <th>Flash</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>模型质量</strong></td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>推理速度</strong></td>
+                        <td>⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>内存效率</strong></td>
+                        <td>⭐</td>
+                        <td>⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>长序列支持</strong></td>
+                        <td>⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐</td>
+                        <td>⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>实现难度</strong></td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>主流采用度</strong></td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                        <td>⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                </tbody>
+            </table>
+            
             <div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 10px;">
                 <h3>💡 选择建议</h3>
                 <ul style="margin-left: 20px; line-height: 2;">
-                    <li><strong>训练阶段：</strong>Flash Attention + Full Attention</li>
-                    <li><strong>推理优化：</strong>GQA/MQA 减少KV缓存</li>
-                    <li><strong>长文本（8K-32K）：</strong>Local/Sparse Attention</li>
-                    <li><strong>超长文本（>32K）：</strong>Linear Attention变体</li>
-                    <li><strong>资源受限：</strong>MQA + Flash Attention组合</li>
+                    <li><strong>训练阶段：</strong>Flash Attention + Full Attention（速度与精度并重）</li>
+                    <li><strong>推理优化：</strong>GQA（Llama系列）或MQA（PaLM系列）减少KV缓存</li>
+                    <li><strong>中等文本（1K-8K）：</strong>Local Attention（Longformer）或稀疏模式</li>
+                    <li><strong>长文本（8K-32K）：</strong>块稀疏（BigBird）或混合注意力</li>
+                    <li><strong>超长文本（>32K）：</strong>Linear Attention（Performer）或Linformer</li>
+                    <li><strong>边缘设备：</strong>MQA + 量化 + Flash Attention组合</li>
+                    <li><strong>实时服务：</strong>GQA（4个KV头）+ Flash Attention v2</li>
                 </ul>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                    <h4 style="color: #856404;">🎯 实践经验</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8; color: #856404;">
+                        <li>不同层可以使用不同注意力：底层Local，中层Sparse，顶层Full</li>
+                        <li>Flash Attention已成为训练标配，几乎无需权衡</li>
+                        <li>GQA是目前最平衡的选择（Llama 2/3采用）</li>
+                        <li>线性注意力虽然快但精度损失明显，谨慎使用</li>
+                        <li>根据硬件选择：A100/H100用Flash，消费级GPU用GQA/MQA</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
