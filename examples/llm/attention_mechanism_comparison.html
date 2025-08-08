@@ -273,26 +273,26 @@
             
             <h3>📚 QKV的本质含义</h3>
             <div class="math-section">
-                <p><strong>Query (Q)：查询向量</strong></p>
+                <p><b>Query (Q)：查询向量</b></p>
                 <ul style="margin-left: 20px;">
                     <li>代表"我在找什么信息"</li>
                     <li>每个位置的token生成一个Query，用于查询其他位置的信息</li>
                 </ul>
                 
-                <p style="margin-top: 15px;"><strong>Key (K)：键向量</strong></p>
+                <p style="margin-top: 15px;"><b>Key (K)：键向量</b></p>
                 <ul style="margin-left: 20px;">
                     <li>代表"我能提供什么信息"</li>
                     <li>每个位置的token生成一个Key，供其他位置查询</li>
                 </ul>
                 
-                <p style="margin-top: 15px;"><strong>Value (V)：值向量</strong></p>
+                <p style="margin-top: 15px;"><b>Value (V)：值向量</b></p>
                 <ul style="margin-left: 20px;">
                     <li>代表"我的实际信息内容"</li>
                     <li>根据Query-Key的匹配度，Value被加权聚合</li>
                 </ul>
                 
                 <div class="step-box">
-                    <strong>注意力输出的含义：</strong>
+                    <b>注意力输出的含义：</b>
                     <p>Attention输出是所有位置Value的加权和，权重由Query与Key的相似度决定。</p>
                     <p>本质上是：<em>"根据当前位置的需求(Q)，从所有位置中按相关性(K)提取信息(V)"</em></p>
                 </div>
@@ -300,15 +300,15 @@
             
             <h3>🚀 训练：并行计算所有位置</h3>
             <div class="visualization">
-                <svg viewBox="0 0 1200 600">
+                <svg viewBox="0 0 1200 700">
                     <text x="600" y="30" text-anchor="middle" font-weight="bold" font-size="18">训练时的并行计算（Teacher Forcing）</text>
                     
-                    <!-- 输入序列 -->
-                    <g transform="translate(100, 80)">
-                        <text x="200" y="-10" text-anchor="middle" font-weight="bold">输入序列："我爱北京天安门"</text>
+                    <!-- 左侧：输入序列和处理流程 -->
+                    <g transform="translate(50, 60)">
+                        <text x="250" y="0" text-anchor="middle" font-weight="bold">输入序列："我爱北京天安门"</text>
                         
                         <!-- Token嵌入 -->
-                        <g>
+                        <g transform="translate(0, 20)">
                             <rect x="0" y="0" width="60" height="40" fill="#667eea" opacity="0.7" stroke="#333"/>
                             <text x="30" y="25" text-anchor="middle" fill="white">我</text>
                             
@@ -329,7 +329,7 @@
                         </g>
                         
                         <!-- 并行箭头 -->
-                        <g stroke="#333" stroke-width="2" marker-end="url(#arrowhead)">
+                        <g stroke="#333" stroke-width="2" marker-end="url(#arrowhead)" transform="translate(0, 20)">
                             <path d="M 30 45 L 30 75"/>
                             <path d="M 100 45 L 100 75"/>
                             <path d="M 170 45 L 170 75"/>
@@ -339,9 +339,9 @@
                         </g>
                         
                         <!-- QKV生成（并行） -->
-                        <text x="200" y="100" text-anchor="middle" font-size="12">所有位置同时生成Q、K、V</text>
+                        <text x="200" y="120" text-anchor="middle" font-size="12">所有位置同时生成Q、K、V</text>
                         
-                        <g transform="translate(0, 110)">
+                        <g transform="translate(0, 130)">
                             <rect x="0" y="0" width="420" height="30" fill="#f093fb" opacity="0.5"/>
                             <text x="210" y="20" text-anchor="middle">Q: [6×d_model] 并行计算</text>
                             
@@ -353,7 +353,7 @@
                         </g>
                         
                         <!-- 因果掩码 -->
-                        <g transform="translate(0, 230)">
+                        <g transform="translate(0, 260)">
                             <text x="210" y="0" text-anchor="middle" font-weight="bold">因果掩码（Causal Mask）</text>
                             <rect x="50" y="10" width="300" height="300" fill="none" stroke="#333" stroke-width="2"/>
                             
@@ -399,23 +399,23 @@
                         </g>
                     </g>
                     
-                    <!-- 并行优势说明 -->
+                    <!-- 右侧：并行优势说明 -->
                     <g transform="translate(650, 80)">
-                        <rect x="0" y="0" width="450" height="200" fill="#e8f5e9" stroke="#4caf50" stroke-width="2" rx="10"/>
+                        <rect x="0" y="0" width="450" height="220" fill="#e8f5e9" stroke="#4caf50" stroke-width="2" rx="10"/>
                         <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#2e7d32">为什么训练可以并行？</text>
                         
-                        <text x="20" y="60" font-size="13">1. <strong>Teacher Forcing</strong>：训练时知道完整答案</text>
-                        <text x="20" y="85" font-size="13">2. <strong>因果掩码</strong>：确保每个位置只看到之前的内容</text>
-                        <text x="20" y="110" font-size="13">3. <strong>矩阵运算</strong>：所有位置的注意力一次计算</text>
-                        <text x="20" y="135" font-size="13">4. <strong>GPU并行</strong>：充分利用GPU的并行计算能力</text>
+                        <text x="20" y="60" font-size="13">1. Teacher Forcing：训练时知道完整答案</text>
+                        <text x="20" y="85" font-size="13">2. 因果掩码：确保每个位置只看到之前的内容</text>
+                        <text x="20" y="110" font-size="13">3. 矩阵运算：所有位置的注意力一次计算</text>
+                        <text x="20" y="135" font-size="13">4. GPU并行：充分利用GPU的并行计算能力</text>
                         
-                        <rect x="20" y="150" width="410" height="40" fill="#fff3cd" stroke="#ffc107" rx="5"/>
-                        <text x="30" y="170" font-size="12">💡 一次前向传播处理整个序列，</text>
-                        <text x="30" y="185" font-size="12">    而不是逐个token计算</text>
+                        <rect x="20" y="160" width="410" height="45" fill="#fff3cd" stroke="#ffc107" rx="5"/>
+                        <text x="30" y="180" font-size="12">💡 一次前向传播处理整个序列，</text>
+                        <text x="30" y="195" font-size="12">    而不是逐个token计算</text>
                     </g>
                     
                     <!-- 目标输出 -->
-                    <g transform="translate(650, 320)">
+                    <g transform="translate(650, 350)">
                         <text x="225" y="0" text-anchor="middle" font-weight="bold">训练目标（右移一位）</text>
                         
                         <g transform="translate(0, 20)">
@@ -447,7 +447,7 @@
             
             <h3>🔮 推理：逐个生成Token</h3>
             <div class="visualization">
-                <svg viewBox="0 0 1200 700">
+                <svg viewBox="0 0 1200 750">
                     <text x="600" y="30" text-anchor="middle" font-weight="bold" font-size="18">推理时的自回归生成（Auto-regressive）</text>
                     
                     <!-- Step 1 -->
@@ -517,7 +517,7 @@
                     </g>
                     
                     <!-- KV Cache说明 -->
-                    <g transform="translate(100, 270)">
+                    <g transform="translate(100, 250)">
                         <rect x="0" y="0" width="1000" height="180" fill="#fff3cd" stroke="#ffc107" stroke-width="2" rx="10"/>
                         <text x="500" y="30" text-anchor="middle" font-weight="bold" fill="#856404">KV Cache机制</text>
                         
@@ -536,26 +536,26 @@
                     </g>
                     
                     <!-- 推理特点 -->
-                    <g transform="translate(100, 480)">
-                        <rect x="0" y="0" width="450" height="150" fill="#ffe0e0" stroke="#ff0000" stroke-width="2" rx="10"/>
+                    <g transform="translate(100, 460)">
+                        <rect x="0" y="0" width="450" height="170" fill="#ffe0e0" stroke="#ff0000" stroke-width="2" rx="10"/>
                         <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#cc0000">推理瓶颈</text>
                         
-                        <text x="20" y="60" font-size="13">❌ <strong>顺序依赖</strong>：必须等前一个token生成完</text>
-                        <text x="20" y="85" font-size="13">❌ <strong>内存瓶颈</strong>：KV Cache随序列长度线性增长</text>
-                        <text x="20" y="110" font-size="13">❌ <strong>低GPU利用率</strong>：每步只处理1个token</text>
+                        <text x="20" y="60" font-size="13">❌ 顺序依赖：必须等前一个token生成完</text>
+                        <text x="20" y="85" font-size="13">❌ 内存瓶颈：KV Cache随序列长度线性增长</text>
+                        <text x="20" y="110" font-size="13">❌ 低GPU利用率：每步只处理1个token</text>
                         
-                        <text x="225" y="140" text-anchor="middle" font-size="11" fill="#666">这就是为什么需要GQA/MQA优化！</text>
+                        <text x="225" y="145" text-anchor="middle" font-size="11" fill="#666">这就是为什么需要GQA/MQA优化！</text>
                     </g>
                     
-                    <g transform="translate(580, 480)">
-                        <rect x="0" y="0" width="450" height="150" fill="#e0ffe0" stroke="#00cc00" stroke-width="2" rx="10"/>
+                    <g transform="translate(580, 460)">
+                        <rect x="0" y="0" width="450" height="170" fill="#e0ffe0" stroke="#00cc00" stroke-width="2" rx="10"/>
                         <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#00aa00">优化方案</text>
                         
-                        <text x="20" y="60" font-size="13">✓ <strong>批处理</strong>：同时处理多个序列</text>
-                        <text x="20" y="85" font-size="13">✓ <strong>GQA/MQA</strong>：减少KV Cache内存</text>
-                        <text x="20" y="110" font-size="13">✓ <strong>投机解码</strong>：小模型预测，大模型验证</text>
+                        <text x="20" y="60" font-size="13">✓ 批处理：同时处理多个序列</text>
+                        <text x="20" y="85" font-size="13">✓ GQA/MQA：减少KV Cache内存</text>
+                        <text x="20" y="110" font-size="13">✓ 投机解码：小模型预测，大模型验证</text>
                         
-                        <text x="225" y="140" text-anchor="middle" font-size="11" fill="#666">Flash Attention也能加速推理！</text>
+                        <text x="225" y="145" text-anchor="middle" font-size="11" fill="#666">Flash Attention也能加速推理！</text>
                     </g>
                 </svg>
             </div>
@@ -581,7 +581,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>GPT-3</strong></td>
+                        <td><b>GPT-3</b></td>
                         <td>175B</td>
                         <td>96</td>
                         <td>12,288</td>
@@ -591,7 +591,7 @@
                         <td>2,048</td>
                     </tr>
                     <tr>
-                        <td><strong>Llama 2-7B</strong></td>
+                        <td><b>Llama 2-7B</b></td>
                         <td>7B</td>
                         <td>32</td>
                         <td>4,096</td>
@@ -601,7 +601,7 @@
                         <td>4,096</td>
                     </tr>
                     <tr>
-                        <td><strong>Llama 2-70B</strong></td>
+                        <td><b>Llama 2-70B</b></td>
                         <td>70B</td>
                         <td>80</td>
                         <td>8,192</td>
@@ -611,7 +611,7 @@
                         <td>4,096</td>
                     </tr>
                     <tr>
-                        <td><strong>Mistral-7B</strong></td>
+                        <td><b>Mistral-7B</b></td>
                         <td>7B</td>
                         <td>32</td>
                         <td>4,096</td>
@@ -621,7 +621,7 @@
                         <td>32,768</td>
                     </tr>
                     <tr>
-                        <td><strong>PaLM</strong></td>
+                        <td><b>PaLM</b></td>
                         <td>540B</td>
                         <td>118</td>
                         <td>18,432</td>
@@ -631,7 +631,7 @@
                         <td>2,048</td>
                     </tr>
                     <tr>
-                        <td><strong>Claude 3</strong></td>
+                        <td><b>Claude 3</b></td>
                         <td>~100B</td>
                         <td>~80</td>
                         <td>~12,288</td>
@@ -645,10 +645,10 @@
             
             <h3>📊 矩阵规模计算示例（以Llama 2-7B为例）</h3>
             <div class="math-section">
-                <p><strong>单层注意力矩阵规模：</strong></p>
+                <p><b>单层注意力矩阵规模：</b></p>
                 
                 <div class="step-box">
-                    <p><strong>参数设置：</strong></p>
+                    <p><b>参数设置：</b></p>
                     <ul style="margin-left: 20px;">
                         <li>d_model = 4,096（隐藏维度）</li>
                         <li>n_heads = 32（查询头数）</li>
@@ -658,16 +658,16 @@
                     </ul>
                 </div>
                 
-                <p style="margin-top: 20px;"><strong>权重矩阵大小：</strong></p>
+                <p style="margin-top: 20px;"><b>权重矩阵大小：</b></p>
                 <ul style="margin-left: 20px;">
                     <li>W_q: [4096 × 4096] = 16.8M参数</li>
                     <li>W_k: [4096 × 1024] = 4.2M参数（GQA优化）</li>
                     <li>W_v: [4096 × 1024] = 4.2M参数（GQA优化）</li>
                     <li>W_o: [4096 × 4096] = 16.8M参数</li>
-                    <li><strong>单层注意力总计：42M参数</strong></li>
+                    <li><b>单层注意力总计：42M参数</b></li>
                 </ul>
                 
-                <p style="margin-top: 20px;"><strong>运行时矩阵大小（批次=1）：</strong></p>
+                <p style="margin-top: 20px;"><b>运行时矩阵大小（批次=1）：</b></p>
                 <ul style="margin-left: 20px;">
                     <li>Q: [4096 × 32 × 128] = 16MB（FP32）</li>
                     <li>K: [4096 × 8 × 128] = 4MB（GQA优化）</li>
@@ -747,7 +747,7 @@
                     
                     <!-- GPU配置建议 -->
                     <g transform="translate(650, 80)">
-                        <rect x="0" y="0" width="450" height="380" fill="#f8f9fa" stroke="#667eea" stroke-width="2" rx="10"/>
+                        <rect x="0" y="0" width="450" height="400" fill="#f8f9fa" stroke="#667eea" stroke-width="2" rx="10"/>
                         <text x="225" y="30" text-anchor="middle" font-weight="bold" fill="#667eea">GPU配置建议</text>
                         
                         <g transform="translate(20, 50)">
@@ -808,16 +808,16 @@ kv_cache_mqa = 2 * n_layers * seq_len * 1 * d_head * batch_size * 2
             
             <h3>📐 数学原理</h3>
             <div class="math-section">
-                <p><strong>缩放点积注意力 (Scaled Dot-Product Attention):</strong></p>
-                <p>$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$</p>
+                <p><b>缩放点积注意力 (Scaled Dot-Product Attention):</b></p>
+                <p>$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$</p>
                 
                 <div class="step-box">
-                    <strong>计算步骤分解：</strong>
+                    <b>计算步骤分解：</b>
                     <ol style="margin-left: 20px; line-height: 2;">
-                        <li><strong>步骤1：</strong> 计算注意力分数 $S = QK^T$ （Query与Key的相似度）</li>
-                        <li><strong>步骤2：</strong> 缩放 $S_{scaled} = \frac{S}{\sqrt{d_k}}$ （防止梯度消失）</li>
-                        <li><strong>步骤3：</strong> 归一化 $A = \text{softmax}(S_{scaled})$ （得到注意力权重）</li>
-                        <li><strong>步骤4：</strong> 加权求和 $O = AV$ （根据权重聚合Value）</li>
+                        <li><b>步骤1：</b> 计算注意力分数 $S = QK^T$ （Query与Key的相似度）</li>
+                        <li><b>步骤2：</b> 缩放 $S_{scaled} = \frac{S}{\sqrt{d_k}}$ （防止梯度消失）</li>
+                        <li><b>步骤3：</b> 归一化 $A = \text{softmax}(S_{scaled})$ （得到注意力权重）</li>
+                        <li><b>步骤4：</b> 加权求和 $O = AV$ （根据权重聚合Value）</li>
                     </ol>
                 </div>
                 
@@ -1060,13 +1060,13 @@ output = torch.matmul(attn_weights, V)  <span class="code-comment"># [batch, hea
             
             <h3>📐 数学原理</h3>
             <div class="math-section">
-                <p><strong>局部窗口注意力 (Local/Sliding Window):</strong></p>
-                <p>$$\text{LocalAttn}(Q, K, V)_i = \text{softmax}\left(\frac{Q_i K_{[i-w:i+w]}^T}{\sqrt{d_k}}\right)V_{[i-w:i+w]}$$</p>
+                <p><b>局部窗口注意力 (Local/Sliding Window):</b></p>
+                <p>$\text{LocalAttn}(Q, K, V)_i = \text{softmax}\left(\frac{Q_i K_{[i-w:i+w]}^T}{\sqrt{d_k}}\right)V_{[i-w:i+w]}$</p>
                 <p>其中 $w$ 是窗口半径，每个位置只关注邻近的 $2w+1$ 个位置</p>
                 
-                <p style="margin-top: 20px;"><strong>块稀疏注意力 (Block Sparse):</strong></p>
+                <p style="margin-top: 20px;"><b>块稀疏注意力 (Block Sparse):</b></p>
                 <p>将序列分成大小为 $b$ 的块：</p>
-                <p>$$\text{BlockAttn}(Q^{(i)}, K^{(i)}, V^{(i)}) = \text{softmax}\left(\frac{Q^{(i)}(K^{(i)})^T}{\sqrt{d_k}}\right)V^{(i)}$$</p>
+                <p>$\text{BlockAttn}(Q^{(i)}, K^{(i)}, V^{(i)}) = \text{softmax}\left(\frac{Q^{(i)}(K^{(i)})^T}{\sqrt{d_k}}\right)V^{(i)}$</p>
             </div>
             
             <h3>🎨 图形化解释</h3>
@@ -1172,12 +1172,12 @@ scores = torch.matmul(Q, K.transpose(-2, -1))  <span class="code-comment"># 块�
             
             <h3>📐 数学原理</h3>
             <div class="math-section">
-                <p><strong>核技巧 (Kernel Trick):</strong></p>
-                <p>标准注意力：$$O = \text{softmax}(QK^T)V = \frac{\exp(QK^T)}{\text{rowsum}(\exp(QK^T))}V$$</p>
-                <p>线性注意力（改变计算顺序）：$$O = \frac{\phi(Q)(\phi(K)^TV)}{\phi(Q)\text{sum}(\phi(K))}$$</p>
+                <p><b>核技巧 (Kernel Trick):</b></p>
+                <p>标准注意力：$O = \text{softmax}(QK^T)V = \frac{\exp(QK^T)}{\text{rowsum}(\exp(QK^T))}V$</p>
+                <p>线性注意力（改变计算顺序）：$O = \frac{\phi(Q)(\phi(K)^TV)}{\phi(Q)\text{sum}(\phi(K))}$</p>
                 
                 <div class="step-box">
-                    <strong>关键优化：改变矩阵乘法顺序</strong>
+                    <b>关键优化：改变矩阵乘法顺序</b>
                     <ul style="margin-left: 20px;">
                         <li>标准方式：$(QK^T)V$ - 先算$QK^T$得到$n×n$矩阵，复杂度$O(n^2d)$</li>
                         <li>线性方式：$Q(K^TV)$ - 先算$K^TV$得到$d×d$矩阵，复杂度$O(nd^2)$</li>
@@ -1342,11 +1342,11 @@ output = torch.matmul(Q, KV) * Z.unsqueeze(-1)  <span class="code-comment"># [n,
             
             <h3>📐 数学原理</h3>
             <div class="math-section">
-                <p><strong>核心思想：</strong>将查询头分成G组，每组共享键值对</p>
+                <p><b>核心思想：</b>将查询头分成G组，每组共享键值对</p>
                 <p>$$\text{GQA}(Q^{(g)}, K^{(g/G)}, V^{(g/G)}) = \text{softmax}\left(\frac{Q^{(g)}(K^{(g/G)})^T}{\sqrt{d_k}}\right)V^{(g/G)}$$</p>
                 
                 <div class="step-box">
-                    <strong>内存节省计算：</strong>
+                    <b>内存节省计算：</b>
                     <ul style="margin-left: 20px;">
                         <li>MHA KV缓存: $2 × n_{heads} × seq\_len × d_k$</li>
                         <li>GQA KV缓存: $2 × n_{kv\_heads} × seq\_len × d_k$</li>
@@ -1496,7 +1496,7 @@ class GroupedQueryAttention(nn.Module):
             
             <h3>📐 数学原理</h3>
             <div class="math-section">
-                <p><strong>核心思想：</strong>所有查询头共享单一的键值对</p>
+                <p><b>核心思想：</b>所有查询头共享单一的键值对</p>
                 <p>$$\text{MQA}(Q^{(h)}, K, V) = \text{softmax}\left(\frac{Q^{(h)}K^T}{\sqrt{d_k}}\right)V$$</p>
                 <p>KV缓存从 $O(n \cdot h \cdot d)$ 降到 $O(n \cdot d)$</p>
             </div>
@@ -1618,14 +1618,14 @@ class MultiQueryAttention(nn.Module):
             
             <h3>📐 数学原理</h3>
             <div class="math-section">
-                <p><strong>在线Softmax (Online Softmax)：</strong></p>
+                <p><b>在线Softmax (Online Softmax)：</b></p>
                 <p>数值稳定的增量计算：</p>
                 <p>$$m^{new} = \max(m^{old}, \text{rowmax}(S))$$</p>
                 <p>$$l^{new} = e^{m^{old}-m^{new}}l^{old} + \text{rowsum}(e^{S-m^{new}})$$</p>
                 <p>$$O^{new} = \frac{e^{m^{old}-m^{new}}l^{old}O^{old} + e^{S-m^{new}}V}{l^{new}}$$</p>
                 
                 <div class="step-box">
-                    <strong>分块策略：</strong>
+                    <b>分块策略：</b>
                     <ul style="margin-left: 20px;">
                         <li>将Q分成大小为B_r的块</li>
                         <li>将K,V分成大小为B_c的块</li>
@@ -1865,7 +1865,7 @@ def flash_attention_forward(Q, K, V):
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>模型质量</strong></td>
+                        <td><b>模型质量</b></td>
                         <td>⭐⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐</td>
@@ -1874,7 +1874,7 @@ def flash_attention_forward(Q, K, V):
                         <td>⭐⭐⭐⭐⭐</td>
                     </tr>
                     <tr>
-                        <td><strong>推理速度</strong></td>
+                        <td><b>推理速度</b></td>
                         <td>⭐⭐</td>
                         <td>⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐⭐⭐</td>
@@ -1883,7 +1883,7 @@ def flash_attention_forward(Q, K, V):
                         <td>⭐⭐⭐⭐</td>
                     </tr>
                     <tr>
-                        <td><strong>内存效率</strong></td>
+                        <td><b>内存效率</b></td>
                         <td>⭐</td>
                         <td>⭐⭐⭐</td>
                         <td>⭐⭐⭐⭐</td>
@@ -1892,7 +1892,7 @@ def flash_attention_forward(Q, K, V):
                         <td>⭐⭐⭐⭐⭐</td>
                     </tr>
                     <tr>
-                        <td><strong>长序列支持</strong></td>
+                        <td><b>长序列支持</b></td>
                         <td>⭐</td>
                         <td>⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐⭐⭐</td>
@@ -1901,7 +1901,7 @@ def flash_attention_forward(Q, K, V):
                         <td>⭐⭐⭐</td>
                     </tr>
                     <tr>
-                        <td><strong>实现难度</strong></td>
+                        <td><b>实现难度</b></td>
                         <td>⭐⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐</td>
@@ -1910,7 +1910,7 @@ def flash_attention_forward(Q, K, V):
                         <td>⭐</td>
                     </tr>
                     <tr>
-                        <td><strong>主流采用度</strong></td>
+                        <td><b>主流采用度</b></td>
                         <td>⭐⭐⭐⭐⭐</td>
                         <td>⭐⭐⭐</td>
                         <td>⭐⭐</td>
@@ -1924,13 +1924,13 @@ def flash_attention_forward(Q, K, V):
             <div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 10px;">
                 <h3>💡 选择建议</h3>
                 <ul style="margin-left: 20px; line-height: 2;">
-                    <li><strong>训练阶段：</strong>Flash Attention + Full Attention（速度与精度并重）</li>
-                    <li><strong>推理优化：</strong>GQA（Llama系列）或MQA（PaLM系列）减少KV缓存</li>
-                    <li><strong>中等文本（1K-8K）：</strong>Local Attention（Longformer）或稀疏模式</li>
-                    <li><strong>长文本（8K-32K）：</strong>块稀疏（BigBird）或混合注意力</li>
-                    <li><strong>超长文本（>32K）：</strong>Linear Attention（Performer）或Linformer</li>
-                    <li><strong>边缘设备：</strong>MQA + 量化 + Flash Attention组合</li>
-                    <li><strong>实时服务：</strong>GQA（4个KV头）+ Flash Attention v2</li>
+                    <li><b>训练阶段：</b>Flash Attention + Full Attention（速度与精度并重）</li>
+                    <li><b>推理优化：</b>GQA（Llama系列）或MQA（PaLM系列）减少KV缓存</li>
+                    <li><b>中等文本（1K-8K）：</b>Local Attention（Longformer）或稀疏模式</li>
+                    <li><b>长文本（8K-32K）：</b>块稀疏（BigBird）或混合注意力</li>
+                    <li><b>超长文本（>32K）：</b>Linear Attention（Performer）或Linformer</li>
+                    <li><b>边缘设备：</b>MQA + 量化 + Flash Attention组合</li>
+                    <li><b>实时服务：</b>GQA（4个KV头）+ Flash Attention v2</li>
                 </ul>
                 
                 <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
