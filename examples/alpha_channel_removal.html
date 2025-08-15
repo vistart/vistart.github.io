@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha通道移除效果演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .demo-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .demo-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .demo-item h3 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .canvas-container {
+            position: relative;
+            margin: 0 auto;
+            display: inline-block;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        .background-selector {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .bg-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .bg-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .bg-checker { 
+            background-image: 
+                linear-gradient(45deg, #ddd 25%, transparent 25%),
+                linear-gradient(-45deg, #ddd 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #ddd 75%),
+                linear-gradient(-45deg, transparent 75%, #ddd 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        
+        .bg-white { background: white; }
+        .bg-black { background: black; color: white; }
+        .bg-blue { background: #3498db; color: white; }
+        .bg-green { background: #2ecc71; color: white; }
+        
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .comparison-slider {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .slider-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .slider-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .slider-divider {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            overflow: hidden;
+            border-right: 3px solid white;
+        }
+        
+        .slider-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            cursor: ew-resize;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .label {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            top: 10px;
+        }
+        
+        .label-left { left: 10px; }
+        .label-right { right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Alpha通道移除效果演示</h1>
+        
+        <!-- 基础概念演示 -->
+        <div class="demo-section">
+            <h2>1. 不同透明度的影响</h2>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>原始图像（带Alpha）</h3>
+                    <div class="canvas-container bg-checker">
+                        <canvas id="original1" width="250" height="250"></canvas>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">通道数</div>
+                            <div class="stat-value">4 (RGBA)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">透明像素</div>
+                            <div class="stat-value" id="transparent-count">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>移除Alpha后（白色背景）</h3>
+                    <div class="canvas-container">
+                        <canvas id="removed-white" width="250" height="250"></canvas>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">通道数</div>
+                            <div class="stat-value">3 (RGB)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">质量损失</div>
+                            <div class="stat-value" style="color: #e74c3c;">高</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>移除Alpha后（黑色背景）</h3>
+                    <div class="canvas-container">
+                        <canvas id="removed-black" width="250" height="250"></canvas>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">通道数</div>
+                            <div class="stat-value">3 (RGB)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">质量损失</div>
+                            <div class="stat-value" style="color: #e74c3c;">高</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 边缘效果演示 -->
+        <div class="demo-section">
+            <h2>2. 边缘抗锯齿效果损失</h2>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>原始圆形（带Alpha抗锯齿）</h3>
+                    <div class="canvas-container bg-checker">
+                        <canvas id="circle-original" width="250" height="250"></canvas>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>移除Alpha后（边缘粗糙）</h3>
+                    <div class="canvas-container">
+                        <canvas id="circle-removed" width="250" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>观察点：</strong> 注意圆形边缘的平滑度差异。带Alpha的边缘通过半透明像素实现平滑过渡，移除后边缘变得锯齿状。
+            </div>
+        </div>
+        
+        <!-- 实际应用场景 -->
+        <div class="demo-section">
+            <h2>3. 实际应用场景影响</h2>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Logo叠加效果</h3>
+                    <div class="canvas-container">
+                        <canvas id="logo-demo" width="250" height="250"></canvas>
+                    </div>
+                    <div class="background-selector">
+                        <button class="bg-btn bg-checker" onclick="changeLogoBackground('checker')">棋盘格</button>
+                        <button class="bg-btn bg-blue" onclick="changeLogoBackground('blue')">蓝色</button>
+                        <button class="bg-btn bg-green" onclick="changeLogoBackground('green')">绿色</button>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>阴影效果</h3>
+                    <div class="canvas-container">
+                        <canvas id="shadow-demo" width="250" height="250"></canvas>
+                    </div>
+                    <div class="background-selector">
+                        <button class="bg-btn bg-white" onclick="changeShadowMode('with')">带Alpha</button>
+                        <button class="bg-btn bg-black" onclick="changeShadowMode('without')">无Alpha</button>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>渐变透明效果</h3>
+                    <div class="canvas-container">
+                        <canvas id="gradient-demo" width="250" height="250"></canvas>
+                    </div>
+                    <div class="background-selector">
+                        <button class="bg-btn" onclick="toggleGradientAlpha()">切换Alpha</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 质量损失分析 -->
+        <div class="demo-section">
+            <h2>4. 质量损失分析</h2>
+            <div class="warning-box">
+                <strong>⚠️ 主要质量问题：</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>透明背景变成实色背景</li>
+                    <li>半透明效果完全丢失</li>
+                    <li>边缘抗锯齿效果消失</li>
+                    <li>无法再叠加到其他背景上</li>
+                    <li>阴影和光晕效果损坏</li>
+                </ul>
+            </div>
+            
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>文字渲染效果</h3>
+                    <div class="canvas-container bg-checker">
+                        <canvas id="text-demo" width="250" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>水印效果</h3>
+                    <div class="canvas-container">
+                        <canvas id="watermark-demo" width="250" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <div class="demo-item">
+                    <h3>玻璃效果</h3>
+                    <div class="canvas-container">
+                        <canvas id="glass-demo" width="250" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 处理建议 -->
+        <div class="demo-section">
+            <h2>5. 处理建议</h2>
+            <div class="info-box">
+                <strong>✅ 最佳实践：</strong>
+                <ol style="margin-top: 10px; margin-left: 20px;">
+                    <li><strong>保留原始文件：</strong>始终保留带Alpha通道的原始文件</li>
+                    <li><strong>选择合适背景：</strong>如果必须移除Alpha，先选择合适的背景色混合</li>
+                    <li><strong>使用WebP格式：</strong>需要透明度时优先使用PNG或WebP格式</li>
+                    <li><strong>分层保存：</strong>设计文件保持分层，便于后期调整</li>
+                    <li><strong>边缘处理：</strong>移除Alpha前可以先进行边缘羽化处理</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 绘制带透明度的示例
+        function drawTransparencyDemo() {
+            const canvas = document.getElementById('original1');
+            const ctx = canvas.getContext('2d');
+            
+            // 清空画布
+            ctx.clearRect(0, 0, 250, 250);
+            
+            // 绘制不同透明度的方块
+            const colors = [
+                { r: 255, g: 0, b: 0, a: 1.0, label: '100%' },
+                { r: 0, g: 255, b: 0, a: 0.75, label: '75%' },
+                { r: 0, g: 0, b: 255, a: 0.5, label: '50%' },
+                { r: 255, g: 255, b: 0, a: 0.25, label: '25%' },
+                { r: 255, g: 0, b: 255, a: 0, label: '0%' }
+            ];
+            
+            let transparentCount = 0;
+            colors.forEach((color, i) => {
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
+                ctx.fillRect(i * 50, 50, 45, 150);
+                
+                // 添加标签
+                ctx.fillStyle = 'black';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(color.label, i * 50 + 22, 40);
+                
+                if (color.a < 1) transparentCount++;
+            });
+            
+            document.getElementById('transparent-count').textContent = `${transparentCount}/5`;
+            
+            // 白色背景版本
+            const canvasWhite = document.getElementById('removed-white');
+            const ctxWhite = canvasWhite.getContext('2d');
+            ctxWhite.fillStyle = 'white';
+            ctxWhite.fillRect(0, 0, 250, 250);
+            
+            colors.forEach((color, i) => {
+                // 模拟Alpha混合到白色背景
+                const r = Math.round(color.r * color.a + 255 * (1 - color.a));
+                const g = Math.round(color.g * color.a + 255 * (1 - color.a));
+                const b = Math.round(color.b * color.a + 255 * (1 - color.a));
+                
+                ctxWhite.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctxWhite.fillRect(i * 50, 50, 45, 150);
+                
+                ctxWhite.fillStyle = 'black';
+                ctxWhite.font = '12px Arial';
+                ctxWhite.textAlign = 'center';
+                ctxWhite.fillText('无透明', i * 50 + 22, 40);
+            });
+            
+            // 黑色背景版本
+            const canvasBlack = document.getElementById('removed-black');
+            const ctxBlack = canvasBlack.getContext('2d');
+            ctxBlack.fillStyle = 'black';
+            ctxBlack.fillRect(0, 0, 250, 250);
+            
+            colors.forEach((color, i) => {
+                // 模拟Alpha混合到黑色背景
+                const r = Math.round(color.r * color.a);
+                const g = Math.round(color.g * color.a);
+                const b = Math.round(color.b * color.a);
+                
+                ctxBlack.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctxBlack.fillRect(i * 50, 50, 45, 150);
+                
+                ctxBlack.fillStyle = 'white';
+                ctxBlack.font = '12px Arial';
+                ctxBlack.textAlign = 'center';
+                ctxBlack.fillText('无透明', i * 50 + 22, 40);
+            });
+        }
+        
+        // 绘制圆形抗锯齿示例
+        function drawCircleDemo() {
+            // 带Alpha的圆形
+            const canvasOrig = document.getElementById('circle-original');
+            const ctxOrig = canvasOrig.getContext('2d');
+            
+            ctxOrig.clearRect(0, 0, 250, 250);
+            
+            // 绘制带抗锯齿的圆形
+            ctxOrig.beginPath();
+            ctxOrig.arc(125, 125, 80, 0, Math.PI * 2);
+            ctxOrig.fillStyle = 'rgba(52, 152, 219, 0.8)';
+            ctxOrig.fill();
+            
+            // 添加渐变边缘
+            const gradient = ctxOrig.createRadialGradient(125, 125, 60, 125, 125, 80);
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
+            gradient.addColorStop(1, 'rgba(52, 152, 219, 0)');
+            ctxOrig.fillStyle = gradient;
+            ctxOrig.fill();
+            
+            // 无Alpha的圆形（模拟）
+            const canvasRemoved = document.getElementById('circle-removed');
+            const ctxRemoved = canvasRemoved.getContext('2d');
+            
+            ctxRemoved.fillStyle = '#f0f0f0';
+            ctxRemoved.fillRect(0, 0, 250, 250);
+            
+            // 关闭抗锯齿（模拟效果）
+            ctxRemoved.imageSmoothingEnabled = false;
+            ctxRemoved.beginPath();
+            ctxRemoved.arc(125, 125, 80, 0, Math.PI * 2);
+            ctxRemoved.fillStyle = 'rgb(52, 152, 219)';
+            ctxRemoved.fill();
+        }
+        
+        // Logo演示
+        let logoBackground = 'checker';
+        function drawLogoDemo() {
+            const canvas = document.getElementById('logo-demo');
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制背景
+            if (logoBackground === 'checker') {
+                drawCheckerboard(ctx, 250, 250);
+            } else if (logoBackground === 'blue') {
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(0, 0, 250, 250);
+            } else if (logoBackground === 'green') {
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(0, 0, 250, 250);
+            }
+            
+            // 绘制Logo（带透明度）
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 阴影效果
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+            
+            // 渐变文字
+            const gradient = ctx.createLinearGradient(0, 100, 0, 150);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+            gradient.addColorStop(1, 'rgba(200, 200, 200, 0.9)');
+            ctx.fillStyle = gradient;
+            ctx.fillText('LOGO', 125, 125);
+        }
+        
+        function changeLogoBackground(bg) {
+            logoBackground = bg;
+            drawLogoDemo();
+        }
+        
+        // 阴影演示
+        let shadowMode = 'with';
+        function drawShadowDemo() {
+            const canvas = document.getElementById('shadow-demo');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(0, 0, 250, 250);
+            
+            if (shadowMode === 'with') {
+                // 带Alpha的柔和阴影
+                for (let i = 20; i > 0; i--) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${0.02})`;
+                    ctx.fillRect(75 + i, 75 + i, 100, 100);
+                }
+            } else {
+                // 无Alpha的硬阴影
+                ctx.fillStyle = 'rgb(100, 100, 100)';
+                ctx.fillRect(85, 85, 100, 100);
+            }
+            
+            // 主要方块
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(75, 75, 100, 100);
+        }
+        
+        function changeShadowMode(mode) {
+            shadowMode = mode;
+            drawShadowDemo();
+        }
+        
+        // 渐变演示
+        let gradientAlpha = true;
+        function drawGradientDemo() {
+            const canvas = document.getElementById('gradient-demo');
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            drawCheckerboard(ctx, 250, 250);
+            
+            const gradient = ctx.createLinearGradient(0, 0, 250, 0);
+            
+            if (gradientAlpha) {
+                gradient.addColorStop(0, 'rgba(155, 89, 182, 1)');
+                gradient.addColorStop(0.5, 'rgba(155, 89, 182, 0.5)');
+                gradient.addColorStop(1, 'rgba(155, 89, 182, 0)');
+            } else {
+                gradient.addColorStop(0, 'rgb(155, 89, 182)');
+                gradient.addColorStop(0.5, 'rgb(205, 172, 219)');
+                gradient.addColorStop(1, 'rgb(255, 255, 255)');
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 50, 250, 150);
+        }
+        
+        function toggleGradientAlpha() {
+            gradientAlpha = !gradientAlpha;
+            drawGradientDemo();
+        }
+        
+        // 文字渲染演示
+        function drawTextDemo() {
+            const canvas = document.getElementById('text-demo');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, 250, 150);
+            
+            ctx.font = '32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 带Alpha的平滑文字
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillText('Alpha文字', 125, 40);
+            
+            // 无Alpha的锯齿文字（模拟）
+            ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = 'rgb(0, 0, 0)';
+            ctx.fillText('无Alpha', 125, 100);
+            ctx.imageSmoothingEnabled = true;
+        }
+        
+        // 水印演示
+        function drawWatermarkDemo() {
+            const canvas = document.getElementById('watermark-demo');
+            const ctx = canvas.getContext('2d');
+            
+            // 背景图片（模拟）
+            const gradient = ctx.createLinearGradient(0, 0, 250, 150);
+            gradient.addColorStop(0, '#3498db');
+            gradient.addColorStop(1, '#2ecc71');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 250, 150);
+            
+            // 水印
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 左侧：带Alpha
+            ctx.save();
+            ctx.translate(62, 75);
+            ctx.rotate(-45 * Math.PI / 180);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillText('水印', 0, 0);
+            ctx.restore();
+            
+            // 右侧：无Alpha
+            ctx.save();
+            ctx.translate(187, 75);
+            ctx.rotate(-45 * Math.PI / 180);
+            ctx.fillStyle = 'rgb(255, 255, 255)';
+            ctx.fillText('水印', 0, 0);
+            ctx.restore();
+            
+            // 标签
+            ctx.font = '12px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText('带Alpha', 62, 130);
+            ctx.fillText('无Alpha', 187, 130);
+        }
+        
+        // 玻璃效果演示
+        function drawGlassDemo() {
+            const canvas = document.getElementById('glass-demo');
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            const gradient = ctx.createLinearGradient(0, 0, 250, 150);
+            gradient.addColorStop(0, '#e74c3c');
+            gradient.addColorStop(1, '#f39c12');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 250, 150);
+            
+            // 左侧：带Alpha的玻璃效果
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(10, 30, 100, 90);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 30, 100, 90);
+            
+            // 右侧：无Alpha（变成实色）
+            ctx.fillStyle = 'rgb(255, 204, 204)';
+            ctx.fillRect(140, 30, 100, 90);
+            ctx.strokeStyle = 'rgb(255, 255, 255)';
+            ctx.strokeRect(140, 30, 100, 90);
+            
+            // 标签
+            ctx.font = '12px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText('玻璃效果', 60, 75);
+            ctx.fillText('实色块', 190, 75);
+        }
+        
+        // 辅助函数：绘制棋盘格背景
+        function drawCheckerboard(ctx, width, height, size = 10) {
+            const rows = Math.ceil(height / size);
+            const cols = Math.ceil(width / size);
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    ctx.fillStyle = (row + col) % 2 === 0 ? '#ddd' : '#fff';
+                    ctx.fillRect(col * size, row * size, size, size);
+                }
+            }
+        }
+        
+        // 初始化所有演示
+        function initDemos() {
+            drawTransparencyDemo();
+            drawCircleDemo();
+            drawLogoDemo();
+            drawShadowDemo();
+            drawGradientDemo();
+            drawTextDemo();
+            drawWatermarkDemo();
+            drawGlassDemo();
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', initDemos);
+    </script>
+</body>
+</html>
