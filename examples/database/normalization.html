@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库范式系统详解</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .nav-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #495057;
+            margin: 20px 0 15px;
+            font-size: 1.4em;
+        }
+
+        .term-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .term-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .term-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 15px;
+        }
+
+        .term-informal {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .term-formal {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: #667eea;
+            transition: width 0.3s ease;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+        }
+
+        .tab.active:after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+            animation: slideUp 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            background: white;
+        }
+
+        tr:hover td {
+            background: #f8f9fa;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .problem-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .solution-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .definition-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+
+        .example-scenario {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 1.05em;
+        }
+
+        .note {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            h2 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗄️ 关系型数据库范式系统</h1>
+            <p class="subtitle">从理论到实践的完整指南</p>
+        </header>
+
+        <nav>
+            <div class="nav-buttons">
+                <button class="nav-btn active" onclick="showSection('terms')">核心术语</button>
+                <button class="nav-btn" onclick="showSection('overview')">总览</button>
+                <button class="nav-btn" onclick="showSection('1nf')">第一范式</button>
+                <button class="nav-btn" onclick="showSection('2nf')">第二范式</button>
+                <button class="nav-btn" onclick="showSection('3nf')">第三范式</button>
+                <button class="nav-btn" onclick="showSection('bcnf')">BCNF</button>
+                <button class="nav-btn" onclick="showSection('4nf')">第四范式</button>
+                <button class="nav-btn" onclick="showSection('5nf')">第五范式</button>
+                <button class="nav-btn" onclick="showSection('dknf')">DKNF</button>
+                <button class="nav-btn" onclick="showSection('6nf')">第六范式</button>
+                <button class="nav-btn" onclick="showSection('practice')">实践建议</button>
+            </div>
+        </nav>
+
+        <div class="content">
+            <!-- 核心术语 -->
+            <div id="terms" class="section active">
+                <h2>核心术语解释</h2>
+                
+                <div class="term-card">
+                    <div class="term-title">📊 属性 (Attribute)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>表中的列，代表实体的某个特征。比如学生表中的"姓名"、"年龄"、"学号"都是属性。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>关系 R(A₁, A₂, ..., Aₙ) 中的 Aᵢ 即为属性，其中 i ∈ [1, n]
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🔑 主键 (Primary Key)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>能够唯一标识表中每一行数据的属性或属性组合。就像身份证号能唯一标识一个人。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>设 K ⊆ R，若对于 R 中任意两个元组 t₁, t₂，都有 t₁[K] ≠ t₂[K]，且 K 是最小的，则 K 为主键
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🎯 候选键 (Candidate Key)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>所有能够唯一标识记录的最小属性集合。一个表可能有多个候选键，选其中一个作为主键。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>设 K ⊆ R，若 K → R 且不存在 K' ⊂ K 使得 K' → R，则 K 为候选键
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">➡️ 函数依赖 (Functional Dependency)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>如果知道了属性A的值，就能唯一确定属性B的值，就说B函数依赖于A。比如知道了学号，就能确定学生姓名。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>设 X, Y ⊆ R，若对于 R 中任意两个元组 t₁, t₂，当 t₁[X] = t₂[X] 时，必有 t₁[Y] = t₂[Y]，则称 X → Y
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">📌 部分函数依赖 (Partial Dependency)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>某个属性只依赖于主键的一部分，而不是整个主键。就像在订单明细表中，产品名称只依赖于产品ID，不需要知道完整的(订单ID, 产品ID)。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>若 X → Y，且存在 X' ⊂ X 使得 X' → Y，则称 Y 部分函数依赖于 X
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🔄 传递函数依赖 (Transitive Dependency)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>A决定B，B决定C，但B不能决定A，则C传递依赖于A。就像：学号→系编号→系主任，系主任就传递依赖于学号。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>若 X → Y，Y → Z，Y ⊈ X，Z ⊈ Y，则称 Z 传递函数依赖于 X
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">📚 多值依赖 (Multivalued Dependency)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>一个属性可能对应多个独立的值集合。比如一个员工可能有多个技能，也有多个爱好，技能和爱好之间没有关系。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>设 X, Y ⊆ R，若对于任意关系实例，X的每个值对应一组Y值，且这组Y值与R-X-Y中的属性无关，则 X →→ Y
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🔗 连接依赖 (Join Dependency)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>一个表可以无损分解为多个小表，这些小表通过连接可以完全恢复原表的信息，不多不少。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>关系 R 满足连接依赖 JD(R₁, R₂, ..., Rₙ)，当且仅当 R = R₁ ⋈ R₂ ⋈ ... ⋈ Rₙ
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🎯 域 (Domain)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>属性的取值范围和类型。比如"年龄"的域是正整数，"性别"的域是{男, 女}，"邮箱"的域是符合邮箱格式的字符串。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>域 D 是一个值的集合，关系中的每个属性 A 都有一个域 dom(A)，属性值必须满足 a ∈ dom(A)
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🔒 域约束 (Domain Constraint)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>限制属性只能取特定范围或类型的值。如价格必须大于0，日期必须是有效日期格式。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>对于属性 A，域约束 C(A) 定义为谓词函数，满足 ∀a ∈ A: C(A)(a) = true
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">🔐 键约束 (Key Constraint)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>确保某些属性组合的值在表中是唯一的，不能重复。主键、唯一键都是键约束。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>对于属性集 K，键约束要求 ∀t₁,t₂ ∈ R: t₁[K] = t₂[K] ⟹ t₁ = t₂
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-title">⏰ 时态依赖 (Temporal Dependency)</div>
+                    <div class="term-informal">
+                        <strong>通俗解释：</strong>属性值随时间变化的依赖关系。比如员工的部门可能随时间改变，产品价格会随时间调整。
+                    </div>
+                    <div class="term-formal">
+                        <strong>数学描述：</strong>X →ₜ Y 表示在时间点 t，X 的值决定 Y 的值，但在不同时间点可能有不同的映射关系
+                    </div>
+                </div>
+            </div>
+
+            <!-- 总览 -->
+            <div id="overview" class="section">
+                <h2>范式系统总览</h2>
+                
+                <div class="example-scenario">
+                    <strong>📦 贯穿案例：电商订单系统</strong><br>
+                    我们将使用一个电商平台的订单管理系统作为贯穿整个范式学习的案例，包含客户、产品、订单、配送等信息。
+                </div>
+
+                <div class="definition-box">
+                    <h3>什么是数据库范式？</h3>
+                    <p>数据库范式是一系列设计规则，用于：</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>减少数据冗余</li>
+                        <li>避免数据异常（插入、更新、删除异常）</li>
+                        <li>提高数据一致性</li>
+                        <li>优化存储空间</li>
+                    </ul>
+                </div>
+
+                <div class="note">
+                    <strong>⚡ 重要提示：</strong>每个高级范式都包含了所有低级范式的要求。比如满足3NF的表一定满足2NF和1NF。
+                </div>
+            </div>
+
+            <!-- 第一范式 -->
+            <div id="1nf" class="section">
+                <h2>第一范式 (1NF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>每个属性都是原子性的（不可再分）</li>
+                        <li>每个字段只包含单一值</li>
+                        <li>没有重复的列</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, '1nf-violate')">❌ 违反1NF</button>
+                    <button class="tab" onclick="showTab(this, '1nf-comply')">✅ 符合1NF</button>
+                </div>
+
+                <div id="1nf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>电话号码和收货地址字段包含多个值，违反原子性原则
+                        <br><strong>违反的概念：</strong>属性的原子性 - 每个属性应该是不可再分的基本数据单元
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>客户ID<br><code>[主键]</code></th>
+                                <th>客户姓名<br><code>[属性]</code></th>
+                                <th>电话号码<br><code>[多值属性-违反]</code></th>
+                                <th>收货地址<br><code>[复合属性-违反]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>C001</td>
+                                <td>张三</td>
+                                <td>138-1111-1111,<br>139-2222-2222</td>
+                                <td>北京市朝阳区XX路1号;<br>上海市浦东新区YY路2号</td>
+                            </tr>
+                            <tr>
+                                <td>C002</td>
+                                <td>李四</td>
+                                <td>137-3333-3333</td>
+                                <td>广州市天河区ZZ路3号</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="1nf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将多值属性分离到独立的表中，建立一对多关系
+                        <br><strong>应用的概念：</strong>原子性、主键约束、外键引用
+                    </div>
+                    
+                    <h4>客户表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>客户ID<br><code>[主键]</code></th>
+                                <th>客户姓名<br><code>[原子属性]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>C001</td>
+                                <td>张三</td>
+                            </tr>
+                            <tr>
+                                <td>C002</td>
+                                <td>李四</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>客户电话表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>客户ID<br><code>[外键→客户表]</code></th>
+                                <th>电话号码<br><code>[原子属性]</code></th>
+                                <th>类型<br><code>[原子属性]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>C001 <code>[函数依赖：客户ID→客户姓名]</code></td>
+                                <td>138-1111-1111</td>
+                                <td>主要</td>
+                            </tr>
+                            <tr>
+                                <td>C001</td>
+                                <td>139-2222-2222</td>
+                                <td>备用</td>
+                            </tr>
+                            <tr>
+                                <td>C002</td>
+                                <td>137-3333-3333</td>
+                                <td>主要</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>客户地址表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>地址ID<br><code>[主键]</code></th>
+                                <th>客户ID<br><code>[外键→客户表]</code></th>
+                                <th>省份<br><code>[原子属性]</code></th>
+                                <th>城市<br><code>[原子属性]</code></th>
+                                <th>详细地址<br><code>[原子属性]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>A001</td>
+                                <td>C001</td>
+                                <td>北京</td>
+                                <td>朝阳区</td>
+                                <td>XX路1号</td>
+                            </tr>
+                            <tr>
+                                <td>A002</td>
+                                <td>C001</td>
+                                <td>上海</td>
+                                <td>浦东新区</td>
+                                <td>YY路2号</td>
+                            </tr>
+                            <tr>
+                                <td>A003</td>
+                                <td>C002</td>
+                                <td>广东</td>
+                                <td>广州市</td>
+                                <td>天河区ZZ路3号</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念总结：</strong>通过分解，每个属性都满足原子性，消除了多值依赖，建立了清晰的主键-外键关系。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二范式 -->
+            <div id="2nf" class="section">
+                <h2>第二范式 (2NF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>满足1NF</li>
+                        <li>消除部分函数依赖</li>
+                        <li>非主键属性必须完全依赖于主键</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, '2nf-violate')">❌ 违反2NF</button>
+                    <button class="tab" onclick="showTab(this, '2nf-comply')">✅ 符合2NF</button>
+                </div>
+
+                <div id="2nf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>主键是(订单ID, 产品ID)，但产品名称和单价只依赖于产品ID，客户姓名和订单日期只依赖于订单ID
+                        <br><strong>违反的概念：</strong>部分函数依赖 - 非主键属性只依赖于复合主键的一部分
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[复合主键]</code></th>
+                                <th>产品ID<br><code>[复合主键]</code></th>
+                                <th>产品名称<br><code>[部分依赖于产品ID]</code></th>
+                                <th>单价<br><code>[部分依赖于产品ID]</code></th>
+                                <th>数量<br><code>[完全依赖]</code></th>
+                                <th>客户ID<br><code>[部分依赖于订单ID]</code></th>
+                                <th>客户姓名<br><code>[传递依赖]</code></th>
+                                <th>订单日期<br><code>[部分依赖于订单ID]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>P001</td>
+                                <td>iPhone 15</td>
+                                <td>7999</td>
+                                <td>1</td>
+                                <td>C001</td>
+                                <td>张三</td>
+                                <td>2024-01-15</td>
+                            </tr>
+                            <tr>
+                                <td>O001</td>
+                                <td>P002</td>
+                                <td>AirPods</td>
+                                <td>1999</td>
+                                <td>2</td>
+                                <td>C001</td>
+                                <td>张三 <code>[冗余]</code></td>
+                                <td>2024-01-15 <code>[冗余]</code></td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>P001</td>
+                                <td>iPhone 15 <code>[冗余]</code></td>
+                                <td>7999 <code>[冗余]</code></td>
+                                <td>1</td>
+                                <td>C002</td>
+                                <td>李四</td>
+                                <td>2024-01-16</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>函数依赖分析：</strong>
+                        <br>• 产品ID → {产品名称, 单价}（部分依赖）
+                        <br>• 订单ID → {客户ID, 订单日期}（部分依赖）
+                        <br>• 客户ID → 客户姓名（传递依赖）
+                        <br>• (订单ID, 产品ID) → 数量（完全依赖）
+                    </div>
+                </div>
+
+                <div id="2nf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将部分依赖的属性分离到独立的表中，保留完全依赖的属性
+                        <br><strong>应用的概念：</strong>消除部分函数依赖，建立适当的主键和外键关系
+                    </div>
+                    
+                    <h4>订单表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[主键]</code></th>
+                                <th>客户ID<br><code>[外键→客户表]</code></th>
+                                <th>订单日期<br><code>[完全依赖于主键]</code></th>
+                                <th>订单状态<br><code>[完全依赖于主键]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>C001</td>
+                                <td>2024-01-15</td>
+                                <td>已完成</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>C002</td>
+                                <td>2024-01-16</td>
+                                <td>配送中</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>产品表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID<br><code>[主键]</code></th>
+                                <th>产品名称<br><code>[完全依赖于主键]</code></th>
+                                <th>单价<br><code>[完全依赖于主键]</code></th>
+                                <th>库存<br><code>[完全依赖于主键]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>iPhone 15</td>
+                                <td>7999</td>
+                                <td>50</td>
+                            </tr>
+                            <tr>
+                                <td>P002</td>
+                                <td>AirPods</td>
+                                <td>1999</td>
+                                <td>100</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>订单明细表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[复合主键+外键]</code></th>
+                                <th>产品ID<br><code>[复合主键+外键]</code></th>
+                                <th>数量<br><code>[完全依赖于复合主键]</code></th>
+                                <th>折扣<br><code>[完全依赖于复合主键]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>P001</td>
+                                <td>1</td>
+                                <td>0.95</td>
+                            </tr>
+                            <tr>
+                                <td>O001</td>
+                                <td>P002</td>
+                                <td>2</td>
+                                <td>1.00</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>P001</td>
+                                <td>1</td>
+                                <td>0.90</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念总结：</strong>现在每个表中的非主键属性都完全依赖于该表的主键，消除了部分函数依赖。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三范式 -->
+            <div id="3nf" class="section">
+                <h2>第三范式 (3NF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>满足2NF</li>
+                        <li>消除传递函数依赖</li>
+                        <li>非主键属性之间不能有依赖关系</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, '3nf-violate')">❌ 违反3NF</button>
+                    <button class="tab" onclick="showTab(this, '3nf-comply')">✅ 符合3NF</button>
+                </div>
+
+                <div id="3nf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>配送公司名称和联系电话依赖于配送公司ID，而配送公司ID不是主键
+                        <br><strong>违反的概念：</strong>传递函数依赖 - 订单ID → 配送公司ID → {配送公司名称, 配送公司电话}
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[主键]</code></th>
+                                <th>客户姓名<br><code>[非主键属性]</code></th>
+                                <th>配送公司ID<br><code>[非主键属性]</code></th>
+                                <th>配送公司名称<br><code>[传递依赖]</code></th>
+                                <th>配送公司电话<br><code>[传递依赖]</code></th>
+                                <th>配送状态<br><code>[直接依赖]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>张三</td>
+                                <td>D01</td>
+                                <td>顺丰速运 <code>[传递依赖于D01]</code></td>
+                                <td>95338 <code>[传递依赖于D01]</code></td>
+                                <td>已签收</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>李四</td>
+                                <td>D01</td>
+                                <td>顺丰速运 <code>[冗余]</code></td>
+                                <td>95338 <code>[冗余]</code></td>
+                                <td>配送中</td>
+                            </tr>
+                            <tr>
+                                <td>O003</td>
+                                <td>王五</td>
+                                <td>D02</td>
+                                <td>京东物流 <code>[传递依赖于D02]</code></td>
+                                <td>95311 <code>[传递依赖于D02]</code></td>
+                                <td>已发货</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>函数依赖链：</strong>
+                        <br>• 订单ID → 配送公司ID（直接依赖）
+                        <br>• 配送公司ID → {配送公司名称, 配送公司电话}（但配送公司ID不是候选键）
+                        <br>• 因此：订单ID → 配送公司ID → {配送公司名称, 配送公司电话}（传递依赖）
+                    </div>
+                </div>
+
+                <div id="3nf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将传递依赖的属性分离到独立的表中，消除非主键属性间的依赖
+                        <br><strong>应用的概念：</strong>每个非主键属性都直接依赖于主键，而不是通过其他非主键属性
+                    </div>
+                    
+                    <h4>订单配送表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[主键]</code></th>
+                                <th>客户姓名<br><code>[直接依赖]</code></th>
+                                <th>配送公司ID<br><code>[外键]</code></th>
+                                <th>配送状态<br><code>[直接依赖]</code></th>
+                                <th>运单号<br><code>[直接依赖]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>张三</td>
+                                <td>D01</td>
+                                <td>已签收</td>
+                                <td>SF123456</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>李四</td>
+                                <td>D01</td>
+                                <td>配送中</td>
+                                <td>SF123457</td>
+                            </tr>
+                            <tr>
+                                <td>O003</td>
+                                <td>王五</td>
+                                <td>D02</td>
+                                <td>已发货</td>
+                                <td>JD789012</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>配送公司表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>配送公司ID<br><code>[主键]</code></th>
+                                <th>公司名称<br><code>[直接依赖于主键]</code></th>
+                                <th>联系电话<br><code>[直接依赖于主键]</code></th>
+                                <th>网址<br><code>[直接依赖于主键]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>D01</td>
+                                <td>顺丰速运</td>
+                                <td>95338</td>
+                                <td>www.sf-express.com</td>
+                            </tr>
+                            <tr>
+                                <td>D02</td>
+                                <td>京东物流</td>
+                                <td>95311</td>
+                                <td>www.jdl.com</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念总结：</strong>消除了传递依赖后，每个表的非主键属性都直接且完全依赖于该表的主键，不存在通过其他非主键属性的间接依赖。
+                    </div>
+                </div>
+            </div>
+
+            <!-- BCNF -->
+            <div id="bcnf" class="section">
+                <h2>BCNF (Boyce-Codd范式)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>满足3NF</li>
+                        <li>每个决定因素都必须是候选键</li>
+                        <li>消除所有基于函数依赖的异常</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, 'bcnf-violate')">❌ 违反BCNF</button>
+                    <button class="tab" onclick="showTab(this, 'bcnf-comply')">✅ 符合BCNF</button>
+                </div>
+
+                <div id="bcnf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>客服ID决定所属部门，但客服ID不是候选键。候选键是(订单ID, 客服ID)
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>客服ID</th>
+                                <th>客服姓名</th>
+                                <th>所属部门</th>
+                                <th>处理时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>CS001</td>
+                                <td>小王</td>
+                                <td>售后部</td>
+                                <td>2024-01-15 10:30</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>CS001</td>
+                                <td>小王</td>
+                                <td>售后部</td>
+                                <td>2024-01-15 14:20</td>
+                            </tr>
+                            <tr>
+                                <td>O003</td>
+                                <td>CS002</td>
+                                <td>小李</td>
+                                <td>技术支持部</td>
+                                <td>2024-01-16 09:15</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="bcnf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将非候选键的决定因素分离
+                    </div>
+                    
+                    <h4>订单客服记录表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>客服ID</th>
+                                <th>处理时间</th>
+                                <th>处理结果</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>CS001</td>
+                                <td>2024-01-15 10:30</td>
+                                <td>已解决</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>CS001</td>
+                                <td>2024-01-15 14:20</td>
+                                <td>已解决</td>
+                            </tr>
+                            <tr>
+                                <td>O003</td>
+                                <td>CS002</td>
+                                <td>2024-01-16 09:15</td>
+                                <td>处理中</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>客服信息表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>客服ID</th>
+                                <th>客服姓名</th>
+                                <th>所属部门</th>
+                                <th>入职日期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CS001</td>
+                                <td>小王</td>
+                                <td>售后部</td>
+                                <td>2023-03-15</td>
+                            </tr>
+                            <tr>
+                                <td>CS002</td>
+                                <td>小李</td>
+                                <td>技术支持部</td>
+                                <td>2023-06-01</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 第四范式 -->
+            <div id="4nf" class="section">
+                <h2>第四范式 (4NF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>满足BCNF</li>
+                        <li>消除多值依赖</li>
+                        <li>一个表中不应该有两个或更多的独立多值事实</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, '4nf-violate')">❌ 违反4NF</button>
+                    <button class="tab" onclick="showTab(this, '4nf-comply')">✅ 符合4NF</button>
+                </div>
+
+                <div id="4nf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>产品的适用平台和支持语言是两个独立的多值属性，造成笛卡尔积
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID</th>
+                                <th>产品名称</th>
+                                <th>适用平台</th>
+                                <th>支持语言</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>购物APP</td>
+                                <td>iOS</td>
+                                <td>中文</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>购物APP</td>
+                                <td>iOS</td>
+                                <td>英文</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>购物APP</td>
+                                <td>Android</td>
+                                <td>中文</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>购物APP</td>
+                                <td>Android</td>
+                                <td>英文</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="4nf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将独立的多值属性分离到不同的表
+                    </div>
+                    
+                    <h4>产品平台表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID</th>
+                                <th>适用平台</th>
+                                <th>版本号</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>iOS</td>
+                                <td>2.1.0</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>Android</td>
+                                <td>2.0.8</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>产品语言表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID</th>
+                                <th>支持语言</th>
+                                <th>翻译完成度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>中文</td>
+                                <td>100%</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>英文</td>
+                                <td>100%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 第五范式 -->
+            <div id="5nf" class="section">
+                <h2>第五范式 (5NF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>满足4NF</li>
+                        <li>消除连接依赖</li>
+                        <li>表必须可以无损分解为更小的表</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, '5nf-violate')">❌ 违反5NF</button>
+                    <button class="tab" onclick="showTab(this, '5nf-comply')">✅ 符合5NF</button>
+                </div>
+
+                <div id="5nf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>供应商-产品-仓库的三元关系存在连接依赖
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>供应商</th>
+                                <th>产品</th>
+                                <th>仓库</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>华为</td>
+                                <td>手机</td>
+                                <td>北京仓</td>
+                            </tr>
+                            <tr>
+                                <td>华为</td>
+                                <td>平板</td>
+                                <td>上海仓</td>
+                            </tr>
+                            <tr>
+                                <td>小米</td>
+                                <td>手机</td>
+                                <td>北京仓</td>
+                            </tr>
+                            <tr>
+                                <td>小米</td>
+                                <td>手机</td>
+                                <td>上海仓</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        约束：如果供应商S供应产品P，产品P存储在仓库W，且供应商S向仓库W供货，则S-P-W关系成立
+                    </div>
+                </div>
+
+                <div id="5nf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>分解为三个二元关系表
+                    </div>
+                    
+                    <h4>供应商产品表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>供应商</th>
+                                <th>产品</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>华为</td>
+                                <td>手机</td>
+                            </tr>
+                            <tr>
+                                <td>华为</td>
+                                <td>平板</td>
+                            </tr>
+                            <tr>
+                                <td>小米</td>
+                                <td>手机</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>产品仓库表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品</th>
+                                <th>仓库</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>手机</td>
+                                <td>北京仓</td>
+                            </tr>
+                            <tr>
+                                <td>手机</td>
+                                <td>上海仓</td>
+                            </tr>
+                            <tr>
+                                <td>平板</td>
+                                <td>上海仓</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>供应商仓库表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>供应商</th>
+                                <th>仓库</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>华为</td>
+                                <td>北京仓</td>
+                            </tr>
+                            <tr>
+                                <td>华为</td>
+                                <td>上海仓</td>
+                            </tr>
+                            <tr>
+                                <td>小米</td>
+                                <td>北京仓</td>
+                            </tr>
+                            <tr>
+                                <td>小米</td>
+                                <td>上海仓</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DKNF -->
+            <div id="dknf" class="section">
+                <h2>域键范式 (DKNF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>最严格的范式之一</li>
+                        <li>所有约束都是域约束和键约束的逻辑结果</li>
+                        <li>消除所有插入、更新、删除异常</li>
+                        <li>没有任何非平凡的函数依赖</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, 'dknf-violate')">❌ 违反DKNF</button>
+                    <button class="tab" onclick="showTab(this, 'dknf-comply')">✅ 符合DKNF</button>
+                </div>
+
+                <div id="dknf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>存在业务规则约束不能通过域和键来表达
+                        <br><strong>业务规则：</strong>VIP客户的订单金额超过1000元自动免运费，普通客户需要订单超过200元才免运费
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[主键]</code></th>
+                                <th>客户ID<br><code>[外键]</code></th>
+                                <th>客户类型<br><code>[域:{VIP,普通}]</code></th>
+                                <th>订单金额<br><code>[域:decimal>0]</code></th>
+                                <th>运费<br><code>[域:decimal≥0]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>C001</td>
+                                <td>VIP</td>
+                                <td>1500</td>
+                                <td>0 <code>[函数依赖于客户类型+订单金额]</code></td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>C002</td>
+                                <td>普通</td>
+                                <td>150</td>
+                                <td>15 <code>[函数依赖于客户类型+订单金额]</code></td>
+                            </tr>
+                            <tr>
+                                <td>O003</td>
+                                <td>C001</td>
+                                <td>VIP</td>
+                                <td>800</td>
+                                <td>15 <code>[违反VIP规则]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念分析：</strong>运费不仅依赖于订单金额，还依赖于客户类型，这种复合业务规则无法仅通过域约束和键约束表达。
+                    </div>
+                </div>
+
+                <div id="dknf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将复杂业务规则分解，使所有约束都可以用域和键表达
+                    </div>
+                    
+                    <h4>客户运费规则表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>规则ID<br><code>[主键]</code></th>
+                                <th>客户类型<br><code>[候选键]</code></th>
+                                <th>免运费门槛<br><code>[域:decimal>0]</code></th>
+                                <th>标准运费<br><code>[域:decimal≥0]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>R001</td>
+                                <td>VIP</td>
+                                <td>1000</td>
+                                <td>15</td>
+                            </tr>
+                            <tr>
+                                <td>R002</td>
+                                <td>普通</td>
+                                <td>200</td>
+                                <td>15</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>订单表（简化）</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID<br><code>[主键]</code></th>
+                                <th>客户ID<br><code>[外键]</code></th>
+                                <th>订单金额<br><code>[域:decimal>0]</code></th>
+                                <th>实际运费<br><code>[域:decimal≥0]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>O001</td>
+                                <td>C001</td>
+                                <td>1500</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>O002</td>
+                                <td>C002</td>
+                                <td>150</td>
+                                <td>15</td>
+                            </tr>
+                            <tr>
+                                <td>O003</td>
+                                <td>C001</td>
+                                <td>800</td>
+                                <td>15</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念说明：</strong>现在所有约束都可以通过域约束（数据类型和范围）和键约束（主键、外键）来保证，运费计算逻辑移到应用层。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第六范式 -->
+            <div id="6nf" class="section">
+                <h2>第六范式 (6NF)</h2>
+                
+                <div class="definition-box">
+                    <h3>定义</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>满足5NF</li>
+                        <li>处理时态数据和历史数据</li>
+                        <li>每个表最多包含一个非键属性（极度分解）</li>
+                        <li>主要用于时态数据库和数据仓库</li>
+                    </ul>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab(this, '6nf-violate')">❌ 违反6NF</button>
+                    <button class="tab" onclick="showTab(this, '6nf-comply')">✅ 符合6NF</button>
+                </div>
+
+                <div id="6nf-violate" class="tab-content active">
+                    <div class="problem-box">
+                        <strong>问题：</strong>产品的多个属性可能在不同时间点独立变化，但都存储在同一个表中
+                        <br><strong>时态依赖：</strong>价格、库存、描述等属性各自有不同的变化频率
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID<br><code>[主键]</code></th>
+                                <th>生效日期<br><code>[主键]</code></th>
+                                <th>产品名称</th>
+                                <th>价格<br><code>[时态依赖]</code></th>
+                                <th>库存<br><code>[时态依赖]</code></th>
+                                <th>产品描述<br><code>[时态依赖]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-01-01</td>
+                                <td>iPhone 15</td>
+                                <td>7999</td>
+                                <td>100</td>
+                                <td>最新款iPhone</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-02-01</td>
+                                <td>iPhone 15</td>
+                                <td>7999</td>
+                                <td>80</td>
+                                <td>最新款iPhone</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-03-01</td>
+                                <td>iPhone 15</td>
+                                <td>7599</td>
+                                <td>80</td>
+                                <td>热销iPhone</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念分析：</strong>价格、库存、描述各自独立变化，但必须复制所有属性来记录任何一个属性的变化，造成冗余。
+                    </div>
+                </div>
+
+                <div id="6nf-comply" class="tab-content">
+                    <div class="solution-box">
+                        <strong>解决方案：</strong>将每个可独立变化的属性分离到独立的时态表中
+                    </div>
+                    
+                    <h4>产品基本信息表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID<br><code>[主键]</code></th>
+                                <th>产品名称<br><code>[稳定属性]</code></th>
+                                <th>创建日期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>iPhone 15</td>
+                                <td>2024-01-01</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>产品价格历史表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID<br><code>[主键]</code></th>
+                                <th>生效日期<br><code>[主键]</code></th>
+                                <th>价格<br><code>[单一非键属性]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-01-01</td>
+                                <td>7999</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-03-01</td>
+                                <td>7599</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>产品库存历史表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID<br><code>[主键]</code></th>
+                                <th>记录时间<br><code>[主键]</code></th>
+                                <th>库存量<br><code>[单一非键属性]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-01-01 00:00</td>
+                                <td>100</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-02-01 00:00</td>
+                                <td>80</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>产品描述历史表</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>产品ID<br><code>[主键]</code></th>
+                                <th>更新日期<br><code>[主键]</code></th>
+                                <th>产品描述<br><code>[单一非键属性]</code></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-01-01</td>
+                                <td>最新款iPhone</td>
+                            </tr>
+                            <tr>
+                                <td>P001</td>
+                                <td>2024-03-01</td>
+                                <td>热销iPhone</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">
+                        <strong>概念说明：</strong>每个表都满足"一个键+一个非键属性"的结构，实现了最大程度的分解。每个属性的变化历史独立记录，消除了时态冗余。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实践建议 -->
+            <div id="practice" class="section">
+                <h2>实践建议</h2>
+                
+                <div class="definition-box">
+                    <h3>🎯 核心原则</h3>
+                    <p><strong>大多数情况下，达到3NF就足够了</strong></p>
+                    <p>过度规范化可能导致：</p>
+                    <ul style="margin-left: 20px;">
+                        <li>查询需要大量JOIN操作</li>
+                        <li>性能下降</li>
+                        <li>代码复杂度增加</li>
+                    </ul>
+                </div>
+
+                <div class="note">
+                    <h3>⚖️ 规范化 vs 反规范化权衡</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>场景</th>
+                                <th>建议</th>
+                                <th>原因</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>OLTP系统</td>
+                                <td>高度规范化(3NF/BCNF)</td>
+                                <td>保证数据一致性，减少异常</td>
+                            </tr>
+                            <tr>
+                                <td>数据仓库/OLAP</td>
+                                <td>适度反规范化</td>
+                                <td>提高查询性能，减少JOIN</td>
+                            </tr>
+                            <tr>
+                                <td>报表系统</td>
+                                <td>反规范化</td>
+                                <td>快速生成报表</td>
+                            </tr>
+                            <tr>
+                                <td>缓存表</td>
+                                <td>完全反规范化</td>
+                                <td>极致的读取性能</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="solution-box">
+                    <h3>✅ 最佳实践</h3>
+                    <ol style="margin-left: 20px;">
+                        <li><strong>先规范化，后优化</strong>：先设计到3NF，然后根据性能需求选择性反规范化</li>
+                        <li><strong>使用索引</strong>：合理的索引可以大幅提升JOIN性能</li>
+                        <li><strong>物化视图</strong>：对于复杂查询，考虑使用物化视图</li>
+                        <li><strong>读写分离</strong>：写库高度规范化，读库适度反规范化</li>
+                        <li><strong>定期评估</strong>：随着业务发展，定期评估和调整数据库设计</li>
+                    </ol>
+                </div>
+
+                <div class="problem-box">
+                    <h3>⚠️ 常见误区</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>盲目追求高级范式，忽视实际性能需求</li>
+                        <li>完全不做规范化，导致数据冗余和异常</li>
+                        <li>在OLAP场景使用高度规范化设计</li>
+                        <li>忽视业务场景，机械套用范式规则</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            // 隐藏所有section
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // 显示选中的section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // 更新导航按钮状态
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function showTab(tabElement, contentId) {
+            // 获取当前tab组
+            const tabGroup = tabElement.parentElement;
+            const section = tabGroup.parentElement;
+            
+            // 移除当前组所有tab的active类
+            tabGroup.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 添加active类到点击的tab
+            tabElement.classList.add('active');
+            
+            // 隐藏当前section下所有tab-content
+            section.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 显示对应的content
+            document.getElementById(contentId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
