@@ -8,298 +8,73 @@
     <!-- KaTeX CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     
-    <!-- KaTeX JS -->
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
             min-height: 100vh;
             padding: 24px;
         }
         
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1280px; margin: 0 auto; }
+        .card { background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 32px; margin-bottom: 24px; }
+        .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        h1 { font-size: 30px; font-weight: bold; color: #1f2937; }
+        h2 { font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 16px; }
+        h3 { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 12px; }
         
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            padding: 32px;
-            margin-bottom: 24px;
-        }
+        .formula-section { background: #eef2ff; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .formula-title { font-size: 20px; font-weight: 600; color: #312e81; margin-bottom: 16px; }
+        .formula-box { background: white; padding: 16px; border-radius: 8px; border-left: 4px solid #6366f1; margin-bottom: 16px; }
+        .formula-content { background: #f9fafb; padding: 16px; border-radius: 8px; text-align: center; margin: 8px 0; }
         
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px; }
         
-        .header-icon {
-            font-size: 32px;
-        }
+        label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px; }
+        input { width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+        input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
         
-        h1 {
-            font-size: 30px;
-            font-weight: bold;
-            color: #1f2937;
-        }
-        
-        h2 {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 16px;
-        }
-        
-        h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 12px;
-        }
-        
-        .formula-section {
-            background: #eef2ff;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .formula-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #312e81;
-            margin-bottom: 16px;
-        }
-        
-        .formula-box {
-            background: white;
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid #6366f1;
-            margin-bottom: 16px;
-        }
-        
-        .formula-content {
-            background: #f9fafb;
-            padding: 16px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 8px 0;
-        }
-        
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .grid-4 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        
-        .stat-card {
-            border-radius: 8px;
-            padding: 16px;
-            color: white;
-        }
-        
+        .stat-card { border-radius: 8px; padding: 16px; color: white; }
         .stat-card-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
         .stat-card-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
         .stat-card-orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
         .stat-card-purple { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: bold; }
+        .stat-extra { font-size: 12px; opacity: 0.75; margin-top: 4px; }
         
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 4px;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead { background: #f3f4f6; }
+        th { padding: 12px 16px; text-align: left; font-weight: 600; }
+        th:not(:first-child), td:not(:first-child) { text-align: right; }
+        td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+        tbody tr:hover { background: #f9fafb; }
         
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-        }
+        .info-box { padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .info-box-blue { background: #eff6ff; border-left: 4px solid #3b82f6; }
+        .info-box-amber { background: #fffbeb; border-left: 4px solid #f59e0b; }
+        .info-box-red { background: #fef2f2; border-left: 4px solid #ef4444; }
+        .info-box-green { background: #f0fdf4; border-left: 4px solid #10b981; }
+        .info-box-purple { background: #faf5ff; border-left: 4px solid #a855f7; }
         
-        .stat-extra {
-            font-size: 12px;
-            opacity: 0.75;
-            margin-top: 4px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        
-        thead {
-            background: #f3f4f6;
-        }
-        
-        th {
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-        }
-        
-        th:not(:first-child) {
-            text-align: right;
-        }
-        
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        td:not(:first-child) {
-            text-align: right;
-        }
-        
-        tbody tr:hover {
-            background: #f9fafb;
-        }
-        
-        .info-box {
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-        
-        .info-box-blue {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-        }
-        
-        .info-box-amber {
-            background: #fffbeb;
-            border-left: 4px solid #f59e0b;
-        }
-        
-        .info-box-red {
-            background: #fef2f2;
-            border-left: 4px solid #ef4444;
-        }
-        
-        .info-box-green {
-            background: #f0fdf4;
-            border-left: 4px solid #10b981;
-        }
-        
-        .info-box-purple {
-            background: #faf5ff;
-            border-left: 4px solid #a855f7;
-        }
-        
-        .border-card {
-            background: white;
-            padding: 16px;
-            border-radius: 8px;
-            border: 2px solid;
-        }
-        
+        .border-card { background: white; padding: 16px; border-radius: 8px; border: 2px solid; }
         .border-blue { border-color: #93c5fd; }
         .border-green { border-color: #86efac; }
         .border-purple { border-color: #d8b4fe; }
         
-        .comparison-card {
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid;
-        }
+        .comparison-card { padding: 16px; border-radius: 8px; border-left: 4px solid; }
+        .comparison-green { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: #10b981; }
+        .comparison-yellow { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #f59e0b; }
+        .comparison-red { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color: #ef4444; }
         
-        .comparison-green {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-color: #10b981;
-        }
-        
-        .comparison-yellow {
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-            border-color: #f59e0b;
-        }
-        
-        .comparison-red {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-color: #ef4444;
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 450px;
-            margin-bottom: 24px;
-        }
-        
-        .chart-container-small {
-            position: relative;
-            height: 350px;
-            margin-bottom: 24px;
-        }
-        
-        .chart-container-medium {
-            position: relative;
-            height: 400px;
-            margin-bottom: 24px;
-        }
-        
-        ul {
-            list-style: none;
-        }
-        
-        li {
-            margin-bottom: 8px;
-        }
+        .chart-container { width: 100%; height: 450px; margin-bottom: 24px; position: relative; }
+        .chart-container-small { width: 100%; height: 350px; margin-bottom: 24px; position: relative; }
+        .chart-container-medium { width: 100%; height: 400px; margin-bottom: 24px; position: relative; }
+        canvas { width: 100%; height: 100%; }
         
         .text-sm { font-size: 14px; }
         .text-xs { font-size: 12px; }
@@ -309,165 +84,22 @@
         .font-bold { font-weight: 700; }
         .font-mono { font-family: 'Courier New', monospace; }
         
+        ul { list-style: none; }
+        li { margin-bottom: 8px; display: flex; align-items: start; gap: 8px; }
+        
         @media (max-width: 768px) {
             body { padding: 12px; }
             .card { padding: 16px; }
             h1 { font-size: 24px; }
-            h2 { font-size: 20px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <div class="header-icon">🧮</div>
-                <h1>等额本息还款计算器</h1>
-            </div>
-            
-            <div class="formula-section">
-                <div class="formula-title">数学模型（离散函数）</div>
-                <div id="formulas"></div>
-            </div>
-            
-            <div class="grid-3">
-                <div class="input-group">
-                    <label>贷款本金（元）</label>
-                    <input type="number" id="principal" value="1000000">
-                </div>
-                <div class="input-group">
-                    <label>年利率（%）</label>
-                    <input type="number" step="0.01" id="annualRate" value="5.0">
-                </div>
-                <div class="input-group">
-                    <label>贷款月数</label>
-                    <input type="number" id="months" value="360">
-                </div>
-            </div>
-            
-            <div class="grid-4">
-                <div class="stat-card stat-card-blue">
-                    <div class="stat-label">每月还款额</div>
-                    <div class="stat-value" id="monthlyPayment">¥0.00</div>
-                </div>
-                <div class="stat-card stat-card-green">
-                    <div class="stat-label">总还款额</div>
-                    <div class="stat-value" id="totalPayment">¥0.00</div>
-                </div>
-                <div class="stat-card stat-card-orange">
-                    <div class="stat-label">总利息</div>
-                    <div class="stat-value" id="totalInterest">¥0.00</div>
-                </div>
-                <div class="stat-card stat-card-purple">
-                    <div class="stat-label">最后一期还款</div>
-                    <div class="stat-value" id="lastPayment">¥0.00</div>
-                    <div class="stat-extra" id="lastPaymentDiff">差异: ¥0.00</div>
-                </div>
-            </div>
-            
-            <div>
-                <h3>还款明细（前12期）</h3>
-                <div style="overflow-x: auto;">
-                    <table id="scheduleTable"></table>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>离散函数 vs 连续近似</h2>
-            <div class="info-box info-box-blue">
-                <p class="text-sm font-semibold" style="margin-bottom: 8px;" id="chartDescription"></p>
-                <div class="text-xs text-gray-600">
-                    <p>• 橙色实线：离散公式（虽然数学上可对实数n求值，但实际只在整数点有意义）</p>
-                    <p>• 蓝色虚线：指数近似 (1+α)^n ≈ e^(αn)</p>
-                    <p>• 绿色点线：连续还款模型</p>
-                    <p>• 橙色散点：实际应用中的离散点（整数月）</p>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="comparisonChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>指数近似的相对误差</h2>
-            <div class="info-box info-box-amber">
-                <p class="text-sm">相对误差 = (离散公式 - 指数近似) / 离散公式 × 100%</p>
-                <p class="text-xs text-gray-600" style="margin-top: 8px;">
-                    误差非常小（小于 0.3%），说明指数近似 e^(αn) 非常准确，这证明了等额本息公式与自然对数底 e 的深刻联系。
-                </p>
-            </div>
-            <div class="chart-container-small">
-                <canvas id="errorChart"></canvas>
-            </div>
-            
-            <div style="margin-top: 24px;">
-                <h3>关键期数的数值对比</h3>
-                <div style="overflow-x: auto;">
-                    <table id="comparisonTable"></table>
-                </div>
-            </div>
-            
-            <div class="info-box info-box-green" style="margin-top: 24px;">
-                <p class="text-sm font-semibold" style="margin-bottom: 8px;">✅ 结论</p>
-                <ul class="text-sm text-gray-700">
-                    <li>• 等额本息公式虽然在实际中是<strong>离散的</strong>（整数月），但数学上是关于实数 n 的<strong>连续函数</strong></li>
-                    <li>• 当 α 较小时，(1+α)^n ≈ e^(αn) 的近似非常精确（误差小于 0.3%）</li>
-                    <li>• 这说明按揭贷款公式与自然对数底 e 有<strong>深刻的内在联系</strong></li>
-                    <li>• 连续还款模型与指数近似在数值上几乎一致，证明了离散复利与连续复利的等价性</li>
-                </ul>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>边际效益递减分析：为何长期贷款成为"永续债"</h2>
-            <div class="info-box info-box-red">
-                <p class="font-semibold text-sm" style="margin-bottom: 8px;">核心洞察</p>
-                <p class="text-sm text-gray-700">
-                    从函数曲线可以看出，随着贷款期限增加，<strong>每增加一年期限，月供减少的幅度越来越小</strong>。
-                    这意味着：延长贷款期限的边际收益递减，超过30年后几乎没有实际意义，反而使贷款成为"永续债"。
-                </p>
-            </div>
-            
-            <div class="grid-2">
-                <div class="info-box info-box-blue">
-                    <h3 style="color: #1e40af;">变化率对比（单位本金 P=1）</h3>
-                    <div id="derivativeStats"></div>
-                </div>
-                
-                <div class="info-box info-box-amber">
-                    <h3 style="color: #92400e;">实际含义解读</h3>
-                    <ul class="text-sm text-gray-700">
-                        <li style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <span style="color: #059669; font-weight: bold;">✓</span>
-                            <span><strong>5-15年：</strong>每增加1年期限，月供显著降低，值得考虑</span>
-                        </li>
-                        <li style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <span style="color: #d97706; font-weight: bold;">▲</span>
-                            <span><strong>15-30年：</strong>月供继续降低，但幅度开始减缓</span>
-                        </li>
-                        <li style="display: flex; gap: 8px;">
-                            <span style="color: #dc2626; font-weight: bold;">✗</span>
-                            <span><strong>30年以上：</strong>月供几乎不再降低，但总利息持续激增，成为"永续债"</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="chart-container-medium">
-                <canvas id="derivativeChart"></canvas>
-            </div>
-            
-            <div class="grid-3" style="margin-top: 24px;">
-                <div class="comparison-card comparison-green" id="comparison1020"></div>
-                <div class="comparison-card comparison-yellow" id="comparison2030"></div>
-                <div class="comparison-card comparison-red" id="comparison3040"></div>
-            </div>
-            
-            <div class="info-box info-box-purple" style="margin-top: 24px;" id="mathExplanation"></div>
-        </div>
-    </div>
+    <div id="app"></div>
 
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
     <script>
         // 计算函数
         function calculateDiscretePayment(P, yearRate, n) {
@@ -492,522 +124,694 @@
         }
 
         // 渲染LaTeX
-        function renderLatex(element, latex, displayMode = false) {
+        function renderLatex(latex, displayMode = false) {
+            const span = document.createElement('span');
             if (window.katex) {
-                katex.render(latex, element, { throwOnError: false, displayMode });
-            } else {
-                element.textContent = latex;
+                try {
+                    katex.render(latex, span, { throwOnError: false, displayMode });
+                } catch (e) {
+                    span.textContent = latex;
+                }
+            }
+            return span.outerHTML;
+        }
+
+        // SVG图表绘制
+        function createLineChart(containerId, data, config) {
+            const container = document.getElementById(containerId);
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = { top: 40, right: 80, bottom: 80, left: 80 };
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+
+            let svg = container.querySelector('svg');
+            if (svg) svg.remove();
+
+            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', width);
+            svg.setAttribute('height', height);
+            container.appendChild(svg);
+
+            // 找到数据范围
+            const xValues = data.map(d => d[config.xKey]);
+            const xMin = config.xMin !== undefined ? config.xMin : Math.min(...xValues);
+            const xMax = config.xMax !== undefined ? config.xMax : Math.max(...xValues);
+            
+            let yMin = Infinity, yMax = -Infinity;
+            config.lines.forEach(line => {
+                data.forEach(d => {
+                    if (d[line.key] !== undefined && d[line.key] !== null && isFinite(d[line.key])) {
+                        yMin = Math.min(yMin, d[line.key]);
+                        yMax = Math.max(yMax, d[line.key]);
+                    }
+                });
+            });
+            
+            if (config.yMin !== undefined) yMin = config.yMin;
+            if (config.yMax !== undefined) yMax = config.yMax;
+
+            // 坐标转换
+            const scaleX = (x) => margin.left + ((x - xMin) / (xMax - xMin)) * chartWidth;
+            const scaleY = (y) => margin.top + chartHeight - ((y - yMin) / (yMax - yMin)) * chartHeight;
+
+            // 绘制网格
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            
+            // X轴网格
+            for (let i = 0; i <= 10; i++) {
+                const x = xMin + (xMax - xMin) * i / 10;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', scaleX(x));
+                line.setAttribute('y1', margin.top);
+                line.setAttribute('x2', scaleX(x));
+                line.setAttribute('y2', margin.top + chartHeight);
+                line.setAttribute('stroke', '#e5e7eb');
+                line.setAttribute('stroke-dasharray', '3,3');
+                g.appendChild(line);
+            }
+
+            // Y轴网格
+            for (let i = 0; i <= 10; i++) {
+                const y = yMin + (yMax - yMin) * i / 10;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', scaleY(y));
+                line.setAttribute('x2', margin.left + chartWidth);
+                line.setAttribute('y2', scaleY(y));
+                line.setAttribute('stroke', '#e5e7eb');
+                line.setAttribute('stroke-dasharray', '3,3');
+                g.appendChild(line);
+            }
+            svg.appendChild(g);
+
+            // 绘制参考线
+            if (config.referenceLines) {
+                config.referenceLines.forEach(ref => {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    if (ref.type === 'horizontal') {
+                        line.setAttribute('x1', margin.left);
+                        line.setAttribute('y1', scaleY(ref.value));
+                        line.setAttribute('x2', margin.left + chartWidth);
+                        line.setAttribute('y2', scaleY(ref.value));
+                    } else if (ref.type === 'vertical') {
+                        line.setAttribute('x1', scaleX(ref.value));
+                        line.setAttribute('y1', margin.top);
+                        line.setAttribute('x2', scaleX(ref.value));
+                        line.setAttribute('y2', margin.top + chartHeight);
+                    }
+                    line.setAttribute('stroke', ref.color || '#ef4444');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('stroke-dasharray', '5,5');
+                    svg.appendChild(line);
+
+                    if (ref.label) {
+                        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        if (ref.type === 'horizontal') {
+                            text.setAttribute('x', margin.left + chartWidth - 5);
+                            text.setAttribute('y', scaleY(ref.value) - 5);
+                        } else {
+                            text.setAttribute('x', scaleX(ref.value) + 5);
+                            text.setAttribute('y', margin.top + 15);
+                        }
+                        text.setAttribute('fill', ref.color || '#ef4444');
+                        text.setAttribute('font-size', '11');
+                        text.textContent = ref.label;
+                        svg.appendChild(text);
+                    }
+                });
+            }
+
+            // 绘制数据线
+            config.lines.forEach(lineConfig => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                let d = '';
+                data.forEach((point, i) => {
+                    if (point[lineConfig.key] !== undefined && isFinite(point[lineConfig.key])) {
+                        const x = scaleX(point[config.xKey]);
+                        const y = scaleY(point[lineConfig.key]);
+                        d += (i === 0 ? 'M' : 'L') + x + ',' + y + ' ';
+                    }
+                });
+                path.setAttribute('d', d);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', lineConfig.color);
+                path.setAttribute('stroke-width', lineConfig.width || 2);
+                if (lineConfig.dash) path.setAttribute('stroke-dasharray', lineConfig.dash);
+                svg.appendChild(path);
+            });
+
+            // 绘制散点
+            if (config.scatter) {
+                config.scatter.data.forEach(point => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', scaleX(point[config.xKey]));
+                    circle.setAttribute('cy', scaleY(point[config.scatter.key]));
+                    circle.setAttribute('r', config.scatter.radius || 3);
+                    circle.setAttribute('fill', config.scatter.color);
+                    svg.appendChild(circle);
+                });
+            }
+
+            // 绘制坐标轴
+            const axisX = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            axisX.setAttribute('x1', margin.left);
+            axisX.setAttribute('y1', margin.top + chartHeight);
+            axisX.setAttribute('x2', margin.left + chartWidth);
+            axisX.setAttribute('y2', margin.top + chartHeight);
+            axisX.setAttribute('stroke', '#000');
+            axisX.setAttribute('stroke-width', '2');
+            svg.appendChild(axisX);
+
+            const axisY = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            axisY.setAttribute('x1', margin.left);
+            axisY.setAttribute('y1', margin.top);
+            axisY.setAttribute('x2', margin.left);
+            axisY.setAttribute('y2', margin.top + chartHeight);
+            axisY.setAttribute('stroke', '#000');
+            axisY.setAttribute('stroke-width', '2');
+            svg.appendChild(axisY);
+
+            // X轴标签
+            for (let i = 0; i <= 5; i++) {
+                const x = xMin + (xMax - xMin) * i / 5;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', scaleX(x));
+                text.setAttribute('y', margin.top + chartHeight + 20);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '12');
+                text.textContent = x.toFixed(0);
+                svg.appendChild(text);
+            }
+
+            // Y轴标签
+            for (let i = 0; i <= 5; i++) {
+                const y = yMin + (yMax - yMin) * i / 5;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 10);
+                text.setAttribute('y', scaleY(y) + 4);
+                text.setAttribute('text-anchor', 'end');
+                text.setAttribute('font-size', '12');
+                text.textContent = y.toFixed(6);
+                svg.appendChild(text);
+            }
+
+            // 轴标题
+            if (config.xLabel) {
+                const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                xLabel.setAttribute('x', margin.left + chartWidth / 2);
+                xLabel.setAttribute('y', height - 20);
+                xLabel.setAttribute('text-anchor', 'middle');
+                xLabel.setAttribute('font-size', '14');
+                xLabel.textContent = config.xLabel;
+                svg.appendChild(xLabel);
+            }
+
+            if (config.yLabel) {
+                const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                yLabel.setAttribute('transform', `translate(20, ${margin.top + chartHeight / 2}) rotate(-90)`);
+                yLabel.setAttribute('text-anchor', 'middle');
+                yLabel.setAttribute('font-size', '14');
+                yLabel.textContent = config.yLabel;
+                svg.appendChild(yLabel);
+            }
+
+            // 图例
+            if (config.lines.length > 0) {
+                const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                config.lines.forEach((line, i) => {
+                    const legendLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    legendLine.setAttribute('x1', margin.left + chartWidth - 150);
+                    legendLine.setAttribute('y1', 20 + i * 20);
+                    legendLine.setAttribute('x2', margin.left + chartWidth - 120);
+                    legendLine.setAttribute('y2', 20 + i * 20);
+                    legendLine.setAttribute('stroke', line.color);
+                    legendLine.setAttribute('stroke-width', line.width || 2);
+                    if (line.dash) legendLine.setAttribute('stroke-dasharray', line.dash);
+                    legend.appendChild(legendLine);
+
+                    const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    legendText.setAttribute('x', margin.left + chartWidth - 115);
+                    legendText.setAttribute('y', 24 + i * 20);
+                    legendText.setAttribute('font-size', '12');
+                    legendText.textContent = line.name;
+                    legend.appendChild(legendText);
+                });
+                svg.appendChild(legend);
             }
         }
 
-        // 全局变量
-        let comparisonChart, errorChart, derivativeChart;
+        // 主应用
+        class App {
+            constructor() {
+                this.principal = 1000000;
+                this.annualRate = 5.0;
+                this.months = 360;
+                this.init();
+            }
 
-        // 初始化
-        function init() {
-            renderFormulas();
-            calculate();
-            
-            // 添加事件监听
-            document.getElementById('principal').addEventListener('input', calculate);
-            document.getElementById('annualRate').addEventListener('input', calculate);
-            document.getElementById('months').addEventListener('input', calculate);
-        }
+            init() {
+                this.render();
+                this.attachEvents();
+                this.calculate();
+            }
 
-        function renderFormulas() {
-            const container = document.getElementById('formulas');
-            container.innerHTML = `
-                <div class="formula-box">
-                    <p class="text-sm text-gray-600" style="margin-bottom: 8px;">等额本息月供公式（离散）：</p>
-                    <div class="formula-content" id="mainFormula"></div>
-                    <div class="text-sm text-gray-600" style="margin-top: 12px;">
-                        <p>其中：<span id="vars"></span></p>
-                        <p style="color: #1d4ed8; font-weight: 500; margin-top: 8px;">
-                            注意：虽然数学上该式对实数n有定义，但实际应用中n必须为正整数（月数）
+            render() {
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="container">
+                        <div class="card">
+                            <div class="header">
+                                <div style="font-size: 32px;">🧮</div>
+                                <h1>等额本息还款计算器</h1>
+                            </div>
+                            
+                            <div class="formula-section">
+                                <div class="formula-title">数学模型（离散函数）</div>
+                                <div class="formula-box">
+                                    <p class="text-sm text-gray-600" style="margin-bottom: 8px;">等额本息月供公式（离散）：</p>
+                                    <div class="formula-content" id="mainFormula"></div>
+                                    <div style="margin-top: 12px; font-size: 14px; color: #4b5563;">
+                                        <p>其中：<span id="varsFormula"></span></p>
+                                        <p style="color: #1d4ed8; font-weight: 500; margin-top: 8px;">
+                                            注意：虽然数学上该式对实数n有定义，但实际应用中n必须为正整数（月数）
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="grid-3">
+                                    <div class="border-card border-blue">
+                                        <p class="font-semibold" style="color: #1e40af; margin-bottom: 8px;">指数近似：</p>
+                                        <div style="text-align: center;" id="expFormula"></div>
+                                        <p class="text-gray-600" style="margin-top: 8px; text-align: center;">当α较小时</p>
+                                    </div>
+                                    <div class="border-card border-green">
+                                        <p class="font-semibold" style="color: #047857; margin-bottom: 8px;">连续还款模型：</p>
+                                        <div style="text-align: center;" id="contFormula"></div>
+                                        <p class="text-gray-600" style="margin-top: 8px; text-align: center;">理想化连续偿还</p>
+                                    </div>
+                                    <div class="border-card border-purple">
+                                        <p class="font-semibold" style="color: #7c3aed; margin-bottom: 8px;">渐近线：</p>
+                                        <div style="text-align: center;" id="asymFormula"></div>
+                                        <p class="text-gray-600" style="margin-top: 8px; text-align: center;">永续年金（只还利息）</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid-3">
+                                <div>
+                                    <label>贷款本金（元）</label>
+                                    <input type="number" id="principal" value="${this.principal}">
+                                </div>
+                                <div>
+                                    <label>年利率（%）</label>
+                                    <input type="number" step="0.01" id="annualRate" value="${this.annualRate}">
+                                </div>
+                                <div>
+                                    <label>贷款月数</label>
+                                    <input type="number" id="months" value="${this.months}">
+                                </div>
+                            </div>
+                            
+                            <div class="grid-4">
+                                <div class="stat-card stat-card-blue">
+                                    <div class="stat-label">每月还款额</div>
+                                    <div class="stat-value" id="monthlyPayment">¥0.00</div>
+                                </div>
+                                <div class="stat-card stat-card-green">
+                                    <div class="stat-label">总还款额</div>
+                                    <div class="stat-value" id="totalPayment">¥0.00</div>
+                                </div>
+                                <div class="stat-card stat-card-orange">
+                                    <div class="stat-label">总利息</div>
+                                    <div class="stat-value" id="totalInterest">¥0.00</div>
+                                </div>
+                                <div class="stat-card stat-card-purple">
+                                    <div class="stat-label">最后一期还款</div>
+                                    <div class="stat-value" id="lastPayment">¥0.00</div>
+                                    <div class="stat-extra" id="lastPaymentDiff">差异: ¥0.00</div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3>还款明细（前12期）</h3>
+                                <div style="overflow-x: auto;">
+                                    <table id="scheduleTable"></table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h2>离散函数 vs 连续近似</h2>
+                            <div class="info-box info-box-blue">
+                                <p class="text-sm font-semibold" style="margin-bottom: 8px;" id="chartDesc"></p>
+                                <div class="text-xs text-gray-600">
+                                    <p>• 橙色实线：离散公式（虽然数学上可对实数n求值，但实际只在整数点有意义）</p>
+                                    <p>• 蓝色虚线：指数近似 (1+α)^n ≈ e^(αn)</p>
+                                    <p>• 绿色点线：连续还款模型</p>
+                                    <p>• 橙色散点：实际应用中的离散点（整数月）</p>
+                                </div>
+                            </div>
+                            <div class="chart-container" id="chart1"></div>
+                        </div>
+                        
+                        <div class="card">
+                            <h2>指数近似的相对误差</h2>
+                            <div class="info-box info-box-amber">
+                                <p class="text-sm">相对误差 = (离散公式 - 指数近似) / 离散公式 × 100%</p>
+                                <p class="text-xs text-gray-600" style="margin-top: 8px;">
+                                    误差非常小（小于 0.3%），说明指数近似 e^(αn) 非常准确，这证明了等额本息公式与自然对数底 e 的深刻联系。
+                                </p>
+                            </div>
+                            <div class="chart-container-small" id="chart2"></div>
+                            
+                            <div style="margin-top: 24px;">
+                                <h3>关键期数的数值对比</h3>
+                                <div style="overflow-x: auto;">
+                                    <table id="comparisonTable"></table>
+                                </div>
+                            </div>
+                            
+                            <div class="info-box info-box-green" style="margin-top: 24px;">
+                                <p class="text-sm font-semibold" style="margin-bottom: 8px;">✅ 结论</p>
+                                <ul class="text-sm text-gray-700">
+                                    <li>• 等额本息公式虽然在实际中是<strong>离散的</strong>（整数月），但数学上是关于实数 n 的<strong>连续函数</strong></li>
+                                    <li>• 当 α 较小时，(1+α)^n ≈ e^(αn) 的近似非常精确（误差小于 0.3%）</li>
+                                    <li>• 这说明按揭贷款公式与自然对数底 e 有<strong>深刻的内在联系</strong></li>
+                                    <li>• 连续还款模型与指数近似在数值上几乎一致，证明了离散复利与连续复利的等价性</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h2>边际效益递减分析：为何长期贷款成为"永续债"</h2>
+                            <div class="info-box info-box-red">
+                                <p class="font-semibold text-sm" style="margin-bottom: 8px;">核心洞察</p>
+                                <p class="text-sm text-gray-700">
+                                    从函数曲线可以看出，随着贷款期限增加，<strong>每增加一年期限，月供减少的幅度越来越小</strong>。
+                                    这意味着：延长贷款期限的边际收益递减，超过30年后几乎没有实际意义，反而使贷款成为"永续债"。
+                                </p>
+                            </div>
+                            
+                            <div class="grid-2">
+                                <div class="info-box info-box-blue">
+                                    <h3 style="color: #1e40af;">变化率对比（单位本金 P=1）</h3>
+                                    <div id="derivativeStats"></div>
+                                </div>
+                                
+                                <div class="info-box info-box-amber">
+                                    <h3 style="color: #92400e;">实际含义解读</h3>
+                                    <ul class="text-sm text-gray-700">
+                                        <li><span style="color: #059669; font-weight: bold;">✓</span><span><strong>5-15年：</strong>每增加1年期限，月供显著降低，值得考虑</span></li>
+                                        <li><span style="color: #d97706; font-weight: bold;">▲</span><span><strong>15-30年：</strong>月供继续降低，但幅度开始减缓</span></li>
+                                        <li><span style="color: #dc2626; font-weight: bold;">✗</span><span><strong>30年以上：</strong>月供几乎不再降低，但总利息持续激增，成为"永续债"</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="chart-container-medium" id="chart3"></div>
+                            
+                            <div class="grid-3" style="margin-top: 24px;">
+                                <div class="comparison-card comparison-green" id="comp1020"></div>
+                                <div class="comparison-card comparison-yellow" id="comp2030"></div>
+                                <div class="comparison-card comparison-red" id="comp3040"></div>
+                            </div>
+                            
+                            <div class="info-box info-box-purple" style="margin-top: 24px;" id="mathExpl"></div>
+                        </div>
+                    </div>
+                `;
+
+                // 渲染LaTeX公式
+                document.getElementById('mainFormula').innerHTML = renderLatex('M = P \\cdot \\frac{\\alpha (1+\\alpha)^n}{(1+\\alpha)^n - 1}', true);
+                document.getElementById('varsFormula').innerHTML = 
+                    renderLatex('P') + ' = 本金，' + 
+                    renderLatex('\\alpha = r/12') + ' = 月利率，' + 
+                    renderLatex('n') + ' = 还款月数（整数）';
+                document.getElementById('expFormula').innerHTML = renderLatex('(1+\\alpha)^n \\approx e^{\\alpha n}', true);
+                document.getElementById('contFormula').innerHTML = renderLatex('M_c = P \\cdot \\frac{\\alpha}{1 - e^{-\\alpha n}}', true);
+                document.getElementById('asymFormula').innerHTML = renderLatex('\\lim_{n \\to \\infty} M = P \\cdot \\alpha', true);
+            }
+
+            attachEvents() {
+                document.getElementById('principal').addEventListener('input', () => this.calculate());
+                document.getElementById('annualRate').addEventListener('input', () => this.calculate());
+                document.getElementById('months').addEventListener('input', () => this.calculate());
+            }
+
+            calculate() {
+                this.principal = Number(document.getElementById('principal').value);
+                this.annualRate = Number(document.getElementById('annualRate').value);
+                this.months = Number(document.getElementById('months').value);
+                
+                const alpha = this.annualRate / 100 / 12;
+                const monthlyPayment = calculateDiscretePayment(this.principal, this.annualRate, this.months);
+                const totalPayment = monthlyPayment * this.months;
+                const totalInterest = totalPayment - this.principal;
+                
+                const lastPeriodPrincipal = this.principal * Math.pow(1 + alpha, this.months - 1) - 
+                    monthlyPayment * (Math.pow(1 + alpha, this.months - 1) - 1) / alpha;
+                const lastPayment = lastPeriodPrincipal * (1 + alpha);
+                
+                document.getElementById('monthlyPayment').textContent = '¥' + monthlyPayment.toFixed(2);
+                document.getElementById('totalPayment').textContent = '¥' + totalPayment.toFixed(2);
+                document.getElementById('totalInterest').textContent = '¥' + totalInterest.toFixed(2);
+                document.getElementById('lastPayment').textContent = '¥' + lastPayment.toFixed(2);
+                document.getElementById('lastPaymentDiff').textContent = '差异: ¥' + (lastPayment - monthlyPayment).toFixed(2);
+                
+                this.generateScheduleTable();
+                this.generateCharts();
+                this.generateComparisonTable();
+                this.generateDerivativeStats();
+                this.generateComparisonCards();
+                this.generateMathExplanation();
+            }
+
+            generateScheduleTable() {
+                const alpha = this.annualRate / 100 / 12;
+                const M = calculateDiscretePayment(this.principal, this.annualRate, this.months);
+                let remainingPrincipal = this.principal;
+                
+                let html = '<thead><tr><th>期数</th><th>还款额</th><th>本金</th><th>利息</th><th>剩余本金</th></tr></thead><tbody>';
+                
+                for (let i = 1; i <= Math.min(12, this.months); i++) {
+                    const interestPayment = remainingPrincipal * alpha;
+                    let principalPayment = M - interestPayment;
+                    
+                    if (i === this.months) {
+                        principalPayment = remainingPrincipal;
+                        const actualPayment = principalPayment + interestPayment;
+                        html += `<tr><td>${i}</td><td>¥${actualPayment.toFixed(2)}</td><td>¥${principalPayment.toFixed(2)}</td><td>¥${interestPayment.toFixed(2)}</td><td>¥0.00</td></tr>`;
+                    } else {
+                        remainingPrincipal -= principalPayment;
+                        html += `<tr><td>${i}</td><td>¥${M.toFixed(2)}</td><td>¥${principalPayment.toFixed(2)}</td><td>¥${interestPayment.toFixed(2)}</td><td>¥${remainingPrincipal.toFixed(2)}</td></tr>`;
+                    }
+                }
+                
+                html += '</tbody>';
+                document.getElementById('scheduleTable').innerHTML = html;
+            }
+
+            generateCharts() {
+                const alpha = this.annualRate / 100 / 12;
+                document.getElementById('chartDesc').textContent = 
+                    `图表说明：本金标准化为 P=1，年利率 r=${this.annualRate}%（月利率 α=${alpha.toFixed(6)}）`;
+                
+                // 图表1：离散函数对比
+                const data1 = [];
+                for (let n = 0.5; n <= 400; n += 0.5) {
+                    data1.push({
+                        n: n,
+                        discrete: calculateDiscretePayment(1, this.annualRate, n),
+                        exponential: calculateExponentialApprox(1, this.annualRate, n),
+                        continuous: calculateContinuousPayment(1, this.annualRate, n)
+                    });
+                }
+                
+                const scatterData = [];
+                for (let n = 1; n <= 400; n += 6) {
+                    scatterData.push({
+                        n: n,
+                        payment: calculateDiscretePayment(1, this.annualRate, n)
+                    });
+                }
+                
+                createLineChart('chart1', data1, {
+                    xKey: 'n',
+                    xMin: 0,
+                    xMax: 400,
+                    yMin: 0,
+                    xLabel: '贷款期限 n (月)',
+                    yLabel: '月供额（单位本金）',
+                    lines: [
+                        { key: 'discrete', color: '#f97316', width: 2.5, name: '离散公式（实数n）' },
+                        { key: 'exponential', color: '#3b82f6', width: 2, dash: '5,5', name: '指数近似 e^(αn)' },
+                        { key: 'continuous', color: '#10b981', width: 1.5, dash: '3,3', name: '连续还款模型' }
+                    ],
+                    scatter: {
+                        data: scatterData,
+                        key: 'payment',
+                        color: '#f97316',
+                        radius: 3
+                    },
+                    referenceLines: [
+                        { type: 'horizontal', value: alpha, color: '#ef4444', label: `渐近线 M = α = ${alpha.toFixed(6)}` }
+                    ]
+                });
+                
+                // 图表2：相对误差
+                const data2 = [];
+                for (let n = 1; n <= 400; n += 1) {
+                    const discrete = calculateDiscretePayment(1, this.annualRate, n);
+                    const exponential = calculateExponentialApprox(1, this.annualRate, n);
+                    data2.push({
+                        n: n,
+                        error: ((discrete - exponential) / discrete) * 100
+                    });
+                }
+                
+                createLineChart('chart2', data2, {
+                    xKey: 'n',
+                    xLabel: '贷款期限 n (月)',
+                    yLabel: '相对误差 (%)',
+                    lines: [
+                        { key: 'error', color: '#f59e0b', width: 2, name: '相对误差' }
+                    ],
+                    referenceLines: [
+                        { type: 'horizontal', value: 0, color: '#666' }
+                    ]
+                });
+                
+                // 图表3：变化率
+                const data3 = [];
+                for (let years = 5; years <= 50; years += 1) {
+                    const n = years * 12;
+                    const M_current = calculateExponentialApprox(1, this.annualRate, n);
+                    const M_next = calculateExponentialApprox(1, this.annualRate, n + 12);
+                    data3.push({
+                        years: years,
+                        derivative: Math.abs((M_current - M_next) * 1000)
+                    });
+                }
+                
+                createLineChart('chart3', data3, {
+                    xKey: 'years',
+                    xLabel: '贷款期限（年）',
+                    yLabel: '每增加1年，月供减少额 (×1000)',
+                    lines: [
+                        { key: 'derivative', color: '#8b5cf6', width: 3, name: '变化率 |dM/d(年)|' }
+                    ],
+                    referenceLines: [
+                        { type: 'vertical', value: 30, color: '#ef4444', label: '30年分界线' }
+                    ]
+                });
+            }
+
+            generateComparisonTable() {
+                let html = '<thead><tr><th>期数 n</th><th>离散公式</th><th>指数近似</th><th>连续模型</th><th>相对误差</th></tr></thead><tbody>';
+                
+                [12, 60, 120, 240, 360].forEach(n => {
+                    const discrete = calculateDiscretePayment(1, this.annualRate, n);
+                    const exponential = calculateExponentialApprox(1, this.annualRate, n);
+                    const continuous = calculateContinuousPayment(1, this.annualRate, n);
+                    const error = ((discrete - exponential) / discrete * 100);
+                    
+                    html += `<tr>
+                        <td>${n} (${(n/12).toFixed(1)}年)</td>
+                        <td class="font-mono">${discrete.toFixed(6)}</td>
+                        <td class="font-mono">${exponential.toFixed(6)}</td>
+                        <td class="font-mono">${continuous.toFixed(6)}</td>
+                        <td class="font-mono" style="color: #ea580c;">${error.toFixed(4)}%</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody>';
+                document.getElementById('comparisonTable').innerHTML = html;
+            }
+
+            generateDerivativeStats() {
+                const yearlyData = [];
+                for (let years = 5; years <= 50; years += 1) {
+                    const n = years * 12;
+                    const M_current = calculateExponentialApprox(1, this.annualRate, n);
+                    const M_next = calculateExponentialApprox(1, this.annualRate, n + 12);
+                    yearlyData.push({
+                        years: years,
+                        derivative: Math.abs((M_current - M_next) * 1000)
+                    });
+                }
+                
+                const range1 = yearlyData.filter(d => d.years >= 5 && d.years <= 30);
+                const range2 = yearlyData.filter(d => d.years > 30);
+                const avgDerivative1 = range1.reduce((sum, d) => sum + d.derivative, 0) / range1.length;
+                const avgDerivative2 = range2.reduce((sum, d) => sum + d.derivative, 0) / range2.length;
+                const ratio = avgDerivative1 / avgDerivative2;
+                
+                document.getElementById('derivativeStats').innerHTML = `
+                    <div style="margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 4px; margin-bottom: 8px;">
+                            <span class="text-sm">5-30年平均变化率：</span>
+                            <span class="font-mono font-bold" style="color: #2563eb;">${avgDerivative1.toFixed(6)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 4px; margin-bottom: 8px;">
+                            <span class="text-sm">30-50年平均变化率：</span>
+                            <span class="font-mono font-bold" style="color: #ea580c;">${avgDerivative2.toFixed(6)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px; background: linear-gradient(to right, #fef3c7, #fde68a); border-radius: 4px; border: 1px solid #fbbf24;">
+                            <span class="font-semibold text-sm">衰减比例：</span>
+                            <span class="font-mono font-bold" style="color: #b91c1c;">${ratio.toFixed(2)}倍</span>
+                        </div>
+                        <p class="text-xs text-gray-600" style="margin-top: 12px;">
+                            前期变化率是后期的 <strong>${ratio.toFixed(1)}倍</strong>，说明前30年延长期限的效果远好于30年后。
                         </p>
                     </div>
-                </div>
-                <div class="grid-3">
-                    <div class="border-card border-blue">
-                        <p class="font-semibold" style="color: #1e40af; margin-bottom: 8px;">指数近似：</p>
-                        <div class="text-sm" style="text-align: center;">
-                            <div id="expApprox"></div>
-                            <p class="text-gray-600" style="margin-top: 8px;">当α较小时</p>
-                        </div>
-                    </div>
-                    <div class="border-card border-green">
-                        <p class="font-semibold" style="color: #047857; margin-bottom: 8px;">连续还款模型：</p>
-                        <div class="text-sm" style="text-align: center;">
-                            <div id="contModel"></div>
-                            <p class="text-gray-600" style="margin-top: 8px;">理想化连续偿还</p>
-                        </div>
-                    </div>
-                    <div class="border-card border-purple">
-                        <p class="font-semibold" style="color: #7c3aed; margin-bottom: 8px;">渐近线：</p>
-                        <div class="text-sm" style="text-align: center;">
-                            <div id="asymptote"></div>
-                            <p class="text-gray-600" style="margin-top: 8px;">永续年金（只还利息）</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            renderLatex(document.getElementById('mainFormula'), 'M = P \\cdot \\frac{\\alpha (1+\\alpha)^n}{(1+\\alpha)^n - 1}', true);
-            
-            const varsSpan = document.createElement('span');
-            renderLatex(varsSpan, 'P');
-            const varsText = ' = 本金，';
-            const alphaSpan = document.createElement('span');
-            renderLatex(alphaSpan, '\\alpha = r/12');
-            const varsText2 = ' = 月利率，';
-            const nSpan = document.createElement('span');
-            renderLatex(nSpan, 'n');
-            const varsText3 = ' = 还款月数（整数）';
-            
-            const varsContainer = document.getElementById('vars');
-            varsContainer.appendChild(varsSpan);
-            varsContainer.appendChild(document.createTextNode(varsText));
-            varsContainer.appendChild(alphaSpan);
-            varsContainer.appendChild(document.createTextNode(varsText2));
-            varsContainer.appendChild(nSpan);
-            varsContainer.appendChild(document.createTextNode(varsText3));
-            
-            renderLatex(document.getElementById('expApprox'), '(1+\\alpha)^n \\approx e^{\\alpha n}', true);
-            renderLatex(document.getElementById('contModel'), 'M_c = P \\cdot \\frac{\\alpha}{1 - e^{-\\alpha n}}', true);
-            renderLatex(document.getElementById('asymptote'), '\\lim_{n \\to \\infty} M = P \\cdot \\alpha', true);
-        }
+                `;
+            }
 
-        function calculate() {
-            const principal = Number(document.getElementById('principal').value);
-            const annualRate = Number(document.getElementById('annualRate').value);
-            const months = Number(document.getElementById('months').value);
-            const alpha = annualRate / 100 / 12;
-            
-            // 计算还款数据
-            const monthlyPayment = calculateDiscretePayment(principal, annualRate, months);
-            const totalPayment = monthlyPayment * months;
-            const totalInterest = totalPayment - principal;
-            
-            // 计算最后一期
-            const lastPeriodPrincipal = principal * Math.pow(1 + alpha, months - 1) - 
-                monthlyPayment * (Math.pow(1 + alpha, months - 1) - 1) / alpha;
-            const lastPayment = lastPeriodPrincipal * (1 + alpha);
-            
-            // 更新统计卡片
-            document.getElementById('monthlyPayment').textContent = '¥' + monthlyPayment.toFixed(2);
-            document.getElementById('totalPayment').textContent = '¥' + totalPayment.toFixed(2);
-            document.getElementById('totalInterest').textContent = '¥' + totalInterest.toFixed(2);
-            document.getElementById('lastPayment').textContent = '¥' + lastPayment.toFixed(2);
-            document.getElementById('lastPaymentDiff').textContent = '差异: ¥' + (lastPayment - monthlyPayment).toFixed(2);
-            
-            // 生成还款明细表
-            generateScheduleTable(principal, annualRate, months);
-            
-            // 更新图表描述
-            document.getElementById('chartDescription').textContent = 
-                `图表说明：本金标准化为 P=1，年利率 r=${annualRate}%（月利率 α=${alpha.toFixed(6)}）`;
-            
-            // 生成图表
-            generateComparisonChart(annualRate, alpha);
-            generateErrorChart(annualRate);
-            generateComparisonTable(annualRate);
-            generateDerivativeChart(annualRate);
-            generateComparisonCards(principal, annualRate);
-            generateMathExplanation(alpha);
-        }
-
-        function generateScheduleTable(principal, annualRate, months) {
-            const alpha = annualRate / 100 / 12;
-            const M = calculateDiscretePayment(principal, annualRate, months);
-            let remainingPrincipal = principal;
-            
-            let html = '<thead><tr><th>期数</th><th>还款额</th><th>本金</th><th>利息</th><th>剩余本金</th></tr></thead><tbody>';
-            
-            for (let i = 1; i <= Math.min(12, months); i++) {
-                const interestPayment = remainingPrincipal * alpha;
-                let principalPayment = M - interestPayment;
+            generateComparisonCards() {
+                const p1020 = calculateExponentialApprox(this.principal, this.annualRate, 120);
+                const p2030 = calculateExponentialApprox(this.principal, this.annualRate, 240);
+                const p3040a = calculateExponentialApprox(this.principal, this.annualRate, 360);
+                const p3040b = calculateExponentialApprox(this.principal, this.annualRate, 480);
                 
-                if (i === months) {
-                    principalPayment = remainingPrincipal;
-                    const actualPayment = principalPayment + interestPayment;
-                    html += `<tr>
-                        <td>${i}</td>
-                        <td>¥${actualPayment.toFixed(2)}</td>
-                        <td>¥${principalPayment.toFixed(2)}</td>
-                        <td>¥${interestPayment.toFixed(2)}</td>
-                        <td>¥0.00</td>
-                    </tr>`;
-                } else {
-                    remainingPrincipal -= principalPayment;
-                    html += `<tr>
-                        <td>${i}</td>
-                        <td>¥${M.toFixed(2)}</td>
-                        <td>¥${principalPayment.toFixed(2)}</td>
-                        <td>¥${interestPayment.toFixed(2)}</td>
-                        <td>¥${remainingPrincipal.toFixed(2)}</td>
-                    </tr>`;
-                }
-            }
-            
-            html += '</tbody>';
-            document.getElementById('scheduleTable').innerHTML = html;
-        }
-
-        function generateComparisonChart(annualRate, alpha) {
-            const data = [];
-            const labels = [];
-            const discreteData = [];
-            const exponentialData = [];
-            const continuousData = [];
-            const scatterData = [];
-            
-            for (let n = 0.5; n <= 400; n += 0.5) {
-                labels.push(n);
-                discreteData.push(calculateDiscretePayment(1, annualRate, n));
-                exponentialData.push(calculateExponentialApprox(1, annualRate, n));
-                continuousData.push(calculateContinuousPayment(1, annualRate, n));
-            }
-            
-            for (let n = 1; n <= 400; n += 6) {
-                scatterData.push({ x: n, y: calculateDiscretePayment(1, annualRate, n) });
-            }
-            
-            const ctx = document.getElementById('comparisonChart');
-            
-            if (comparisonChart) {
-                comparisonChart.destroy();
-            }
-            
-            comparisonChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '离散公式（实数n）',
-                            data: discreteData,
-                            borderColor: '#f97316',
-                            borderWidth: 2.5,
-                            fill: false,
-                            pointRadius: 0
-                        },
-                        {
-                            label: '指数近似 e^(αn)',
-                            data: exponentialData,
-                            borderColor: '#3b82f6',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            pointRadius: 0
-                        },
-                        {
-                            label: '连续还款模型',
-                            data: continuousData,
-                            borderColor: '#10b981',
-                            borderWidth: 1.5,
-                            borderDash: [3, 3],
-                            fill: false,
-                            pointRadius: 0
-                        },
-                        {
-                            type: 'scatter',
-                            label: '离散点（整数月）',
-                            data: scatterData,
-                            backgroundColor: '#f97316',
-                            pointRadius: 3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        },
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: alpha,
-                                    yMax: alpha,
-                                    borderColor: '#ef4444',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        display: true,
-                                        content: `渐近线 M = α = ${alpha.toFixed(6)}`,
-                                        position: 'end'
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            title: {
-                                display: true,
-                                text: '贷款期限 n (月)'
-                            },
-                            min: 0,
-                            max: 400
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: '月供额（单位本金）'
-                            },
-                            min: 0
-                        }
-                    }
-                }
-            });
-        }
-
-        function generateErrorChart(annualRate) {
-            const labels = [];
-            const errorData = [];
-            
-            for (let n = 1; n <= 400; n++) {
-                labels.push(n);
-                const discrete = calculateDiscretePayment(1, annualRate, n);
-                const exponential = calculateExponentialApprox(1, annualRate, n);
-                errorData.push(((discrete - exponential) / discrete) * 100);
-            }
-            
-            const ctx = document.getElementById('errorChart');
-            
-            if (errorChart) {
-                errorChart.destroy();
-            }
-            
-            errorChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '相对误差',
-                        data: errorData,
-                        borderColor: '#f59e0b',
-                        borderWidth: 2,
-                        fill: false,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: '贷款期限 n (月)'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: '相对误差 (%)'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function generateComparisonTable(annualRate) {
-            let html = '<thead><tr><th>期数 n</th><th>离散公式</th><th>指数近似</th><th>连续模型</th><th>相对误差</th></tr></thead><tbody>';
-            
-            [12, 60, 120, 240, 360].forEach(n => {
-                const discrete = calculateDiscretePayment(1, annualRate, n);
-                const exponential = calculateExponentialApprox(1, annualRate, n);
-                const continuous = calculateContinuousPayment(1, annualRate, n);
-                const error = ((discrete - exponential) / discrete * 100);
+                document.getElementById('comp1020').innerHTML = `
+                    <p class="text-sm font-semibold" style="color: #065f46; margin-bottom: 8px;">📊 10年 → 20年</p>
+                    <p class="text-xs text-gray-700">月供从 ${p1020.toFixed(2)} 元降至 ${p2030.toFixed(2)} 元</p>
+                    <p class="font-bold" style="color: #047857; font-size: 18px; margin-top: 8px;">减少 ${(p1020 - p2030).toFixed(2)} 元</p>
+                `;
                 
-                html += `<tr>
-                    <td>${n} (${(n/12).toFixed(1)}年)</td>
-                    <td class="font-mono">${discrete.toFixed(6)}</td>
-                    <td class="font-mono">${exponential.toFixed(6)}</td>
-                    <td class="font-mono">${continuous.toFixed(6)}</td>
-                    <td class="font-mono" style="color: #ea580c;">${error.toFixed(4)}%</td>
-                </tr>`;
-            });
-            
-            html += '</tbody>';
-            document.getElementById('comparisonTable').innerHTML = html;
-        }
-
-        function generateDerivativeChart(annualRate) {
-            const labels = [];
-            const derivativeData = [];
-            const yearlyData = [];
-            
-            for (let years = 5; years <= 50; years++) {
-                const n = years * 12;
-                const M_current = calculateExponentialApprox(1, annualRate, n);
-                const M_next = calculateExponentialApprox(1, annualRate, n + 12);
-                const derivative = Math.abs((M_current - M_next) * 1000);
+                document.getElementById('comp2030').innerHTML = `
+                    <p class="text-sm font-semibold" style="color: #92400e; margin-bottom: 8px;">📊 20年 → 30年</p>
+                    <p class="text-xs text-gray-700">月供从 ${p2030.toFixed(2)} 元降至 ${p3040a.toFixed(2)} 元</p>
+                    <p class="font-bold" style="color: #b45309; font-size: 18px; margin-top: 8px;">减少 ${(p2030 - p3040a).toFixed(2)} 元</p>
+                `;
                 
-                labels.push(years);
-                derivativeData.push(derivative);
-                yearlyData.push({ years, derivative });
+                document.getElementById('comp3040').innerHTML = `
+                    <p class="text-sm font-semibold" style="color: #991b1b; margin-bottom: 8px;">📊 30年 → 40年</p>
+                    <p class="text-xs text-gray-700">月供从 ${p3040a.toFixed(2)} 元降至 ${p3040b.toFixed(2)} 元</p>
+                    <p class="font-bold" style="color: #b91c1c; font-size: 18px; margin-top: 8px;">仅减少 ${(p3040a - p3040b).toFixed(2)} 元</p>
+                `;
             }
-            
-            // 计算统计数据
-            const range1 = yearlyData.filter(d => d.years >= 5 && d.years <= 30);
-            const range2 = yearlyData.filter(d => d.years > 30);
-            const avgDerivative1 = range1.reduce((sum, d) => sum + d.derivative, 0) / range1.length;
-            const avgDerivative2 = range2.reduce((sum, d) => sum + d.derivative, 0) / range2.length;
-            const ratio = avgDerivative1 / avgDerivative2;
-            
-            // 更新统计信息
-            document.getElementById('derivativeStats').innerHTML = `
-                <div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 4px; margin-bottom: 8px;">
-                        <span class="text-sm">5-30年平均变化率：</span>
-                        <span class="font-mono font-bold" style="color: #2563eb;">${avgDerivative1.toFixed(6)}</span>
+
+            generateMathExplanation() {
+                document.getElementById('mathExpl').innerHTML = `
+                    <p class="font-semibold text-sm" style="margin-bottom: 8px;">🔬 数学解释</p>
+                    <div class="text-sm text-gray-700">
+                        <p>对于函数 ${renderLatex('M(n) = P \\cdot \\frac{\\alpha}{1 - e^{-\\alpha n}}')}，其导数为：</p>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; margin: 8px 0;">
+                            ${renderLatex('\\frac{dM}{dn} = -P \\cdot \\frac{\\alpha^2 e^{-\\alpha n}}{(1 - e^{-\\alpha n})^2}', true)}
+                        </div>
+                        <p>当 n 增大时，${renderLatex('e^{-\\alpha n} \\to 0')}，导致 ${renderLatex('|dM/dn| \\to 0')}。这就是为什么曲线越来越平缓，延长期限的效果越来越差。</p>
+                        <p style="color: #b91c1c; font-weight: 600; margin-top: 12px;">
+                            结论：超过30年的贷款，月供虽然略低，但由于期限过长、总利息巨大，实质上变成了"永续债"，贷款人几乎一辈子都在还利息。
+                        </p>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 4px; margin-bottom: 8px;">
-                        <span class="text-sm">30-50年平均变化率：</span>
-                        <span class="font-mono font-bold" style="color: #ea580c;">${avgDerivative2.toFixed(6)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px; background: linear-gradient(to right, #fef3c7, #fde68a); border-radius: 4px; border: 1px solid #fbbf24;">
-                        <span class="font-semibold text-sm">衰减比例：</span>
-                        <span class="font-mono font-bold" style="color: #b91c1c;">${ratio.toFixed(2)}倍</span>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-600" style="margin-top: 12px;">
-                    前期变化率是后期的 <strong>${ratio.toFixed(1)}倍</strong>，说明前30年延长期限的效果远好于30年后。
-                </p>
-            `;
-            
-            const ctx = document.getElementById('derivativeChart');
-            
-            if (derivativeChart) {
-                derivativeChart.destroy();
+                `;
             }
-            
-            derivativeChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '变化率 |dM/d(年)|',
-                        data: derivativeData,
-                        borderColor: '#8b5cf6',
-                        borderWidth: 3,
-                        fill: false,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        },
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    xMin: 30,
-                                    xMax: 30,
-                                    borderColor: '#ef4444',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        display: true,
-                                        content: '30年分界线',
-                                        position: 'start'
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: '贷款期限（年）'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: '每增加1年，月供减少额 (×1000)'
-                            }
-                        }
-                    }
-                }
-            });
         }
 
-        function generateComparisonCards(principal, annualRate) {
-            const p1020 = calculateExponentialApprox(principal, annualRate, 120);
-            const p2030 = calculateExponentialApprox(principal, annualRate, 240);
-            const p3040a = calculateExponentialApprox(principal, annualRate, 360);
-            const p3040b = calculateExponentialApprox(principal, annualRate, 480);
-            
-            document.getElementById('comparison1020').innerHTML = `
-                <p class="text-sm font-semibold" style="color: #065f46; margin-bottom: 8px;">📊 10年 → 20年</p>
-                <p class="text-xs text-gray-700">
-                    月供从 ${p1020.toFixed(2)} 元降至 ${p2030.toFixed(2)} 元
-                </p>
-                <p class="font-bold" style="color: #047857; font-size: 18px; margin-top: 8px;">
-                    减少 ${(p1020 - p2030).toFixed(2)} 元
-                </p>
-            `;
-            
-            document.getElementById('comparison2030').innerHTML = `
-                <p class="text-sm font-semibold" style="color: #92400e; margin-bottom: 8px;">📊 20年 → 30年</p>
-                <p class="text-xs text-gray-700">
-                    月供从 ${p2030.toFixed(2)} 元降至 ${p3040a.toFixed(2)} 元
-                </p>
-                <p class="font-bold" style="color: #b45309; font-size: 18px; margin-top: 8px;">
-                    减少 ${(p2030 - p3040a).toFixed(2)} 元
-                </p>
-            `;
-            
-            document.getElementById('comparison3040').innerHTML = `
-                <p class="text-sm font-semibold" style="color: #991b1b; margin-bottom: 8px;">📊 30年 → 40年</p>
-                <p class="text-xs text-gray-700">
-                    月供从 ${p3040a.toFixed(2)} 元降至 ${p3040b.toFixed(2)} 元
-                </p>
-                <p class="font-bold" style="color: #b91c1c; font-size: 18px; margin-top: 8px;">
-                    仅减少 ${(p3040a - p3040b).toFixed(2)} 元
-                </p>
-            `;
-        }
-
-        function generateMathExplanation(alpha) {
-            const container = document.getElementById('mathExplanation');
-            container.innerHTML = `
-                <p class="font-semibold text-sm" style="margin-bottom: 8px;">🔬 数学解释</p>
-                <div class="text-sm text-gray-700">
-                    <p>对于函数 <span id="func1"></span>，其导数为：</p>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; margin: 8px 0;" id="derivative"></div>
-                    <p>当 n 增大时，<span id="exp1"></span>，导致 <span id="exp2"></span>。这就是为什么曲线越来越平缓，延长期限的效果越来越差。</p>
-                    <p style="color: #b91c1c; font-weight: 600; margin-top: 12px;">
-                        结论：超过30年的贷款，月供虽然略低，但由于期限过长、总利息巨大，实质上变成了"永续债"，贷款人几乎一辈子都在还利息。
-                    </p>
-                </div>
-            `;
-            
-            renderLatex(document.getElementById('func1'), 'M(n) = P \\cdot \\frac{\\alpha}{1 - e^{-\\alpha n}}');
-            renderLatex(document.getElementById('derivative'), '\\frac{dM}{dn} = -P \\cdot \\frac{\\alpha^2 e^{-\\alpha n}}{(1 - e^{-\\alpha n})^2}', true);
-            renderLatex(document.getElementById('exp1'), 'e^{-\\alpha n} \\to 0');
-            renderLatex(document.getElementById('exp2'), '|dM/dn| \\to 0');
-        }
-
-        // 页面加载完成后初始化
-        window.addEventListener('load', init);
+        window.addEventListener('load', () => {
+            new App();
+        });
     </script>
 </body>
 </html>
