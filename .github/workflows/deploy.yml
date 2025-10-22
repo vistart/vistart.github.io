@@ -31,6 +31,14 @@ jobs:
           # 复制整个 examples 目录到 dist
           cp -R examples/* dist/examples/
 
+      # 新增步骤：复制 games 目录到构建输出目录
+      - name: Copy games directory
+        run: |
+          # 创建目标目录（确保存在）
+          mkdir -p dist/games
+          # 复制整个 games 目录到 dist
+          cp -R games/* dist/games/
+
         # 配置 base URL 如果需要
         # - name: Update base href
         #   run: |
