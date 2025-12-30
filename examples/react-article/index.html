@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Article Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="max-w-4xl mx-auto p-6">
+      <h1 class="text-2xl font-bold mb-4">文章目录</h1>
+      <ul id="article-list" class="space-y-2">
+        <!-- 目录由下面的模块脚本动态生成 -->
+      </ul>
+    </div>
+
+    <script type="module">
+      // 使用 eager=true 在客户端读取每个模块的导出（包含 meta）来生成目录
+      const modules = import.meta.glob('../articles/*.tsx', { eager: true });
+      const list = document.getElementById('article-list');
+      if (!list) throw new Error('article-list not found');
+
+      const items = Object.keys(modules).map(path => {
+        const mod = modules[path];
+        const file = path.split('/').pop().replace('.tsx','');
+        const meta = mod.meta || {};
+        return {
+          key: file,
+          title: meta.title || file,
+          date: meta.date || ''
+        };
+      }).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+      for (const it of items) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `/examples/react-article/view.html?page=${it.key}`;
+        a.textContent = it.title;
+        a.className = 'text-blue-600 hover:underline';
+
+        li.appendChild(a);
+        if (it.date) {
+          const s = document.createElement('span');
+          s.className = 'ml-2 text-sm text-gray-500';
+          s.textContent = it.date;
+          li.appendChild(s);
+        }
+        list.appendChild(li);
+      }
+    </script>
+  </body>
+</html>
