@@ -7,9 +7,9 @@ if (!container) throw new Error('Root container not found');
 
 const root = createRoot(container);
 
-// 使用 Vite 的 import.meta.glob 预加载 examples/articles 目录下的组件（eager=true）
+// 使用 Vite 的 import.meta.glob 预加载当前目录下的 articles 目录的组件（eager=true）
 // eager 模式下 modules[path] 是模块对象；非 eager 时是一个加载函数
-const modules = import.meta.glob('../articles/*.tsx', { eager: true });
+const modules = import.meta.glob('./articles/*.tsx', { eager: true });
 
 function getPageKey() {
   const params = new URLSearchParams(location.search);
@@ -18,7 +18,7 @@ function getPageKey() {
 
 async function mount() {
   const page = getPageKey();
-  const modulePath = `../articles/${page}.tsx`;
+  const modulePath = `./articles/${page}.tsx`;
   const loader = modules[modulePath];
   if (!loader) {
     root.render(

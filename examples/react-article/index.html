@@ -16,7 +16,7 @@
 
     <script type="module">
       // 使用 eager=true 在客户端读取每个模块的导出（包含 meta）来生成目录
-      const modules = import.meta.glob('../articles/*.tsx', { eager: true });
+      const modules = import.meta.glob('./articles/*.tsx', { eager: true });
       const list = document.getElementById('article-list');
       if (!list) throw new Error('article-list not found');
 
