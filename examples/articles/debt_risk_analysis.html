@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购房负债决策与风险敞口分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 450px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="p-6 max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-2">购房负债决策与风险敞口分析</h1>
+        <p class="text-center text-gray-600 mb-6">基于社会贡献曲线的劳动力变现与风险管理</p>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex gap-4 mb-4 flex-wrap">
+                <button id="conservative-btn" class="px-4 py-2 rounded font-semibold bg-green-500 text-white scenario-btn">
+                    保守策略
+                </button>
+                <button id="balanced-btn" class="px-4 py-2 rounded font-semibold bg-gray-200 scenario-btn">
+                    平衡策略
+                </button>
+                <button id="aggressive-btn" class="px-4 py-2 rounded font-semibold bg-gray-200 scenario-btn">
+                    激进策略
+                </button>
+                <button id="risk-event-btn" class="px-4 py-2 rounded font-semibold ml-auto bg-gray-200 scenario-btn">
+                    模拟风险事件(35岁)
+                </button>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="debtRiskChart"></canvas>
+            </div>
+        </div>
+
+        <div id="scenario-details" class="bg-green-50 rounded-lg p-6 mb-6 border-l-4 border-green-500">
+            <h2 class="text-2xl font-bold mb-4" style="color: #16a34a">
+                当前选择: 保守策略
+            </h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white rounded p-4">
+                    <h3 class="font-semibold mb-3 text-gray-800">策略参数</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">购房年龄:</span>
+                            <span class="font-semibold">28岁</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">首付比例:</span>
+                            <span class="font-semibold">50%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">贷款年限:</span>
+                            <span class="font-semibold">15年</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">月供压力:</span>
+                            <span class="font-semibold">月供占比25%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">风险等级:</span>
+                            <span class="font-semibold text-green-600">低</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded p-4">
+                    <h3 class="font-semibold mb-3 text-gray-800">利弊分析</h3>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <div class="text-green-600 font-semibold mb-1">✓ 优势:</div>
+                            <div class="text-gray-700">风险敞口小,财务灵活性高</div>
+                        </div>
+                        <div>
+                            <div class="text-red-600 font-semibold mb-1">✗ 劣势:</div>
+                            <div class="text-gray-700">晚享受住房,可能错过房价上涨</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow p-5">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">核心策略原则</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start">
+                        <span class="text-blue-500 mr-2 text-lg">1.</span>
+                        <div>
+                            <div class="font-semibold">收入稳定性评估</div>
+                            <div class="text-gray-600">选择负债水平前,评估行业前景、职业发展路径</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-blue-500 mr-2 text-lg">2.</span>
+                        <div>
+                            <div class="font-semibold">保持流动性储备</div>
+                            <div class="text-gray-600">至少保留6-12个月月供的应急资金</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-blue-500 mr-2 text-lg">3.</span>
+                        <div>
+                            <div class="font-semibold">月供占比控制</div>
+                            <div class="text-gray-600">建议不超过家庭收入的40%,预留生活质量空间</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-blue-500 mr-2 text-lg">4.</span>
+                        <div>
+                            <div class="font-semibold">考虑贡献曲线变化</div>
+                            <div class="text-gray-600">35-50岁需支持子女,45岁后收入增速放缓</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-5">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">风险应对措施</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start">
+                        <span class="text-orange-500 mr-2 text-lg">1.</span>
+                        <div>
+                            <div class="font-semibold">收入多元化</div>
+                            <div class="text-gray-600">培养副业能力,不把所有鸡蛋放在一个篮子</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-orange-500 mr-2 text-lg">2.</span>
+                        <div>
+                            <div class="font-semibold">购买保险保障</div>
+                            <div class="text-gray-600">重疾险、定期寿险覆盖贷款余额</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-orange-500 mr-2 text-lg">3.</span>
+                        <div>
+                            <div class="font-semibold">持续技能提升</div>
+                            <div class="text-gray-600">保持竞争力,延缓贡献曲线下降速度</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-orange-500 mr-2 text-lg">4.</span>
+                        <div>
+                            <div class="font-semibold">灵活调整策略</div>
+                            <div class="text-gray-600">根据实际情况考虑提前还贷或延长贷款</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-yellow-50 rounded-lg p-5 border-l-4 border-yellow-500">
+            <h3 class="text-lg font-bold mb-3 text-yellow-800">⚠️ 关键洞察</h3>
+            <div class="space-y-2 text-sm text-gray-700">
+                <p><strong>贡献透支本质:</strong> 购房贷款实质上是将未来20-30年的社会贡献提前变现。你在用未来的劳动力抵押当前的资产。</p>
+                <p><strong>风险敞口:</strong> 图中阴影区域代表各种不确定性(失业、疾病、行业变迁)。负债越重,阴影区域越大,一旦"黑天鹅"发生,可支配贡献可能跌破零线。</p>
+                <p><strong>最优决策时机:</strong> 理想购房时机是收入开始快速上升且相对稳定时(25-28岁),既不会错过太多资产增值,也有一定风险承受能力。</p>
+                <p><strong>35岁危机:</strong> 这个年龄段往往面临"上有老下有小"的压力,同时职业发展可能遇到瓶颈,是最需要财务灵活性的时期。</p>
+            </div>
+        </div>
+
+        <div class="mt-4 text-xs text-gray-500 text-center">
+            提示: 点击"模拟风险事件"查看35岁遭遇失业或重大疾病时各策略的脆弱性
+        </div>
+    </div>
+
+    <script>
+        // 基准贡献曲线(中国)
+        function generateBaseContribution() {
+            const data = [];
+            for (let age = 22; age <= 65; age++) {
+                let contribution = 0;
+                if (age < 25) {
+                    contribution = -30 + (age - 22) * 25;
+                } else if (age < 30) {
+                    contribution = 45 + (age - 25) * 3;
+                } else if (age < 50) {
+                    const basePeak = 60 + (age - 30) * 0.5;
+                    const familySupport = age > 35 ? -8 : 0;
+                    contribution = basePeak + familySupport;
+                } else if (age < 60) {
+                    contribution = 70 - (age - 50) * 2 - 10;
+                } else {
+                    contribution = 40 - (age - 60) * 8;
+                }
+                data.push({ age, base: contribution });
+            }
+            return data;
+        }
+
+        // 场景1: 保守策略 - 28岁购房,首付50%,贷款15年
+        function conservativeScenario(baseData) {
+            return baseData.map(item => {
+                const age = item.age;
+                let debtBurden = 0;
+                let available = item.base;
+                let risk = 10; // 基础风险
+
+                if (age >= 28 && age < 43) {
+                    debtBurden = -15; // 月供负担
+                    risk = 20;
+                }
+
+                available = item.base + debtBurden;
+
+                return {
+                    ...item,
+                    available,
+                    debtBurden,
+                    risk,
+                    riskUpper: available + risk,
+                    riskLower: available - risk
+                };
+            });
+        }
+
+        // 场景2: 激进策略 - 22岁购房,首付30%,贷款30年
+        function aggressiveScenario(baseData) {
+            return baseData.map(item => {
+                const age = item.age;
+                let debtBurden = 0;
+                let available = item.base;
+                let risk = 10;
+
+                if (age >= 22 && age < 52) {
+                    // 前期月供压力大
+                    if (age < 30) {
+                        debtBurden = -35; // 收入低但月供固定
+                    } else if (age < 40) {
+                        debtBurden = -25;
+                    } else {
+                        debtBurden = -20;
+                    }
+                    risk = age < 30 ? 40 : (age < 40 ? 35 : 30);
+                }
+
+                available = item.base + debtBurden;
+
+                return {
+                    ...item,
+                    available,
+                    debtBurden,
+                    risk,
+                    riskUpper: available + risk,
+                    riskLower: available - risk
+                };
+            });
+        }
+
+        // 场景3: 平衡策略 - 25岁购房,首付40%,贷款25年
+        function balancedScenario(baseData) {
+            return baseData.map(item => {
+                const age = item.age;
+                let debtBurden = 0;
+                let available = item.base;
+                let risk = 10;
+
+                if (age >= 25 && age < 50) {
+                    if (age < 30) {
+                        debtBurden = -22;
+                    } else if (age < 45) {
+                        debtBurden = -18;
+                    } else {
+                        debtBurden = -15;
+                    }
+                    risk = age < 30 ? 28 : (age < 40 ? 25 : 22);
+                }
+
+                available = item.base + debtBurden;
+
+                return {
+                    ...item,
+                    available,
+                    debtBurden,
+                    risk,
+                    riskUpper: available + risk,
+                    riskLower: available - risk
+                };
+            });
+        }
+
+        // 意外事件模拟(35岁失业/疾病)
+        function applyRiskEvent(data) {
+            return data.map(item => {
+                if (item.age >= 35 && item.age < 37) {
+                    return {
+                        ...item,
+                        available: item.available - 40,
+                        risk: item.risk + 20,
+                        riskUpper: item.available - 40 + item.risk + 20,
+                        riskLower: item.available - 40 - item.risk - 20
+                    };
+                }
+                return item;
+            });
+        }
+
+        // 场景定义
+        const scenarios = {
+            conservative: {
+                name: "保守策略",
+                color: "green",
+                details: {
+                    buyAge: "28岁",
+                    downPayment: "50%",
+                    loanYears: "15年",
+                    monthlyPayment: "月供占比25%",
+                    riskLevel: "低",
+                    advantage: "风险敞口小,财务灵活性高",
+                    disadvantage: "晚享受住房,可能错过房价上涨"
+                }
+            },
+            aggressive: {
+                name: "激进策略",
+                color: "red",
+                details: {
+                    buyAge: "22岁",
+                    downPayment: "30%",
+                    loanYears: "30年",
+                    monthlyPayment: "月供占比50%+",
+                    riskLevel: "高",
+                    advantage: "尽早拥有资产,享受增值",
+                    disadvantage: "前期压力巨大,抗风险能力弱"
+                }
+            },
+            balanced: {
+                name: "平衡策略",
+                color: "blue",
+                details: {
+                    buyAge: "25岁",
+                    downPayment: "40%",
+                    loanYears: "25年",
+                    monthlyPayment: "月供占比35%",
+                    riskLevel: "中",
+                    advantage: "兼顾资产积累与风险控制",
+                    disadvantage: "需要一定储蓄,时机把握重要"
+                }
+            }
+        };
+
+        // 当前状态
+        let currentScenario = 'conservative';
+        let showRiskEvent = false;
+
+        // 初始化图表变量
+        let debtRiskChart = null;
+
+        // 更新图表和详情
+        function updateChart() {
+            const baseData = generateBaseContribution();
+            let scenarioData;
+
+            switch(currentScenario) {
+                case 'conservative':
+                    scenarioData = conservativeScenario(baseData);
+                    break;
+                case 'aggressive':
+                    scenarioData = aggressiveScenario(baseData);
+                    break;
+                case 'balanced':
+                    scenarioData = balancedScenario(baseData);
+                    break;
+                default:
+                    scenarioData = baseData;
+            }
+
+            if (showRiskEvent) {
+                scenarioData = applyRiskEvent(scenarioData);
+            }
+
+            // 更新图表
+            updateChartDisplay(scenarioData);
+
+            // 更新详情
+            updateScenarioDetails();
+        }
+
+        // 更新图表显示
+        function updateChartDisplay(data) {
+            const ctx = document.getElementById('debtRiskChart').getContext('2d');
+            
+            // 销毁现有图表实例
+            if (debtRiskChart && typeof debtRiskChart.destroy === 'function') {
+                debtRiskChart.destroy();
+            }
+
+            // 准备数据
+            const ages = data.map(item => item.age);
+            const baseValues = data.map(item => item.base);
+            const availableValues = data.map(item => item.available);
+            const riskUpperValues = data.map(item => item.riskUpper);
+            const riskLowerValues = data.map(item => item.riskLower);
+
+            // 获取当前场景颜色
+            const currentColor = scenarios[currentScenario].color;
+            let lineColor;
+            if (currentColor === 'green') {
+                lineColor = '#22c55e';
+            } else if (currentColor === 'blue') {
+                lineColor = '#3b82f6';
+            } else {
+                lineColor = '#ef4444';
+            }
+
+            debtRiskChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ages,
+                    datasets: [
+                        {
+                            label: '风险上限',
+                            data: riskUpperValues,
+                            borderColor: 'rgba(254, 202, 202, 0.5)',
+                            backgroundColor: 'rgba(254, 202, 202, 0.3)',
+                            borderWidth: 0,
+                            fill: {
+                                target: 'origin',
+                                above: 'rgba(254, 202, 202, 0.3)',
+                                below: 'rgba(254, 202, 202, 0.3)'
+                            },
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            showLine: false
+                        },
+                        {
+                            label: '风险下限',
+                            data: riskLowerValues,
+                            borderColor: 'rgba(254, 202, 202, 0.5)',
+                            backgroundColor: 'rgba(254, 202, 202, 0.3)',
+                            borderWidth: 0,
+                            fill: {
+                                target: 'origin',
+                                above: 'rgba(254, 202, 202, 0.3)',
+                                below: 'rgba(254, 202, 202, 0.3)'
+                            },
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            showLine: false
+                        },
+                        {
+                            label: '基准贡献(无负债)',
+                            data: baseValues,
+                            borderColor: '#94a3b8',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '实际可支配',
+                            data: availableValues,
+                            borderColor: lineColor,
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '年龄(岁)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '社会贡献度/可支配能力'
+                            },
+                            min: -80,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return `年龄: ${context[0].label}岁`;
+                                },
+                                label: function(context) {
+                                    const data = context.parsed;
+                                    const originalData = data.find(d => d.age === parseInt(context.label));
+                                    if (!originalData) return '';
+                                    
+                                    switch(context.datasetIndex) {
+                                        case 2: // 基准贡献
+                                            return `基准贡献: ${data.y.toFixed(1)}`;
+                                        case 3: // 实际可支配
+                                            return `实际可支配: ${data.y.toFixed(1)}`;
+                                        default:
+                                            return `${context.dataset.label}: ${data.y.toFixed(1)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新场景详情
+        function updateScenarioDetails() {
+            const scenario = scenarios[currentScenario];
+            const detailsContainer = document.getElementById('scenario-details');
+            const currentColor = scenario.color;
+            
+            // 更新容器颜色
+            detailsContainer.className = `bg-${currentColor}-50 rounded-lg p-6 mb-6 border-l-4 border-${currentColor}-500`;
+            
+            // 更新标题颜色
+            const title = detailsContainer.querySelector('h2');
+            if (currentColor === 'green') {
+                title.style.color = '#16a34a';
+            } else if (currentColor === 'blue') {
+                title.style.color = '#2563eb';
+            } else {
+                title.style.color = '#dc2626';
+            }
+            
+            // 更新标题文本
+            title.textContent = `当前选择: ${scenario.name}`;
+            
+            // 更新参数
+            const params = detailsContainer.querySelectorAll('.bg-white.rounded.p-4')[0].querySelectorAll('.space-y-2 div');
+            params[0].querySelector('span:last-child').textContent = scenario.details.buyAge;
+            params[1].querySelector('span:last-child').textContent = scenario.details.downPayment;
+            params[2].querySelector('span:last-child').textContent = scenario.details.loanYears;
+            params[3].querySelector('span:last-child').textContent = scenario.details.monthlyPayment;
+            params[4].querySelector('span:last-child').textContent = scenario.details.riskLevel;
+            
+            // 更新风险等级颜色
+            const riskLevelSpan = params[4].querySelector('span:last-child');
+            riskLevelSpan.className = 'font-semibold';
+            if (scenario.details.riskLevel === '高') {
+                riskLevelSpan.classList.add('text-red-600');
+            } else if (scenario.details.riskLevel === '中') {
+                riskLevelSpan.classList.add('text-orange-600');
+            } else {
+                riskLevelSpan.classList.add('text-green-600');
+            }
+            
+            // 更新利弊分析
+            const benefits = detailsContainer.querySelectorAll('.bg-white.rounded.p-4')[1].querySelectorAll('div div')[1];
+            const drawbacks = detailsContainer.querySelectorAll('.bg-white.rounded.p-4')[1].querySelectorAll('div div')[3];
+            benefits.textContent = scenario.details.advantage;
+            drawbacks.textContent = scenario.details.disadvantage;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置按钮事件
+            document.getElementById('conservative-btn').addEventListener('click', function() {
+                currentScenario = 'conservative';
+                updateButtons();
+                updateChart();
+            });
+            
+            document.getElementById('balanced-btn').addEventListener('click', function() {
+                currentScenario = 'balanced';
+                updateButtons();
+                updateChart();
+            });
+            
+            document.getElementById('aggressive-btn').addEventListener('click', function() {
+                currentScenario = 'aggressive';
+                updateButtons();
+                updateChart();
+            });
+            
+            document.getElementById('risk-event-btn').addEventListener('click', function() {
+                showRiskEvent = !showRiskEvent;
+                updateButtons();
+                updateChart();
+            });
+            
+            // 初始化图表
+            updateChart();
+        });
+
+        // 更新按钮状态
+        function updateButtons() {
+            // 更新场景按钮
+            document.getElementById('conservative-btn').className = `px-4 py-2 rounded font-semibold scenario-btn ${currentScenario === 'conservative' ? 'bg-green-500 text-white' : 'bg-gray-200'}`;
+            document.getElementById('balanced-btn').className = `px-4 py-2 rounded font-semibold scenario-btn ${currentScenario === 'balanced' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`;
+            document.getElementById('aggressive-btn').className = `px-4 py-2 rounded font-semibold scenario-btn ${currentScenario === 'aggressive' ? 'bg-red-500 text-white' : 'bg-gray-200'}`;
+            
+            // 更新风险事件按钮
+            document.getElementById('risk-event-btn').className = `px-4 py-2 rounded font-semibold ml-auto scenario-btn ${showRiskEvent ? 'bg-orange-500 text-white' : 'bg-gray-200'}`;
+            document.getElementById('risk-event-btn').textContent = showRiskEvent ? '隐藏风险事件(35岁)' : '模拟风险事件(35岁)';
+        }
+    </script>
+</body>
+</html>
