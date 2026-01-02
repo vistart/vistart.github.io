@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高风险财务状况分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+        body {
+          font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .mono {
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .glow-red {
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .glow-orange {
+          box-shadow: 0 0 15px rgba(251, 146, 60, 0.3);
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        .pulse-animation {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .card {
+          background: linear-gradient(135deg, rgba(51, 65, 85, 0.7) 0%, rgba(30, 41, 59, 0.9) 100%);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .danger-gradient {
+          background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+
+        .warning-gradient {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-container-medium {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+
+        .chart-container-large {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .active-tab {
+            background-color: #dc2626 !important; /* bg-red-600 */
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- 头部警告 -->
+        <div class="danger-gradient glow-red rounded-2xl p-6 mb-6">
+            <div class="flex items-start gap-4">
+                <i data-lucide="alert-circle" class="w-8 h-8 flex-shrink-0 pulse-animation"></i>
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">高风险财务状况分析报告</h1>
+                    <p class="text-red-100 text-lg">
+                        截至2025年12月，该购房决策已导致严重财务风险，目前处于资不抵债状态
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 关键指标卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="dollar-sign" class="w-5 h-5 text-red-400"></i>
+                    <span class="text-sm text-gray-400">净资产</span>
+                </div>
+                <div class="text-3xl font-bold mono text-red-400">-24万</div>
+                <div class="text-xs text-gray-500 mt-1">资不抵债</div>
+            </div>
+
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="home" class="w-5 h-5 text-orange-400"></i>
+                    <span class="text-sm text-gray-400">房产贬值</span>
+                </div>
+                <div class="text-3xl font-bold mono text-orange-400">-49%</div>
+                <div class="text-xs text-gray-500 mt-1">从313万降至160万</div>
+            </div>
+
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="trending-down" class="w-5 h-5 text-yellow-400"></i>
+                    <span class="text-sm text-gray-400">出租亏损</span>
+                </div>
+                <div class="text-3xl font-bold mono text-yellow-400" id="annualLoss">-5.9万/年</div>
+                <div class="text-xs text-gray-500 mt-1">租金仅为月供44%</div>
+            </div>
+
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i>
+                    <span class="text-sm text-gray-400">还款期限</span>
+                </div>
+                <div class="text-3xl font-bold mono text-blue-400">30年</div>
+                <div class="text-xs text-gray-500 mt-1">剩余贷款284万</div>
+            </div>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="flex gap-2 mb-6 flex-wrap">
+            <button id="tab-overview" class="px-6 py-3 rounded-lg font-medium transition-all bg-red-600 text-white glow-red tab-btn">
+                资产负债
+            </button>
+            <button id="tab-income" class="px-6 py-3 rounded-lg font-medium transition-all bg-slate-700 text-gray-300 hover:bg-slate-600 tab-btn">
+                收入支出
+            </button>
+            <button id="tab-unemployment" class="px-6 py-3 rounded-lg font-medium transition-all bg-slate-700 text-gray-300 hover:bg-slate-600 tab-btn">
+                失业模拟
+            </button>
+            <button id="tab-projection" class="px-6 py-3 rounded-lg font-medium transition-all bg-slate-700 text-gray-300 hover:bg-slate-600 tab-btn">
+                未来预测
+            </button>
+            <button id="tab-buyvsrent" class="px-6 py-3 rounded-lg font-medium transition-all bg-slate-700 text-gray-300 hover:bg-slate-600 tab-btn">
+                买房vs租房
+            </button>
+            <button id="tab-risks" class="px-6 py-3 rounded-lg font-medium transition-all bg-slate-700 text-gray-300 hover:bg-slate-600 tab-btn">
+                风险评估
+            </button>
+        </div>
+
+        <!-- 资产负债概览 -->
+        <div id="overview-tab" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-red-500"></div>
+                        资产负债结构
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="assetLiabilityChart"></canvas>
+                    </div>
+                    <div class="mt-6 p-4 bg-red-950 border border-red-800 rounded-lg">
+                        <div class="text-sm text-red-300 mb-1">当前净资产（2025年12月）</div>
+                        <div class="text-2xl font-bold mono text-red-400" id="netWorthValue">-24.0万元</div>
+                        <div class="text-xs text-red-400 mt-2">
+                            ⚠️ 资产260万 < 负债284万，已处于资不抵债状态
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-orange-500"></div>
+                        购房财务分解
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-slate-700 rounded-lg">
+                            <span class="text-gray-300">购房总价</span>
+                            <span class="font-bold mono text-lg">313万</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-slate-700 rounded-lg">
+                            <span class="text-gray-300">首付（35%）</span>
+                            <span class="font-bold mono text-lg">113万</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-slate-700 rounded-lg">
+                            <span class="text-gray-300">贷款总额</span>
+                            <span class="font-bold mono text-lg">200万</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-slate-700 rounded-lg">
+                            <span class="text-gray-300">已还款额</span>
+                            <span class="font-bold mono text-lg text-green-400">29.2万</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-red-950 border border-red-800 rounded-lg">
+                            <span class="text-red-300">待还贷款</span>
+                            <span class="font-bold mono text-xl text-red-400">284万</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-orange-950 border border-orange-800 rounded-lg">
+                            <span class="text-orange-300">当前房值</span>
+                            <span class="font-bold mono text-xl text-orange-400">160万</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-4 p-3 bg-slate-800 rounded">
+                            <strong>现实情况：</strong>即使现在卖房，售得160万+存款100万=260万，仍需补84万才能还清贷款
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-yellow-500"></div>
+                        失业情况下的现金流（出租房屋）
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-3 gap-4">
+                        <div class="p-3 bg-slate-700 rounded-lg">
+                            <div class="text-xs text-gray-400">月租金收入</div>
+                            <div class="text-lg font-bold mono text-blue-400">3,800元</div>
+                        </div>
+                        <div class="p-3 bg-slate-700 rounded-lg">
+                            <div class="text-xs text-gray-400">月供支出</div>
+                            <div class="text-lg font-bold mono text-red-400">8,689元</div>
+                        </div>
+                        <div class="p-3 bg-red-950 border border-red-800 rounded-lg">
+                            <div class="text-xs text-red-300">月度缺口</div>
+                            <div class="text-lg font-bold mono text-red-400" id="monthlyDeficit">-4,889元</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-4 p-3 bg-slate-800 rounded">
+                        <strong>结论：</strong>即便出租，每年仍需倒贴5.9万元（不含物业费、维修等成本），两年就会消耗11.8万存款
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 收入支出详情 -->
+        <div id="income-tab" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card rounded-xl p-6">
+                        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                            <div class="w-1 h-6 bg-green-500"></div>
+                            月度收入结构（2025年12月在职状态）
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-gray-300">税前月薪</span>
+                                    <span class="font-bold mono text-xl text-green-400" id="grossSalary">30,000元</span>
+                                </div>
+                                <div class="text-xs text-gray-400">互联网大厂，刚调薪至此水平</div>
+                            </div>
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-gray-300">税后到手</span>
+                                    <span class="font-bold mono text-lg text-green-400" id="netSalary">22,000元</span>
+                                </div>
+                                <div class="text-xs text-gray-400">扣除个税和社保</div>
+                            </div>
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-gray-300">公积金（双边）</span>
+                                    <span class="font-bold mono text-lg text-blue-400" id="providentFund">7,200元</span>
+                                </div>
+                                <div class="text-xs text-gray-400">2026年7月后才能覆盖月供</div>
+                            </div>
+                            <div class="p-4 bg-green-950 border border-green-700 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-green-300">月总收入</span>
+                                    <span class="font-bold mono text-2xl text-green-400" id="totalMonthlyIncome">29,200元</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-blue-950 border border-blue-700 rounded-lg">
+                                <div class="mb-3">
+                                    <span class="text-blue-300 font-bold">年终奖（税后）</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div>
+                                        <div class="text-gray-400 mb-1">低档（4倍）</div>
+                                        <div class="font-mono text-yellow-400" id="bonusLowDisplay">9.6万</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-400 mb-1">中档（7倍）</div>
+                                        <div class="font-mono text-green-400" id="bonusMidDisplay">16.8万</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-400 mb-1">高档（10倍）</div>
+                                        <div class="font-mono text-blue-400" id="bonusHighDisplay">24.0万</div>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-2">互联网企业年终奖差距大，取决于绩效和公司业绩</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card rounded-xl p-6">
+                        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                            <div class="w-1 h-6 bg-red-500"></div>
+                            月度支出结构（2025年12月）
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-red-950 border border-red-800 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-red-300">房贷月供</span>
+                                    <span class="font-bold mono text-xl text-red-400">8,689元</span>
+                                </div>
+                                <div class="text-xs text-red-400">30年等额本息，压力极限</div>
+                            </div>
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-gray-300">固定生活开支</span>
+                                    <span class="font-bold mono text-lg" id="monthlyExpense">11,250元/月</span>
+                                </div>
+                                <div class="text-xs text-gray-400">年均13.5万，已成习惯的刚性支出</div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-xs text-gray-400">食住行</div>
+                                    <div class="font-mono text-sm" id="dailyExpense">~8,333元</div>
+                                </div>
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-xs text-gray-400">衣服</div>
+                                    <div class="font-mono text-sm" id="clothingExpense">833元</div>
+                                </div>
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-xs text-gray-400">旅游</div>
+                                    <div class="font-mono text-sm" id="travelExpense">1,667元</div>
+                                </div>
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-xs text-gray-400">宠物</div>
+                                    <div class="font-mono text-sm" id="petExpense">417元</div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-orange-950 border border-orange-700 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-orange-300">月总支出</span>
+                                    <span class="font-bold mono text-2xl text-orange-400" id="totalMonthlyExpense">19,939元</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-blue-500"></div>
+                        月度现金流分析（2025年12月）
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-6 bg-green-950 border border-green-700 rounded-lg">
+                            <div class="text-sm text-green-300 mb-2">月度收入</div>
+                            <div class="text-3xl font-bold mono text-green-400 mb-1" id="monthlyIncomeDisplay">29,200元</div>
+                            <div class="text-xs text-gray-400">税后+公积金</div>
+                        </div>
+                        <div class="p-6 bg-red-950 border border-red-700 rounded-lg">
+                            <div class="text-sm text-red-300 mb-2">月度支出</div>
+                            <div class="text-3xl font-bold mono text-red-400 mb-1" id="monthlyExpenseDisplay">19,939元</div>
+                            <div class="text-xs text-gray-400">房贷+生活</div>
+                        </div>
+                        <div class="p-6 bg-blue-950 border border-blue-700 rounded-lg">
+                            <div class="text-sm text-blue-300 mb-2">月度结余</div>
+                            <div class="text-3xl font-bold mono text-blue-400 mb-1" id="monthlySurplus">9,261元</div>
+                            <div class="text-xs text-gray-400">年存约11万</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 p-4 bg-yellow-950 border border-yellow-700 rounded-lg">
+                        <div class="font-bold text-yellow-300 mb-2">⚠️ 关键风险点</div>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc list-inside">
+                            <li>月结余9261元看似健康，但这是建立在<strong class="text-yellow-400">月薪3万</strong>的基础上</li>
+                            <li>互联网行业35岁危机，高薪难以持续，一旦降薪或失业，立即陷入负现金流</li>
+                            <li>生活习惯已养成（年支出13.5万），失业后<strong class="text-yellow-400">难以立即压缩</strong></li>
+                            <li>公积金7200元，2026年7月前尚不能完全覆盖月供8689元</li>
+                            <li>无任何家庭支持，100万存款是唯一安全垫，消耗后无退路</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 glow-orange">
+                    <h3 class="text-lg font-bold mb-4 text-orange-400">💡 对比：购房前vs购房后（2023年前后）</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-4 bg-green-950 border border-green-700 rounded-lg">
+                            <div class="font-bold text-green-300 mb-3">购房前（2023年以前）</div>
+                            <div class="text-sm text-gray-300 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>月收入（估算）</span>
+                                    <span class="font-mono">~25,000元</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>月房租</span>
+                                    <span class="font-mono text-green-400">-3,000元</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>月生活开支</span>
+                                    <span class="font-mono">-11,250元</span>
+                                </div>
+                                <div class="border-t border-green-800 pt-2 mt-2 flex justify-between font-bold">
+                                    <span class="text-green-400">月结余</span>
+                                    <span class="font-mono text-green-400">~10,750元</span>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-3">
+                                    年存约13万，4.5年存100万 + 首付113万，符合实际
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-red-950 border border-red-700 rounded-lg">
+                            <div class="font-bold text-red-300 mb-3">购房后（2023年至今）</div>
+                            <div class="text-sm text-gray-300 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>月收入（2025年12月）</span>
+                                    <span class="font-mono">29,200元</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>月房贷</span>
+                                    <span class="font-mono text-red-400">-8,689元</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>月生活开支</span>
+                                    <span class="font-mono">-11,250元</span>
+                                </div>
+                                <div class="border-t border-red-800 pt-2 mt-2 flex justify-between font-bold">
+                                    <span class="text-orange-400">月结余</span>
+                                    <span class="font-mono text-orange-400">9,261元</span>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-3">
+                                    虽然收入涨了，但被房贷锁死30年，且资产贬值49%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-slate-800 rounded-lg">
+                        <div class="text-sm font-medium text-gray-300 mb-2">结论：</div>
+                        <div class="text-xs text-gray-400">
+                            购房前每月结余1万+，生活自由；购房后虽然收入提升，但<strong class="text-red-400">被房贷绑架</strong>，
+                            且面临资产大幅缩水（-153万）。更严重的是，失去了人生最宝贵的<strong class="text-orange-400">灵活性</strong>——
+                            无法自由换城市、换工作、应对突发状况。这才是最大的隐性成本。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 失业场景模拟 -->
+        <div id="unemployment-tab" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-red-500"></div>
+                        收入中断情景模拟（房屋出租，习惯性支出未压缩）
+                    </h2>
+                    <div class="chart-container-medium">
+                        <canvas id="unemploymentChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-xs text-gray-400 p-3 bg-slate-800 rounded">
+                        <strong>假设：</strong>失业后立即将房屋出租（月租3800元），但生活习惯难以立即改变，
+                        仍保持原有的年支出13.5万元（月均11250元）。此时月度缺口 = 8689元（月供）- 3800元（租金）+ 11250元（生活开支）= 16139元
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="unemploymentScenariosContainer">
+                    <!-- Unemployment scenarios will be populated by JavaScript -->
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>
+                            关键时间节点
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="p-4 border-l-4 border-yellow-500 bg-yellow-950 bg-opacity-30">
+                                <div class="font-bold text-yellow-400 mb-2">失业后6个月</div>
+                                <div class="text-sm text-gray-300">
+                                    存款从100万降至<span id="savings6Months">70.7万</span>，
+                                    消耗<span id="consumption6Months">29.3万</span>。
+                                    开始焦虑，但仍有一定缓冲。
+                                </div>
+                            </div>
+                            <div class="p-4 border-l-4 border-orange-500 bg-orange-950 bg-opacity-30">
+                                <div class="font-bold text-orange-400 mb-2">失业后12个月</div>
+                                <div class="text-sm text-gray-300">
+                                    存款降至<span id="savings12Months">41.4万</span>，
+                                    已消耗<span id="consumption12Months">58.6万</span>。
+                                    必须找到工作或大幅压缩支出，否则陷入危机。
+                                </div>
+                            </div>
+                            <div class="p-4 border-l-4 border-red-500 bg-red-950 bg-opacity-30">
+                                <div class="font-bold text-red-400 mb-2">失业后24个月</div>
+                                <div class="text-sm text-gray-300">
+                                    存款仅剩<span id="savings24Months">-17.2万</span>，
+                                    累计消耗<span id="consumption24Months">117.2万</span>。
+                                    <strong class="text-red-400">必须立即卖房</strong>，否则断供，但卖房所得160万也不够还贷284万。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="dollar-sign" class="w-5 h-5 text-orange-400"></i>
+                            为什么习惯性支出难以压缩？
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="font-bold mb-2">心理惯性</div>
+                                <div class="text-sm text-gray-300">
+                                    年支出13.5万的生活方式已持续数年，突然失业不会立即改变消费习惯。
+                                    旅游、宠物、衣服等"非必需"支出，在心理上已成为"必需"。
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="font-bold mb-2">刚性成本</div>
+                                <div class="text-sm text-gray-300">
+                                    宠物（5000元/年）需要持续照顾；
+                                    食住行（10万/年）难以大幅削减；
+                                    城市生活的隐性成本（社交、人情往来）无法避免。
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="font-bold mb-2">乐观幻觉</div>
+                                <div class="text-sm text-gray-300">
+                                    失业初期会认为"很快就能找到新工作"，不会立即启动节衣缩食模式。
+                                    等意识到问题严重性时，已消耗大量存款。
+                                </div>
+                            </div>
+                            <div class="p-4 bg-red-950 border border-red-800 rounded-lg">
+                                <div class="font-bold text-red-300 mb-2">现实：即使压缩到极限</div>
+                                <div class="text-sm text-gray-300">
+                                    假设生活开支从11250元/月压缩至5000元/月（非常痛苦），
+                                    月缺口仍有：8689 - 3800 + 5000 = 9889元。
+                                    失业24个月仍需消耗<strong class="text-red-400"> 23.7万存款</strong>，且生活质量极差。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 glow-red">
+                    <h3 class="text-lg font-bold mb-4 text-red-400">⚠️ 失业场景结论</h3>
+                    <div class="p-4 bg-red-950 border-2 border-red-600 rounded-lg">
+                        <div class="text-sm text-gray-300 space-y-3">
+                            <p>
+                                <strong class="text-red-400">最乐观情况：</strong>
+                                失业后6个月内找到新工作，损失约10万存款，尚可承受。
+                            </p>
+                            <p>
+                                <strong class="text-orange-400">一般情况：</strong>
+                                失业12个月，消耗20万存款，被迫接受降薪工作，生活水平大幅下降，但勉强维持。
+                            </p>
+                            <p>
+                                <strong class="text-red-400">最坏情况：</strong>
+                                失业超过18个月，存款消耗过半，陷入恶性循环——
+                                存款不足无法安心找工作，焦虑导致面试失败，最终被迫低价卖房，但卖房款不够还贷，
+                                <strong class="text-red-500">倒欠银行几十万，房财两空</strong>。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-slate-800 rounded-lg">
+                        <div class="text-sm font-medium text-gray-300 mb-2">核心问题：</div>
+                        <div class="text-xs text-gray-400">
+                            这个财务结构没有给人生的不确定性留任何余地。互联网行业本身就是高风险行业，
+                            叠加30年房贷，相当于<strong class="text-white">把人生所有风险都押在"收入永不中断"这个不切实际的假设上</strong>。
+                            一旦假设破灭，整个财务大厦瞬间崩塌。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 未来预测 -->
+        <div id="projection-tab" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-blue-500"></div>
+                        未来三年财务预测（基于2025年12月现状）
+                    </h2>
+                    <div class="chart-container-large">
+                        <canvas id="projectionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 text-orange-400">❌ 乐观预测的谬误</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="p-3 bg-slate-700 rounded">
+                                <div class="font-medium mb-1">当事人预期：</div>
+                                <div class="text-gray-300">"再攒两年就能还清剩余贷款"</div>
+                            </div>
+                            <div class="p-3 bg-red-950 border border-red-800 rounded">
+                                <div class="font-medium mb-1 text-red-300">实际情况（基于2025年12月数据）：</div>
+                                <ul class="text-red-200 space-y-1 list-disc list-inside">
+                                    <li>当前月结余：<span id="monthlyCashFlow">9,261</span>元</li>
+                                    <li>年净存款：约<span id="yearlyNetSaving">11.1</span>万元</li>
+                                    <li>两年后存款：<span id="twoYearSavings">122.2</span>万</li>
+                                    <li>两年后待还贷款：263.3万</li>
+                                    <li>缺口仍有：<span id="remainingGap">141.1</span>万！</li>
+                                </ul>
+                            </div>
+                            <div class="p-3 bg-orange-950 border border-orange-800 rounded">
+                                <div class="font-medium mb-1 text-orange-300">更现实的问题：</div>
+                                <ul class="text-orange-200 space-y-1 list-inside">
+                                    <li>互联网行业35岁危机临近</li>
+                                    <li>收入大概率下降而非稳定</li>
+                                    <li>房价可能进一步下跌</li>
+                                    <li>30年贷款压力持续</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 text-red-400">⚠️ 关键时间节点风险</h3>
+                        <div class="space-y-3">
+                            <div class="p-4 border-l-4 border-yellow-500 bg-yellow-950 bg-opacity-30">
+                                <div class="font-bold text-yellow-400 mb-2">2026年7月前</div>
+                                <div class="text-sm text-gray-300">公积金尚不能覆盖月供，每月需自掏腰包部分还款，现金流紧张</div>
+                            </div>
+                            <div class="p-4 border-l-4 border-orange-500 bg-orange-950 bg-opacity-30">
+                                <div class="font-bold text-orange-400 mb-2">2026-2028年</div>
+                                <div class="text-sm text-gray-300">互联网职业生涯黄金期尾声，裁员风险急剧上升，转行难度大</div>
+                            </div>
+                            <div class="p-4 border-l-4 border-red-500 bg-red-950 bg-opacity-30">
+                                <div class="font-bold text-red-400 mb-2">2028年后</div>
+                                <div class="text-sm text-gray-300">若失业或降薪，只能被迫卖房，但届时可能需补贴更多资金才能脱身</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-4 bg-slate-800 rounded-lg">
+                            <div class="text-sm font-medium text-gray-300 mb-2">30年贷款的陷阱：</div>
+                            <div class="text-xs text-gray-400">
+                                选择最低首付比例（35%）和最长贷款期限（30年），表明财务状况已在承受极限边缘。
+                                任何收入波动都可能导致断供危机，而中国互联网行业恰恰以"高收入、高强度、短寿命"著称。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 买房vs租房对比 -->
+        <div id="buyvsrent-tab" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="card rounded-xl p-6 bg-gradient-to-br from-slate-800 to-slate-900">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <div class="w-1 h-8 bg-purple-500"></div>
+                        <span>平行宇宙对比：如果他没有买房...</span>
+                    </h2>
+                    <div class="p-4 bg-blue-950 border border-blue-700 rounded-lg mb-6">
+                        <div class="font-bold text-blue-300 mb-2">假设条件：</div>
+                        <ul class="text-sm text-gray-300 space-y-1 list-disc list-inside">
+                            <li>2023年未购房，首付113万+存款100万=213万用于投资</li>
+                            <li>选择租房，月租3800元，由公积金7200元全额覆盖（剩余3400元继续投资）</li>
+                            <li>相同的生活品质（年支出13.5万）和收入水平（月薪3万，年终奖16.8万税后）</li>
+                            <li>投资年化收益率4%（保守估计，银行理财/债券基金水平）</li>
+                            <li>房价按预测每年下跌30万</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="home" class="w-6 h-6 text-red-400"></i>
+                            买房路径（现实）
+                        </h3>
+                        <div class="space-y-4" id="buyPathContainer">
+                            <!-- Buy path data will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="dollar-sign" class="w-6 h-6 text-green-400"></i>
+                            租房+投资路径（假设）
+                        </h3>
+                        <div class="space-y-4" id="rentPathContainer">
+                            <!-- Rent path data will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-down" class="w-6 h-6 text-purple-400"></i>
+                        净资产对比趋势
+                    </h3>
+                    <div class="chart-container-large">
+                        <canvas id="buyVsRentChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 text-red-400">❌ 买房路径的代价</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="p-4 bg-red-950 border border-red-800 rounded-lg">
+                                <div class="font-bold text-red-300 mb-2">财务损失</div>
+                                <ul class="text-gray-300 space-y-1 list-disc list-inside">
+                                    <li>首付113万立即转化为"沉没成本"</li>
+                                    <li>房产从313万跌至160万（2025.12），亏损153万</li>
+                                    <li>预计2030年房值仅10万，总亏损303万</li>
+                                    <li>30年利息总计约112万</li>
+                                    <li><strong class="text-red-400">总损失预计：415万</strong></li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-orange-950 border border-orange-800 rounded-lg">
+                                <div class="font-bold text-orange-300 mb-2">机会成本</div>
+                                <ul class="text-gray-300 space-y-1 list-disc list-inside">
+                                    <li>每月8689元房贷 vs 3800元房租，差额4889元</li>
+                                    <li>5年差额累计：4889×12×5 = 29.3万</li>
+                                    <li>若投资收益4%，5年后约32万</li>
+                                    <li>公积金被房贷占用，无法自由支配</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-yellow-950 border border-yellow-800 rounded-lg">
+                                <div class="font-bold text-yellow-300 mb-2">隐性代价</div>
+                                <ul class="text-gray-300 space-y-1 list-disc list-inside">
+                                    <li>30年被锁死在一个城市</li>
+                                    <li>失去换工作、换城市的自由</li>
+                                    <li>心理压力巨大，影响工作表现</li>
+                                    <li>无法应对突发事件（疾病、失业）</li>
+                                    <li>生活质量下降，不敢旅游、消费</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 text-green-400">✓ 租房路径的优势</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="p-4 bg-green-950 border border-green-800 rounded-lg">
+                                <div class="font-bold text-green-300 mb-2">财务自由</div>
+                                <ul class="text-gray-300 space-y-1 list-disc list-inside">
+                                    <li>213万初始资金，4%年化，5年后约259万</li>
+                                    <li>每月公积金剩余3400元可投资</li>
+                                    <li>月租3800 vs 月供8689，压力小60%</li>
+                                    <li>年终奖16.8万可全部投资</li>
+                                    <li><strong class="text-green-400">5年后预计净资产：400万+</strong></li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-blue-950 border border-blue-800 rounded-lg">
+                                <div class="font-bold text-blue-300 mb-2">生活灵活</div>
+                                <ul class="text-gray-300 space-y-1 list-disc list-inside">
+                                    <li>随时可换城市，追求更好机会</li>
+                                    <li>可根据工作地点选择租房位置</li>
+                                    <li>失业也不慌，有充足存款缓冲</li>
+                                    <li>心理压力小，工作表现更好</li>
+                                    <li>保持生活品质，该花的花</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-purple-950 border border-purple-800 rounded-lg">
+                                <div class="font-bold text-purple-300 mb-2">未来选择</div>
+                                <ul class="text-gray-300 space-y-1 list-disc list-inside">
+                                    <li>5年后有400万资金，可选择：</li>
+                                    <li>  • 房价触底时全款买房</li>
+                                    <li>  • 移民或在其他城市发展</li>
+                                    <li>  • 创业或提前退休</li>
+                                    <li>  • 继续租房+投资，财务自由</li>
+                                    <li><strong class="text-purple-400">保留所有可能性</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 glow-orange">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-6 h-6 text-orange-400"></i>
+                        年终奖的影响分析
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 bg-slate-700 rounded-lg">
+                            <div class="text-sm text-gray-400 mb-2">低档年终奖（4倍月薪）</div>
+                            <div class="text-2xl font-bold mono text-yellow-400 mb-1" id="bonusLowDisplay2">
+                                9.6万
+                            </div>
+                            <div class="text-xs text-gray-500">税前12万，税后约9.6万</div>
+                            <div class="mt-3 text-xs text-gray-400">
+                                年净存款：<span id="lowBonusSavings">20.7</span>万
+                            </div>
+                        </div>
+                        <div class="p-4 bg-green-950 border border-green-700 rounded-lg">
+                            <div class="text-sm text-green-300 mb-2">中档年终奖（7倍月薪）</div>
+                            <div class="text-2xl font-bold mono text-green-400 mb-1" id="bonusMidDisplay2">
+                                16.8万
+                            </div>
+                            <div class="text-xs text-gray-500">税前21万，税后约16.8万</div>
+                            <div class="mt-3 text-xs text-green-300">
+                                年净存款：<span id="midBonusSavings">27.9</span>万
+                            </div>
+                        </div>
+                        <div class="p-4 bg-blue-950 border border-blue-700 rounded-lg">
+                            <div class="text-sm text-blue-300 mb-2">高档年终奖（10倍月薪）</div>
+                            <div class="text-2xl font-bold mono text-blue-400 mb-1" id="bonusHighDisplay2">
+                                24.0万
+                            </div>
+                            <div class="text-xs text-gray-500">税前30万，税后约24.0万</div>
+                            <div class="mt-3 text-xs text-blue-300">
+                                年净存款：<span id="highBonusSavings">35.1</span>万
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-red-950 border border-red-800 rounded-lg">
+                        <div class="font-bold text-red-300 mb-2">⚠️ 即便最高年终奖，也无法改变困局</div>
+                        <div class="text-sm text-gray-300 space-y-2">
+                            <p>
+                                假设每年都拿最高档年终奖（税后24万），年净存款约<span id="highBonusAnnualSavings">35.1</span>万：
+                            </p>
+                            <ul class="list-disc list-inside space-y-1 ml-4">
+                                <li>两年后存款：100 + <span id="highBonusTwoYearSavings">170.2</span> = <span id="highBonusTwoYearTotal">270.2</span>万</li>
+                                <li>两年后待还贷款：263.3万</li>
+                                <li>缺口依然有：<span id="highBonusGap">-26.9</span>万</li>
+                                <li>房产继续贬值至100万，净资产仍为负</li>
+                            </ul>
+                            <p class="text-red-400 font-medium mt-3">
+                                结论：年终奖只能延缓崩盘，无法扭转局面。除非连续5-7年高薪+高额年终奖且不失业，
+                                但这在互联网行业几乎不可能实现。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 glow-red">
+                    <h3 class="text-xl font-bold mb-4 text-red-400">💡 核心结论</h3>
+                    <div class="p-5 bg-red-950 border-2 border-red-600 rounded-lg">
+                        <div class="text-sm text-gray-300 space-y-3">
+                            <p class="text-lg font-bold text-red-300">
+                                如果时光倒流，不买房是明智的选择
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <div class="font-bold text-red-400 mb-2">买房5年后（2028）：</div>
+                                    <ul class="text-sm space-y-1 list-disc list-inside">
+                                        <li>净资产：约-50万（资不抵债加剧）</li>
+                                        <li>被30年房贷锁死</li>
+                                        <li>房产持续贬值</li>
+                                        <li>失业风险高悬</li>
+                                        <li>生活压力巨大</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-green-400 mb-2">租房5年后（2028）：</div>
+                                    <ul class="text-sm space-y-1 list-disc list-inside">
+                                        <li>净资产：约400万（保守估计）</li>
+                                        <li>完全财务自由</li>
+                                        <li>随时可换城市/工作</li>
+                                        <li>失业也有足够缓冲</li>
+                                        <li>生活品质无忧</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="text-red-400 font-medium border-t border-red-800 pt-3 mt-3">
+                                <strong>差距：450万净资产 + 人生自由度</strong>
+                            </p>
+                            <p class="text-xs text-gray-400">
+                                这就是为什么在房价下行周期、职业不稳定的情况下，贸然以最大杠杆买房是灾难性决策。
+                                不是"房子不好"，而是<strong class="text-white">时机不对、杠杆过大、风险过高</strong>。
+                                理性的做法是：租房保持灵活，积累资本，等待房价触底或职业稳定后再考虑。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 风险评估 -->
+        <div id="risks-tab" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <div class="w-1 h-6 bg-red-500"></div>
+                        综合风险评估矩阵
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="riskFactorsContainer">
+                        <!-- Risk factors will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>
+                            致命风险分析
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-red-950 border border-red-800 rounded-lg">
+                                <div class="font-bold text-red-300 mb-2">1. 流动性枯竭风险</div>
+                                <div class="text-sm text-gray-300">
+                                    当前存款100万看似充裕，但实际上：
+                                    <ul class="mt-2 space-y-1 list-disc list-inside text-gray-400">
+                                        <li>需覆盖日常生活开支</li>
+                                        <li>需应对突发医疗/家庭支出</li>
+                                        <li>2026年7月前需补贴月供差额</li>
+                                        <li>若失业，每年消耗5.9万（出租情况）</li>
+                                    </ul>
+                                    <div class="mt-2 text-red-400 font-medium">
+                                        实际可用流动资金远低于100万，抗风险能力极弱
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-orange-950 border border-orange-800 rounded-lg">
+                                <div class="font-bold text-orange-300 mb-2">2. 职业周期错配</div>
+                                <div class="text-sm text-gray-300">
+                                    30年房贷 vs 不足5年的职业黄金期：
+                                    <ul class="mt-2 space-y-1 list-disc list-inside text-gray-400">
+                                        <li>互联网行业35岁职业危机</li>
+                                        <li>高薪难以持续到退休</li>
+                                        <li>转行意味着收入大幅下降</li>
+                                        <li>月供8689元是长期重负</li>
+                                    </ul>
+                                    <div class="mt-2 text-orange-400 font-medium">
+                                        收入曲线与还款曲线严重不匹配
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-yellow-950 border border-yellow-800 rounded-lg">
+                                <div class="font-bold text-yellow-300 mb-2">3. 资产缩水陷阱</div>
+                                <div class="text-sm text-gray-300">
+                                    房产从313万跌至160万（-49%）仅是开始：
+                                    <ul class="mt-2 space-y-1 list-disc list-inside text-gray-400">
+                                        <li>人口减少、老龄化加剧</li>
+                                        <li>房地产市场长期下行</li>
+                                        <li>地方财政依赖土地出让</li>
+                                        <li>供大于求的市场结构</li>
+                                    </ul>
+                                    <div class="mt-2 text-yellow-400 font-medium">
+                                        房产作为"资产"实际上是贬值的负债
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="trending-down" class="w-5 h-5 text-blue-400"></i>
+                            情景模拟
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-slate-700 rounded-lg">
+                                <div class="font-bold mb-2 text-green-400">✓ 最好情况（概率：10%）</div>
+                                <div class="text-sm text-gray-300">
+                                    <ul class="space-y-1 list-disc list-inside">
+                                        <li>职位稳定至2030年</li>
+                                        <li>收入保持或增长</li>
+                                        <li>房价止跌企稳</li>
+                                        <li>5-7年内提前还清部分贷款</li>
+                                    </ul>
+                                    <div class="mt-2 text-xs text-gray-500">
+                                        但即便如此，这30年仍被房贷锁死，生活质量大打折扣
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-orange-950 border border-orange-800 rounded-lg">
+                                <div class="font-bold mb-2 text-orange-400">△ 一般情况（概率：40%）</div>
+                                <div class="text-sm text-gray-300">
+                                    <ul class="space-y-1 list-disc list-inside">
+                                        <li>2-3年内被迫转行或降薪</li>
+                                        <li>月收入降至1.5-2万</li>
+                                        <li>房价继续下跌至130-140万</li>
+                                        <li>勉强维持月供但生活质量骤降</li>
+                                    </ul>
+                                    <div class="mt-2 text-orange-400 font-medium">
+                                        净资产持续为负，永远还不清贷款
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-red-950 border border-red-800 rounded-lg">
+                                <div class="font-bold mb-2 text-red-400">✗ 最坏情况（概率：50%）</div>
+                                <div class="text-sm text-gray-300">
+                                    <ul class="space-y-1 list-disc list-inside">
+                                        <li>突然失业且长期找不到工作</li>
+                                        <li>被迫出租但月亏4889元</li>
+                                        <li>1-2年内耗尽存款</li>
+                                        <li>断供被迫低价卖房</li>
+                                        <li>卖房所得不足还贷，需额外借债</li>
+                                    </ul>
+                                    <div class="mt-2 text-red-400 font-bold">
+                                        最终结果：房子没了，还倒欠银行几十万
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 glow-red">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="users" class="w-5 h-5 text-red-400"></i>
+                        综合结论与建议
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-red-950 border-2 border-red-600 rounded-lg">
+                            <div class="font-bold text-red-300 text-lg mb-3">核心问题：这是一个财务自杀式决策</div>
+                            <div class="text-sm text-gray-300 space-y-2">
+                                <p>
+                                    <strong class="text-red-400">当前状态：</strong>
+                                    资不抵债24万，且这个缺口会随着房价下跌持续扩大。不是"���时困难"，而是结构性的财务陷阱。
+                                </p>
+                                <p>
+                                    <strong class="text-red-400">核心矛盾：</strong>
+                                    30年的债务承诺 vs 不足5年的高薪保障期。这是时间维度上的巨大错配，基本无解。
+                                </p>
+                                <p>
+                                    <strong class="text-red-400">退路受阻：</strong>
+                                    单身、无家庭支持、出租亏损、转行困难。所有备选方案都不可行，已经陷入死局。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-orange-950 border border-orange-700 rounded-lg">
+                            <div class="font-bold text-orange-300 mb-3">当务之急</div>
+                            <div class="text-sm text-gray-300">
+                                <ol class="space-y-2 list-decimal list-inside">
+                                    <li>
+                                        <strong>立即止损：</strong>
+                                        趁存款还有100万、还能找到工作的时机，尽快卖房脱身。即便亏损84万，也好过未来更大的窟窿。
+                                    </li>
+                                    <li>
+                                        <strong>重塑职业：</strong>
+                                        利用互联网背景转向更稳定的行业，接受降薪换取长期稳定。
+                                    </li>
+                                    <li>
+                                        <strong>控制欲望：</strong>
+                                        未来5-10年不再考虑买房，租房生活，重建财务安全边际。
+                                    </li>
+                                    <li>
+                                        <strong>理性规划：</strong>
+                                        如确实需要房产，等收入稳定、有充足储蓄后再考虑，且首付比例不低于50%。
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-slate-800 rounded-lg">
+                            <div class="font-bold text-blue-300 mb-2">核心教训</div>
+                            <div class="text-sm text-gray-400">
+                                这个案例充分说明：<strong class="text-white">在收入不稳定、职业周期短的情况下，
+                                以最低首付、最长期限贷款买房，是极其危险的财务行为。</strong>
+                                房产不应该是"资产增值工具"的幻想，而应该是在充分财务准备后的生活需求。
+                                盲目加杠杆只会让人成为房贷的奴隶，最终房财两空。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 基础数据（截至2025年12月）
+        const purchasePrice = 313;
+        const downPayment = 113;
+        const loanAmount = 200;
+        const currentHouseValue = 160;
+        const currentSavings = 100;
+        const paidLoan = 29.2;
+        const remainingLoan = 284;
+        const monthlyPayment = 0.869; // 万元
+        const monthlyRent = 0.38; // 万元
+
+        // 收入支出详情（2025年12月现状）
+        const monthlySalaryGross = 3.0; // 万元，税前
+        const monthlySalaryNet = 2.2; // 万元，税后
+        const monthlyProvidentFund = 0.72; // 万元，公积金
+        const yearlyExpense = 13.5; // 万元，年固定开支（不含房贷）
+        const monthlyExpense = yearlyExpense / 12; // 月均固定开支
+
+        // 刚性支出明细（年度）
+        const rigidExpenses = {
+            clothing: 1.0,
+            travel: 2.0,
+            pet: 0.5,
+            daily: 10.0 // 食住行等基本生活
+        };
+
+        // 年终奖假设（4-10倍月薪，单独计税）
+        const bonusLow = monthlySalaryGross * 4; // 12万
+        const bonusMid = monthlySalaryGross * 7; // 21万
+        const bonusHigh = monthlySalaryGross * 10; // 30万
+
+        // 年终奖单独计税（简化计算，实际税率按阶梯）
+        const bonusTaxRate = 0.20; // 约20%税率
+        const bonusNetLow = bonusLow * (1 - bonusTaxRate);
+        const bonusNetMid = bonusMid * (1 - bonusTaxRate);
+        const bonusNetHigh = bonusHigh * (1 - bonusTaxRate);
+
+        // 月度现金流（有工作时，不含年终奖）
+        const monthlyCashFlow = monthlySalaryNet + monthlyProvidentFund - monthlyPayment - monthlyExpense;
+
+        // 年度净现金流（含年终奖）
+        const yearlyNetCashFlowLow = monthlyCashFlow * 12 + bonusNetLow;
+        const yearlyNetCashFlowMid = monthlyCashFlow * 12 + bonusNetMid;
+        const yearlyNetCashFlowHigh = monthlyCashFlow * 12 + bonusNetHigh;
+
+        // 资产负债数据
+        const assetLiabilityData = [
+            { name: '现金存款', value: currentSavings, color: '#10b981' },
+            { name: '房产市值', value: currentHouseValue, color: '#3b82f6' },
+            { name: '待还贷款', value: -remainingLoan, color: '#ef4444' },
+        ];
+
+        const netWorth = currentSavings + currentHouseValue - remainingLoan;
+
+        // 收入中断情景模拟（出租房屋）
+        const monthlyDeficit = monthlyPayment - monthlyRent + monthlyExpense; // 月度缺口
+        const unemploymentScenarios = [
+            {
+                months: 0,
+                savings: 100,
+                label: '当前（2025年12月）',
+                totalExpense: 0,
+                description: '在职状态'
+            },
+            {
+                months: 6,
+                savings: 100 - (monthlyDeficit) * 6,
+                label: '失业6个月',
+                totalExpense: (monthlyDeficit) * 6,
+                description: '房屋出租，刚性支出未削减'
+            },
+            {
+                months: 12,
+                savings: 100 - (monthlyDeficit) * 12,
+                label: '失业12个月',
+                totalExpense: (monthlyDeficit) * 12,
+                description: '生活习惯难改，消耗加速'
+            },
+            {
+                months: 18,
+                savings: 100 - (monthlyDeficit) * 18,
+                label: '失业18个月',
+                totalExpense: (monthlyDeficit) * 18,
+                description: '接近断供边缘'
+            },
+            {
+                months: 24,
+                savings: 100 - (monthlyDeficit) * 24,
+                label: '失业24个月',
+                totalExpense: (monthlyDeficit) * 24,
+                description: '必须卖房或断供'
+            }
+        ];
+
+        // 未来预测（考虑真实的职业生命周期，中等年终奖16.8万）
+        const yearlyHouseValueDrop = 30; // 房价每年下跌30万
+        const yearlyLoanPayment = 10.4; // 每年还贷约10.4万
+
+        const futureProjection = [
+            {
+                year: '2025年12月',
+                存款: 100,
+                待还贷款: 284,
+                房产市值: 160,
+                净资产: netWorth,
+                年终奖: 0,
+                备注: '当前状态'
+            },
+            {
+                year: '2026年12月',
+                存款: 100 + yearlyNetCashFlowMid,
+                待还贷款: 284 - yearlyLoanPayment,
+                房产市值: 160 - yearlyHouseValueDrop,
+                净资产: (100 + yearlyNetCashFlowMid) + (160 - yearlyHouseValueDrop) - (284 - yearlyLoanPayment),
+                年终奖: bonusNetMid,
+                备注: '假设收入稳定'
+            },
+            {
+                year: '2027年12月',
+                存款: 100 + yearlyNetCashFlowMid * 2,
+                待还贷款: 284 - yearlyLoanPayment * 2,
+                房产市值: 160 - yearlyHouseValueDrop * 2,
+                净资产: (100 + yearlyNetCashFlowMid * 2) + (160 - yearlyHouseValueDrop * 2) - (284 - yearlyLoanPayment * 2),
+                年终奖: bonusNetMid,
+                备注: '35岁危机临近'
+            },
+            {
+                year: '2028年12月',
+                存款: 100 + yearlyNetCashFlowMid * 2 + yearlyNetCashFlowMid * 0.5,
+                待还贷款: 284 - yearlyLoanPayment * 3,
+                房产市值: 160 - yearlyHouseValueDrop * 3,
+                净资产: (100 + yearlyNetCashFlowMid * 2 + yearlyNetCashFlowMid * 0.5) + (160 - yearlyHouseValueDrop * 3) - (284 - yearlyLoanPayment * 3),
+                年终奖: bonusNetMid * 0.5,
+                备注: '转行收入腰斩'
+            },
+        ];
+
+        // 买房vs租房对比（假设租房年化收益4%）
+        const investmentReturn = 0.04;
+        const monthlyRentCost = 0.38; // 万元
+        const providentFundSurplus = monthlyProvidentFund - monthlyRentCost; // 公积金覆盖房租后的剩余
+
+        const buyVsRentComparison = [
+            {
+                year: '2025年12月',
+                买房_现金: 100,
+                买房_房产: 160,
+                买房_负债: -284,
+                买房_净资产: -24,
+                租房_投资总额: 213, // 113首付+100存款
+                租房_备注: '初始状态'
+            },
+            {
+                year: '2026年12月',
+                买房_现金: 100 + yearlyNetCashFlowMid,
+                买房_房产: 160 - yearlyHouseValueDrop,
+                买房_负债: -(284 - yearlyLoanPayment),
+                买房_净资产: (100 + yearlyNetCashFlowMid) + (160 - yearlyHouseValueDrop) - (284 - yearlyLoanPayment),
+                租房_投资总额: 213 * (1 + investmentReturn) + (monthlySalaryNet + providentFundSurplus - monthlyExpense) * 12 + bonusNetMid,
+                租房_备注: '第1年'
+            },
+            {
+                year: '2027年12月',
+                买房_现金: 100 + yearlyNetCashFlowMid * 2,
+                买房_房产: 160 - yearlyHouseValueDrop * 2,
+                买房_负债: -(284 - yearlyLoanPayment * 2),
+                买房_净资产: (100 + yearlyNetCashFlowMid * 2) + (160 - yearlyHouseValueDrop * 2) - (284 - yearlyLoanPayment * 2),
+                租房_投资总额: (213 * (1 + investmentReturn) + (monthlySalaryNet + providentFundSurplus - monthlyExpense) * 12 + bonusNetMid) * (1 + investmentReturn) + (monthlySalaryNet + providentFundSurplus - monthlyExpense) * 12 + bonusNetMid,
+                租房_备注: '第2年'
+            },
+            {
+                year: '2028年12月',
+                买房_现金: 100 + yearlyNetCashFlowMid * 2.5,
+                买房_房产: 160 - yearlyHouseValueDrop * 3,
+                买房_负债: -(284 - yearlyLoanPayment * 3),
+                买房_净资产: (100 + yearlyNetCashFlowMid * 2.5) + (160 - yearlyHouseValueDrop * 3) - (284 - yearlyLoanPayment * 3),
+                租房_投资总额: 340, // 简化计算，实际会更复杂
+                租房_备注: '第3年，买房者可能失业'
+            },
+            {
+                year: '2030年12月',
+                买房_现金: 100 + yearlyNetCashFlowMid * 3,
+                买房_房产: 160 - yearlyHouseValueDrop * 5,
+                买房_负债: -(284 - yearlyLoanPayment * 5),
+                买房_净资产: (100 + yearlyNetCashFlowMid * 3) + (160 - yearlyHouseValueDrop * 5) - (284 - yearlyLoanPayment * 5),
+                租房_投资总额: 400, // 简化计算
+                租房_备注: '第5年'
+            }
+        ];
+
+        // 月度现金流（失业情况下，出租房屋但保持原有生活习惯）
+        const cashFlowUnemployed = [
+            { month: 1, 累计亏损: -monthlyDeficit * 1 },
+            { month: 3, 累计亏损: -monthlyDeficit * 3 },
+            { month: 6, 累计亏损: -monthlyDeficit * 6 },
+            { month: 12, 累计亏损: -monthlyDeficit * 12 },
+            { month: 18, 累计亏损: -monthlyDeficit * 18 },
+            { month: 24, 累计亏损: -monthlyDeficit * 24 },
+        ];
+
+        // 风险评估
+        const riskFactors = [
+            {
+                title: '资不抵债风险',
+                level: 'critical',
+                description: '当前净资产为负24万元，房产贬值49%',
+                impact: '高'
+            },
+            {
+                title: '现金流压力',
+                level: 'critical',
+                description: '月供8689元，公积金到2026年7月才能覆盖',
+                impact: '高'
+            },
+            {
+                title: '职业不稳定',
+                level: 'high',
+                description: '互联网行业寿命短，裁员风险高',
+                impact: '高'
+            },
+            {
+                title: '出租收益低',
+                level: 'high',
+                description: '月租3800元仅为月供44%，年亏损5.9万',
+                impact: '中高'
+            },
+            {
+                title: '房价下行',
+                level: 'medium',
+                description: '市场持续低迷，资产进一步缩水',
+                impact: '中'
+            },
+            {
+                title: '无家庭支持',
+                level: 'medium',
+                description: '单身且家庭无助力，无后备资源',
+                impact: '中'
+            }
+        ];
+
+        // 风险等级颜色映射
+        const riskColors = {
+            critical: 'bg-red-500',
+            high: 'bg-orange-500',
+            medium: 'bg-yellow-500',
+            low: 'bg-blue-500'
+        };
+
+        // 当前活动标签页
+        let activeTab = 'overview';
+
+        // 初始化图表
+        let assetLiabilityChart = null;
+        let cashFlowChart = null;
+        let projectionChart = null;
+        let unemploymentChart = null;
+        let buyVsRentChart = null;
+
+        // 更新标签页
+        function updateActiveTab(tabName) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active-tab', 'bg-red-600', 'text-white', 'glow-red');
+                btn.classList.add('bg-slate-700', 'text-gray-300', 'hover:bg-slate-600');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.add('active-tab');
+
+            // 显示对应的标签页内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+
+            // 更新活动标签页
+            activeTab = tabName;
+
+            // 延迟更新图表，确保DOM已更新
+            setTimeout(() => {
+                if (tabName === 'overview') {
+                    initAssetLiabilityChart();
+                    initCashFlowChart();
+                } else if (tabName === 'projection') {
+                    initProjectionChart();
+                } else if (tabName === 'unemployment') {
+                    initUnemploymentChart();
+                    renderUnemploymentScenarios();
+                } else if (tabName === 'income') {
+                    updateIncomeTabData();
+                } else if (tabName === 'buyvsrent') {
+                    initBuyVsRentChart();
+                    renderBuyVsRentComparison();
+                }
+            }, 100);
+        }
+
+        // 初始化资产负债图表
+        function initAssetLiabilityChart() {
+            const ctx = document.getElementById('assetLiabilityChart').getContext('2d');
+
+            // 销毁现有图表实例
+            if (assetLiabilityChart) {
+                assetLiabilityChart.destroy();
+            }
+
+            // 准备数据
+            const labels = assetLiabilityData.map(item => item.name);
+            const values = assetLiabilityData.map(item => item.value);
+            const colors = assetLiabilityData.map(item => item.color);
+
+            assetLiabilityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '金额（万元）',
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y}万元`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 更新净资产显示
+            document.getElementById('netWorthValue').textContent = netWorth.toFixed(1) + '万元';
+            document.getElementById('annualLoss').textContent = `-${(monthlyDeficit * 12).toFixed(1)}万/年`;
+            document.getElementById('monthlyDeficit').textContent = `-${(monthlyDeficit * 10000).toFixed(0)}元`;
+        }
+
+        // 初始化现金流图表
+        function initCashFlowChart() {
+            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+
+            // 销毁现有图表实例
+            if (cashFlowChart) {
+                cashFlowChart.destroy();
+            }
+
+            // 准备数据
+            const months = cashFlowUnemployed.map(item => item.month);
+            const losses = cashFlowUnemployed.map(item => item.累计亏损);
+
+            cashFlowChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: '累计亏损（万元）',
+                        data: losses,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ef4444',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '月份',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '累计亏损（万元）',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `累计亏损: ${context.parsed.y}万元`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化失业图表
+        function initUnemploymentChart() {
+            const ctx = document.getElementById('unemploymentChart').getContext('2d');
+
+            // 销毁现有图表实例
+            if (unemploymentChart) {
+                unemploymentChart.destroy();
+            }
+
+            // 准备数据
+            const months = unemploymentScenarios.map(item => item.months);
+            const savings = unemploymentScenarios.map(item => item.savings);
+
+            unemploymentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: '剩余存款（万元）',
+                        data: savings,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ef4444',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '失业月数',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '剩余存款（万元）',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `剩余存款: ${context.parsed.y}万元`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化预测图表
+        function initProjectionChart() {
+            const ctx = document.getElementById('projectionChart').getContext('2d');
+
+            // 销毁现有图表实例
+            if (projectionChart) {
+                projectionChart.destroy();
+            }
+
+            // 准备数据
+            const years = futureProjection.map(item => item.year);
+            const deposits = futureProjection.map(item => item.存款);
+            const loans = futureProjection.map(item => item.待还贷款);
+            const houseValues = futureProjection.map(item => item.房产市值);
+            const netWorths = futureProjection.map(item => item.净资产);
+
+            projectionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [
+                        {
+                            label: '存款',
+                            data: deposits,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '待还贷款',
+                            data: loans,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '房产市值',
+                            data: houseValues,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '净资产',
+                            data: netWorths,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#cbd5e1'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+
+            // 更新未来预测页面的数据
+            document.getElementById('monthlyCashFlow').textContent = (monthlyCashFlow * 10000).toFixed(0);
+            document.getElementById('yearlyNetSaving').textContent = yearlyNetCashFlowMid.toFixed(1);
+            document.getElementById('twoYearSavings').textContent = (100 + yearlyNetCashFlowMid * 2).toFixed(1);
+            document.getElementById('remainingGap').textContent = (263.3 - (100 + yearlyNetCashFlowMid * 2)).toFixed(1);
+        }
+
+        // 初始化买房vs租房对比图表
+        function initBuyVsRentChart() {
+            const ctx = document.getElementById('buyVsRentChart').getContext('2d');
+
+            // 销毁现有图表实例
+            if (buyVsRentChart) {
+                buyVsRentChart.destroy();
+            }
+
+            // 准备数据
+            const years = buyVsRentComparison.map(item => item.year);
+            const buyNetWorth = buyVsRentComparison.map(item => item.买房_净资产);
+            const rentNetWorth = buyVsRentComparison.map(item => item.租房_投资总额);
+
+            buyVsRentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [
+                        {
+                            label: '买房路径净资产',
+                            data: buyNetWorth,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 5
+                        },
+                        {
+                            label: '租房路径净资产',
+                            data: rentNetWorth,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#cbd5e1'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+        }
+
+        // 渲染买房vs租房对比数据
+        function renderBuyVsRentComparison() {
+            const buyContainer = document.getElementById('buyPathContainer');
+            const rentContainer = document.getElementById('rentPathContainer');
+
+            buyContainer.innerHTML = '';
+            rentContainer.innerHTML = '';
+
+            buyVsRentComparison.forEach((item, idx) => {
+                const buyDiv = document.createElement('div');
+                buyDiv.className = 'p-4 bg-slate-700 rounded-lg';
+                buyDiv.innerHTML = `
+                    <div class="font-bold text-lg mb-3">${item.year}</div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <div class="text-gray-400">现金存款</div>
+                            <div class="font-mono text-green-400">${item.买房_现金.toFixed(1)}万</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">房产市值</div>
+                            <div class="font-mono text-blue-400">${item.买房_房产.toFixed(1)}万</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">待还贷款</div>
+                            <div class="font-mono text-red-400">${item.买房_负债.toFixed(1)}万</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">净资产</div>
+                            <div class="font-mono font-bold text-lg ${item.买房_净资产 < 0 ? 'text-red-400' : 'text-green-400'}">
+                                ${item.买房_净资产.toFixed(1)}万
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const rentDiv = document.createElement('div');
+                rentDiv.className = 'p-4 bg-slate-700 rounded-lg';
+                rentDiv.innerHTML = `
+                    <div class="font-bold text-lg mb-3">${item.year}</div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">投资总资产</span>
+                            <span class="font-mono text-2xl font-bold text-green-400">
+                                ${item.租房_投资总额.toFixed(1)}万
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">无负债</span>
+                            <span class="font-mono text-green-400">0万</span>
+                        </div>
+                        <div class="border-t border-gray-600 pt-2 mt-2 flex justify-between">
+                            <span class="text-gray-400">净资产</span>
+                            <span class="font-mono text-2xl font-bold text-green-400">
+                                ${item.租房_投资总额.toFixed(1)}万
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">${item.租房_备注}</div>
+                    </div>
+                `;
+
+                buyContainer.appendChild(buyDiv);
+                rentContainer.appendChild(rentDiv);
+            });
+        }
+
+        // 渲染失业场景
+        function renderUnemploymentScenarios() {
+            const container = document.getElementById('unemploymentScenariosContainer');
+            container.innerHTML = '';
+
+            // 过滤掉第0个月（在职状态）的场景
+            const filteredScenarios = unemploymentScenarios.filter(s => s.months > 0);
+
+            filteredScenarios.forEach((scenario, idx) => {
+                let riskLevelClass = '';
+                if (scenario.months <= 6) {
+                    riskLevelClass = 'bg-yellow-500';
+                } else if (scenario.months <= 12) {
+                    riskLevelClass = 'bg-orange-500';
+                } else {
+                    riskLevelClass = 'bg-red-500';
+                }
+
+                const scenarioElement = document.createElement('div');
+                scenarioElement.className = 'card rounded-xl p-5';
+                scenarioElement.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-lg">${scenario.label}</h3>
+                        <div class="px-3 py-1 rounded-full text-xs font-bold ${riskLevelClass} bg-opacity-20 border border-current">
+                            ${scenario.months <= 6 ? '危险' : scenario.months <= 12 ? '严重' : '极危'}
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-slate-700 rounded">
+                            <div class="text-xs text-gray-400 mb-1">剩余存款</div>
+                            <div class="text-2xl font-bold mono ${
+                                scenario.savings > 50 ? 'text-yellow-400' :
+                                scenario.savings > 20 ? 'text-orange-400' : 'text-red-400'
+                            }">
+                                ${scenario.savings.toFixed(1)}万
+                            </div>
+                        </div>
+                        <div class="p-3 bg-red-950 border border-red-800 rounded">
+                            <div class="text-xs text-red-300 mb-1">累计消耗</div>
+                            <div class="text-xl font-bold mono text-red-400">
+                                ${scenario.totalExpense.toFixed(1)}万
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-400 p-2 bg-slate-800 rounded">
+                            ${scenario.description}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(scenarioElement);
+            });
+
+            // 更新关键时间节点显示
+            document.getElementById('savings6Months').textContent = unemploymentScenarios[1].savings.toFixed(1) + '万';
+            document.getElementById('consumption6Months').textContent = unemploymentScenarios[1].totalExpense.toFixed(1) + '万';
+            document.getElementById('savings12Months').textContent = unemploymentScenarios[2].savings.toFixed(1) + '万';
+            document.getElementById('consumption12Months').textContent = unemploymentScenarios[2].totalExpense.toFixed(1) + '万';
+            document.getElementById('savings24Months').textContent = unemploymentScenarios[4].savings.toFixed(1) + '万';
+            document.getElementById('consumption24Months').textContent = unemploymentScenarios[4].totalExpense.toFixed(1) + '万';
+        }
+
+        // 更新收入标签页数据
+        function updateIncomeTabData() {
+            document.getElementById('grossSalary').textContent = (monthlySalaryGross * 10000).toFixed(0) + '元';
+            document.getElementById('netSalary').textContent = (monthlySalaryNet * 10000).toFixed(0) + '元';
+            document.getElementById('providentFund').textContent = (monthlyProvidentFund * 10000).toFixed(0) + '元';
+            document.getElementById('totalMonthlyIncome').textContent = ((monthlySalaryNet + monthlyProvidentFund) * 10000).toFixed(0) + '元';
+            document.getElementById('monthlyExpense').textContent = (monthlyExpense * 10000).toFixed(0) + '元/月';
+            document.getElementById('dailyExpense').textContent = '~' + ((rigidExpenses.daily / 12) * 10000).toFixed(0) + '元';
+            document.getElementById('clothingExpense').textContent = ((rigidExpenses.clothing / 12) * 10000).toFixed(0) + '元';
+            document.getElementById('travelExpense').textContent = ((rigidExpenses.travel / 12) * 10000).toFixed(0) + '元';
+            document.getElementById('petExpense').textContent = ((rigidExpenses.pet / 12) * 10000).toFixed(0) + '元';
+            document.getElementById('totalMonthlyExpense').textContent = ((monthlyPayment + monthlyExpense) * 10000).toFixed(0) + '元';
+            document.getElementById('monthlyIncomeDisplay').textContent = ((monthlySalaryNet + monthlyProvidentFund) * 10000).toFixed(0) + '元';
+            document.getElementById('monthlyExpenseDisplay').textContent = ((monthlyPayment + monthlyExpense) * 10000).toFixed(0) + '元';
+            document.getElementById('monthlySurplus').textContent = (monthlyCashFlow * 10000).toFixed(0) + '元';
+
+            // 更新年终奖显示
+            document.getElementById('bonusLowDisplay').textContent = bonusNetLow.toFixed(1) + '万';
+            document.getElementById('bonusMidDisplay').textContent = bonusNetMid.toFixed(1) + '万';
+            document.getElementById('bonusHighDisplay').textContent = bonusNetHigh.toFixed(1) + '万';
+
+            // 更新买房vs租房页面的年终奖显示
+            document.getElementById('bonusLowDisplay2').textContent = bonusNetLow.toFixed(1) + '万';
+            document.getElementById('bonusMidDisplay2').textContent = bonusNetMid.toFixed(1) + '万';
+            document.getElementById('bonusHighDisplay2').textContent = bonusNetHigh.toFixed(1) + '万';
+
+            // 更新年终奖储蓄计算
+            document.getElementById('lowBonusSavings').textContent = (monthlyCashFlow * 12 + bonusNetLow).toFixed(1) + '万';
+            document.getElementById('midBonusSavings').textContent = (monthlyCashFlow * 12 + bonusNetMid).toFixed(1) + '万';
+            document.getElementById('highBonusSavings').textContent = (monthlyCashFlow * 12 + bonusNetHigh).toFixed(1) + '万';
+
+            // 更新买房vs租房页面的年终奖储蓄计算
+            document.getElementById('highBonusAnnualSavings').textContent = (monthlyCashFlow * 12 + bonusNetHigh).toFixed(1);
+            document.getElementById('highBonusTwoYearSavings').textContent = ((monthlyCashFlow * 12 + bonusNetHigh) * 2).toFixed(1);
+            document.getElementById('highBonusTwoYearTotal').textContent = (100 + (monthlyCashFlow * 12 + bonusNetHigh) * 2).toFixed(1);
+            document.getElementById('highBonusGap').textContent = (263.3 - (100 + (monthlyCashFlow * 12 + bonusNetHigh) * 2)).toFixed(1);
+        }
+
+        // 渲染风险评估矩阵
+        function renderRiskFactors() {
+            const container = document.getElementById('riskFactorsContainer');
+            container.innerHTML = '';
+
+            riskFactors.forEach((risk, idx) => {
+                const riskColorClass = riskColors[risk.level] || riskColors.low;
+
+                const riskElement = document.createElement('div');
+                riskElement.className = 'border border-gray-700 rounded-lg p-4 hover:border-gray-500 transition-colors';
+                riskElement.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="px-3 py-1 rounded-full text-xs font-bold ${riskColorClass} bg-opacity-20 border border-current">
+                            ${risk.level === 'critical' ? '严重' : risk.level === 'high' ? '高' : risk.level === 'medium' ? '中等' : '低'}
+                        </div>
+                        <div class="text-xs text-gray-500">影响：${risk.impact}</div>
+                    </div>
+                    <h3 class="font-bold mb-2">${risk.title}</h3>
+                    <p class="text-sm text-gray-400">${risk.description}</p>
+                `;
+
+                container.appendChild(riskElement);
+            });
+        }
+
+        // 初始化事件监听器
+        function initEventListeners() {
+            document.getElementById('tab-overview').addEventListener('click', () => updateActiveTab('overview'));
+            document.getElementById('tab-income').addEventListener('click', () => updateActiveTab('income'));
+            document.getElementById('tab-unemployment').addEventListener('click', () => updateActiveTab('unemployment'));
+            document.getElementById('tab-projection').addEventListener('click', () => updateActiveTab('projection'));
+            document.getElementById('tab-buyvsrent').addEventListener('click', () => updateActiveTab('buyvsrent'));
+            document.getElementById('tab-risks').addEventListener('click', () => updateActiveTab('risks'));
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化事件监听器
+            initEventListeners();
+
+            // 初始化风险因素
+            renderRiskFactors();
+
+            // 初始化默认标签页
+            updateActiveTab('overview');
+        });
+    </script>
+</body>
+</html>
