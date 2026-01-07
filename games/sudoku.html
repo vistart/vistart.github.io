@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数独游戏</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .sudoku-cell {
+      width: 48px;
+      height: 48px;
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-bold text-center mb-8 text-indigo-900">数独游戏</h1>
+    
+    <!-- 控制面板 -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <h3 class="font-semibold mb-2 text-gray-700">选择难度：</h3>
+          <div class="flex gap-2">
+            <button onclick="generateGame(1)" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition">简易</button>
+            <button onclick="generateGame(2)" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">中等</button>
+            <button onclick="generateGame(3)" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">困难</button>
+          </div>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold mb-2 text-gray-700">当前随机数：</h3>
+          <div class="flex gap-2">
+            <input type="text" id="seedInput" class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="输入7位随机数">
+            <button onclick="loadFromSeed()" class="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition">加载</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mb-4">
+        <button onclick="toggleCustomMode()" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition">自定义局面</button>
+      </div>
+      
+      <div id="customPanel" class="mb-4 p-4 bg-gray-50 rounded hidden">
+        <h3 class="font-semibold mb-2 text-gray-700">输入数独（0表示空格，每行9个数字，用空格分隔）：</h3>
+        <textarea id="customInput" class="w-full h-32 px-3 py-2 border rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="例如：&#10;5 3 0 0 7 0 0 0 0&#10;6 0 0 1 9 5 0 0 0&#10;..."></textarea>
+        <button onclick="loadCustomPuzzle()" class="mt-2 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition">加载自定义</button>
+      </div>
+      
+      <div id="message" class="mb-4 p-3 rounded hidden"></div>
+      
+      <div class="flex gap-2">
+        <button onclick="reset()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition">重置</button>
+        <button onclick="toggleSolution()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">显示答案</button>
+        <button onclick="checkSolution()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition">检查答案</button>
+      </div>
+    </div>
+    
+    <!-- 数独网格 -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <div id="sudokuGrid" class="inline-block border-4 border-gray-800"></div>
+      <div class="mt-4 text-sm text-gray-600">
+        <p>提示：灰色数字为初始数字，蓝色数字为你填写的数字</p>
+        <p id="solutionHint" class="text-yellow-600 hidden">黄色背景显示的是答案</p>
+      </div>
+    </div>
+    
+    <div id="emptyState" class="bg-white rounded-lg shadow-lg p-12 text-center text-gray-500">
+      <p class="text-xl">请选择难度开始游戏，或加载自定义局面</p>
+    </div>
+  </div>
+
+  <script>
+    // 全局状态
+    let puzzle = null;
+    let userBoard = null;
+    let solution = null;
+    let showSolution = false;
+    let seedCode = '';
+
+    // 数独求解器（回溯算法）
+    function solveSudoku(board) {
+      const newBoard = board.map(row => [...row]);
+      
+      const isValid = (row, col, num) => {
+        for (let x = 0; x < 9; x++) {
+          if (newBoard[row][x] === num) return false;
+        }
+        for (let x = 0; x < 9; x++) {
+          if (newBoard[x][col] === num) return false;
+        }
+        const startRow = Math.floor(row / 3) * 3;
+        const startCol = Math.floor(col / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (newBoard[startRow + i][startCol + j] === num) return false;
+          }
+        }
+        return true;
+      };
+      
+      const solve = () => {
+        for (let row = 0; row < 9; row++) {
+          for (let col = 0; col < 9; col++) {
+            if (newBoard[row][col] === 0) {
+              for (let num = 1; num <= 9; num++) {
+                if (isValid(row, col, num)) {
+                  newBoard[row][col] = num;
+                  if (solve()) return true;
+                  newBoard[row][col] = 0;
+                }
+              }
+              return false;
+            }
+          }
+        }
+        return true;
+      };
+      
+      solve();
+      return newBoard;
+    }
+
+    // 检查数独是否有效
+    function isValidSudoku(board) {
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          if (board[row][col] !== 0) {
+            const num = board[row][col];
+            board[row][col] = 0;
+            
+            const isValid = (r, c, n) => {
+              for (let x = 0; x < 9; x++) {
+                if (x !== c && board[r][x] === n) return false;
+                if (x !== r && board[x][c] === n) return false;
+              }
+              const startRow = Math.floor(r / 3) * 3;
+              const startCol = Math.floor(c / 3) * 3;
+              for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                  const nr = startRow + i;
+                  const nc = startCol + j;
+                  if (nr !== r && nc !== c && board[nr][nc] === n) return false;
+                }
+              }
+              return true;
+            };
+            
+            if (!isValid(row, col, num)) {
+              board[row][col] = num;
+              return false;
+            }
+            board[row][col] = num;
+          }
+        }
+      }
+      return true;
+    }
+
+    // 生成完整的数独
+    function generateFullSudoku(seed) {
+      const board = Array(9).fill(0).map(() => Array(9).fill(0));
+      
+      let random = seed;
+      const nextRandom = () => {
+        random = (random * 9301 + 49297) % 233280;
+        return random / 233280;
+      };
+      
+      const isValid = (row, col, num) => {
+        for (let x = 0; x < 9; x++) {
+          if (board[row][x] === num || board[x][col] === num) return false;
+        }
+        const startRow = Math.floor(row / 3) * 3;
+        const startCol = Math.floor(col / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (board[startRow + i][startCol + j] === num) return false;
+          }
+        }
+        return true;
+      };
+      
+      const fill = (row, col) => {
+        if (row === 9) return true;
+        if (col === 9) return fill(row + 1, 0);
+        
+        const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let i = nums.length - 1; i > 0; i--) {
+          const j = Math.floor(nextRandom() * (i + 1));
+          [nums[i], nums[j]] = [nums[j], nums[i]];
+        }
+        
+        for (const num of nums) {
+          if (isValid(row, col, num)) {
+            board[row][col] = num;
+            if (fill(row, col + 1)) return true;
+            board[row][col] = 0;
+          }
+        }
+        return false;
+      };
+      
+      fill(0, 0);
+      return board;
+    }
+
+    // 根据难度挖空
+    function createPuzzle(fullBoard, difficulty, seed) {
+      const puzzleBoard = fullBoard.map(row => [...row]);
+      
+      let cellsToRemove;
+      if (difficulty === 1) cellsToRemove = 35;
+      else if (difficulty === 2) cellsToRemove = 45;
+      else cellsToRemove = 55;
+      
+      let random = seed;
+      const nextRandom = () => {
+        random = (random * 9301 + 49297) % 233280;
+        return random / 233280;
+      };
+      
+      const positions = [];
+      for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+          positions.push([i, j]);
+        }
+      }
+      
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(nextRandom() * (i + 1));
+        [positions[i], positions[j]] = [positions[j], positions[i]];
+      }
+      
+      for (let i = 0; i < cellsToRemove && i < positions.length; i++) {
+        const [row, col] = positions[i];
+        puzzleBoard[row][col] = 0;
+      }
+      
+      return puzzleBoard;
+    }
+
+    // 生成游戏
+    function generateGame(difficulty) {
+      const randomValue = Math.floor(Math.random() * 1000000);
+      const seed = difficulty * 1000000 + randomValue;
+      const code = `${difficulty}${randomValue.toString().padStart(6, '0')}`;
+      
+      const fullBoard = generateFullSudoku(seed);
+      const puzzleBoard = createPuzzle(fullBoard, difficulty, seed + 1);
+      
+      puzzle = puzzleBoard;
+      userBoard = puzzleBoard.map(row => [...row]);
+      solution = solveSudoku(puzzleBoard);
+      showSolution = false;
+      seedCode = code;
+      
+      document.getElementById('seedInput').value = code;
+      showMessage('');
+      renderSudoku();
+    }
+
+    // 从随机数加载
+    function loadFromSeed() {
+      const input = document.getElementById('seedInput').value;
+      if (input.length !== 7) {
+        showMessage('随机数格式错误！应为7位数字', 'error');
+        return;
+      }
+      
+      const difficulty = parseInt(input[0]);
+      if (difficulty < 1 || difficulty > 3) {
+        showMessage('难度指标错误！应为1-3', 'error');
+        return;
+      }
+      
+      const randomValue = parseInt(input.slice(1));
+      const seed = difficulty * 1000000 + randomValue;
+      
+      const fullBoard = generateFullSudoku(seed);
+      const puzzleBoard = createPuzzle(fullBoard, difficulty, seed + 1);
+      
+      puzzle = puzzleBoard;
+      userBoard = puzzleBoard.map(row => [...row]);
+      solution = solveSudoku(puzzleBoard);
+      showSolution = false;
+      seedCode = input;
+      
+      showMessage('成功加载数独！', 'success');
+      renderSudoku();
+    }
+
+    // 加载自定义局面
+    function loadCustomPuzzle() {
+      try {
+        const input = document.getElementById('customInput').value;
+        const lines = input.trim().split('\n');
+        if (lines.length !== 9) {
+          showMessage('输入错误！应为9行', 'error');
+          return;
+        }
+        
+        const board = lines.map(line => {
+          const nums = line.trim().split(/\s+/).map(n => parseInt(n) || 0);
+          if (nums.length !== 9) {
+            throw new Error('每行应有9个数字');
+          }
+          return nums;
+        });
+        
+        if (!isValidSudoku(board)) {
+          showMessage('数独局面不合法！存在冲突', 'error');
+          return;
+        }
+        
+        const solved = solveSudoku(board);
+        const hasEmptyCells = board.some(row => row.includes(0));
+        if (!hasEmptyCells) {
+          showMessage('已是完整数独！', 'error');
+          return;
+        }
+        
+        puzzle = board;
+        userBoard = board.map(row => [...row]);
+        solution = solved;
+        showSolution = false;
+        seedCode = '自定义';
+        
+        document.getElementById('seedInput').value = '自定义';
+        showMessage('自定义数独加载成功！', 'success');
+        renderSudoku();
+      } catch (err) {
+        showMessage(`加载失败：${err.message}`, 'error');
+      }
+    }
+
+    // 切换自定义模式
+    function toggleCustomMode() {
+      const panel = document.getElementById('customPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    // 显示消息
+    function showMessage(msg, type = '') {
+      const msgEl = document.getElementById('message');
+      if (!msg) {
+        msgEl.classList.add('hidden');
+        return;
+      }
+      
+      msgEl.textContent = msg;
+      msgEl.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+      
+      if (type === 'success' || msg.includes('成功') || msg.includes('恭喜')) {
+        msgEl.classList.add('bg-green-100', 'text-green-800');
+      } else if (type === 'error') {
+        msgEl.classList.add('bg-red-100', 'text-red-800');
+      }
+    }
+
+    // 处理单元格变化
+    function handleCellChange(row, col, value) {
+      if (puzzle[row][col] !== 0) return;
+      
+      const num = parseInt(value) || 0;
+      userBoard[row][col] = num >= 0 && num <= 9 ? num : 0;
+      renderSudoku();
+    }
+
+    // 渲染数独
+    function renderSudoku() {
+      const grid = document.getElementById('sudokuGrid');
+      const emptyState = document.getElementById('emptyState');
+      
+      if (!userBoard) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      grid.innerHTML = '';
+      
+      userBoard.forEach((row, rowIndex) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'flex';
+        
+        row.forEach((cell, colIndex) => {
+          const isInitial = puzzle[rowIndex][colIndex] !== 0;
+          const isCorrect = showSolution && solution && cell === solution[rowIndex][colIndex];
+          const isWrong = showSolution && solution && cell !== 0 && cell !== solution[rowIndex][colIndex];
+          const showAnswer = showSolution && cell === 0 && solution;
+          
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.maxLength = 1;
+          input.value = showAnswer ? solution[rowIndex][colIndex] : (cell === 0 ? '' : cell);
+          input.className = 'sudoku-cell text-center border focus:outline-none focus:ring-2 focus:ring-indigo-500';
+          
+          // 边框样式
+          if (colIndex % 3 === 2 && colIndex !== 8) {
+            input.classList.add('border-r-2', 'border-r-gray-800');
+          } else {
+            input.classList.add('border-r', 'border-r-gray-300');
+          }
+          if (rowIndex % 3 === 2 && rowIndex !== 8) {
+            input.classList.add('border-b-2', 'border-b-gray-800');
+          } else {
+            input.classList.add('border-b', 'border-b-gray-300');
+          }
+          
+          // 背景和文字颜色
+          if (isInitial) {
+            input.classList.add('bg-gray-200', 'text-gray-900', 'cursor-not-allowed');
+            input.readOnly = true;
+          } else if (showAnswer) {
+            input.classList.add('bg-yellow-100', 'text-gray-500');
+            input.readOnly = true;
+          } else {
+            input.classList.add('bg-white', 'text-blue-600');
+          }
+          
+          if (isCorrect) input.classList.add('bg-green-100');
+          if (isWrong) input.classList.add('bg-red-100');
+          
+          if (!isInitial && !showAnswer) {
+            input.addEventListener('input', (e) => {
+              handleCellChange(rowIndex, colIndex, e.target.value);
+            });
+          }
+          
+          rowDiv.appendChild(input);
+        });
+        
+        grid.appendChild(rowDiv);
+      });
+      
+      document.getElementById('solutionHint').classList.toggle('hidden', !showSolution);
+    }
+
+    // 切换显示答案
+    function toggleSolution() {
+      if (!userBoard) return;
+      showSolution = !showSolution;
+      const btn = event.target;
+      btn.textContent = showSolution ? '隐藏答案' : '显示答案';
+      renderSudoku();
+    }
+
+    // 检查答案
+    function checkSolution() {
+      if (!userBoard) return;
+      
+      const isComplete = !userBoard.some(row => row.includes(0));
+      if (!isComplete) {
+        showMessage('还有空格未填！', 'error');
+        return;
+      }
+      
+      const isCorrect = JSON.stringify(userBoard) === JSON.stringify(solution);
+      showMessage(isCorrect ? '🎉 恭喜！答案完全正确！' : '❌ 答案有误，请检查', isCorrect ? 'success' : 'error');
+    }
+
+    // 重置
+    function reset() {
+      if (!puzzle) return;
+      userBoard = puzzle.map(row => [...row]);
+      showSolution = false;
+      const btn = document.querySelector('button[onclick="toggleSolution()"]');
+      if (btn) btn.textContent = '显示答案';
+      showMessage('');
+      renderSudoku();
+    }
+
+    // 初始化
+    renderSudoku();
+  </script>
+</body>
+</html>
