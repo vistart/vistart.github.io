@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CORS 交互式演示</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --indigo: #4f46e5;
+      --indigo-600: #4f46e5;
+      --indigo-500: #6366f1;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --red: #dc2626;
+      --amber: #d97706;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #eef2ff 0%, #f8fafc 40%, #ffffff 100%);
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin: 8px 0 18px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .tab-btn.active {
+      color: var(--indigo-600);
+      border-bottom-color: var(--indigo-600);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid #edf0f4;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .text-muted { color: var(--muted); }
+    .text-xs { font-size: 12px; }
+    .text-sm { font-size: 13px; }
+    .text-lg { font-size: 18px; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+
+    .code {
+      font-family: var(--mono);
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .row {
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: #ffffff;
+    }
+    .row.hover-green { border-color: #86efac; background: #f0fdf4; }
+    .row.hover-red { border-color: #fca5a5; background: #fef2f2; }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-red { background: #fee2e2; color: #b91c1c; }
+
+    .note {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+    }
+
+    .pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+      background: #f3f4f6;
+      color: #374151;
+      transition: all 0.15s ease;
+    }
+    .pill.active { background: #2563eb; color: #fff; }
+
+    .terminal {
+      background: #0f172a;
+      color: #86efac;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin: 12px 0;
+    }
+    .terminal .muted { color: #64748b; }
+    .terminal .accent { color: #fbbf24; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px 12px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .result {
+      margin-top: 12px;
+      border-radius: 12px;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      background: #f8fafc;
+    }
+    .result.success { border-color: #86efac; background: #f0fdf4; }
+    .result.fail { border-color: #fca5a5; background: #fef2f2; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .chip {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .code-block {
+      background: #0f172a;
+      color: #86efac;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: var(--mono);
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: 12px 0;
+    }
+    .progress .dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+    .progress .dot.active { background: var(--indigo); color: #fff; }
+    .progress .bar {
+      height: 2px;
+      width: 24px;
+      background: #e5e7eb;
+    }
+    .progress .bar.active { background: #818cf8; }
+
+    .step {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .step.blue { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+    .step.yellow { background: #fef3c7; border-color: #fcd34d; color: #78350f; }
+    .step.purple { background: #ede9fe; border-color: #c4b5fd; color: #4c1d95; }
+    .step.green { background: #dcfce7; border-color: #86efac; color: #166534; }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      margin: 14px 0 8px;
+    }
+
+    @media (max-width: 720px) {
+      .tabs { grid-template-columns: 1fr 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="wrap">
+      <div class="header">
+        <h1>🌐 浏览器跨域问题</h1>
+        <p>交互式教学演示</p>
+      </div>
+
+      <div class="tabs" id="tabs"></div>
+
+      <div class="card" id="content"></div>
+
+      <div class="footer">演示域名: rho.im / rho.social</div>
+    </div>
+  </div>
+
+  <script>
+    const TABS = ["原理图解", "实时演示", "SSO 流程", "解决方案"];
+
+    const state = {
+      activeTab: 0,
+      originHover: null,
+      live: {
+        selectedApi: 0,
+        loading: false,
+        result: null,
+      },
+      sso: {
+        mode: "cookie",
+        step: 0,
+      },
+      solutions: {
+        selected: 0,
+      },
+    };
+
+    const originBaseUrl = "https://app.rho.im";
+    const originExamples = [
+      { url: "https://app.rho.im/api/data", same: true, reason: "协议 ✓ 域名 ✓ 端口 ✓" },
+      { url: "http://app.rho.im/api", same: false, reason: "协议不同 (http ≠ https)" },
+      { url: "https://api.rho.im/data", same: false, reason: "子域名不同 (api ≠ app)" },
+      { url: "https://app.rho.social/page", same: false, reason: "域名不同 (rho.social ≠ rho.im)" },
+      { url: "https://app.rho.im:8443/api", same: false, reason: "端口不同 (8443 ≠ 443)" },
+    ];
+
+    const apis = [
+      {
+        name: "正常同源请求",
+        url: "https://jsonplaceholder.typicode.com/todos/1",
+        desc: "直接请求有 CORS 头的公开 API（模拟同源）",
+        expectSuccess: true,
+      },
+      {
+        name: "跨域请求 (无 CORS)",
+        url: "https://www.google.com/",
+        desc: "请求未设置 CORS 头的站点 → 被浏览器阻止",
+        expectSuccess: false,
+      },
+      {
+        name: "带预检的请求",
+        url: "https://jsonplaceholder.typicode.com/posts",
+        desc: "POST + JSON Content-Type → 触发 OPTIONS 预检",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "test", body: "demo", userId: 1 }),
+        expectSuccess: true,
+      },
+    ];
+
+    const cookieSteps = [
+      {
+        title: "用户访问应用",
+        from: "用户", to: "app1.rho.im",
+        desc: "用户访问 app1.rho.im，没有登录态",
+        detail: "浏览器检查 Cookie，没有找到 domain=.rho.im 的有效 token",
+        color: "blue",
+      },
+      {
+        title: "重定向到 SSO",
+        from: "app1.rho.im", to: "sso.rho.im",
+        desc: "302 重定向到认证中心",
+        detail: "Location: https://sso.rho.im/login?redirect=https://app1.rho.im/dashboard",
+        color: "yellow",
+      },
+      {
+        title: "用户登录",
+        from: "用户", to: "sso.rho.im",
+        desc: "用户在 SSO 页面输入账号密码",
+        detail: "POST https://sso.rho.im/login { username, password }",
+        color: "purple",
+      },
+      {
+        title: "设置共享 Cookie",
+        from: "sso.rho.im", to: "浏览器",
+        desc: "SSO 设置 domain=.rho.im 的 Cookie",
+        detail: "Set-Cookie: token=eyJhbG...; Domain=.rho.im; Path=/; Secure; HttpOnly",
+        color: "green",
+      },
+      {
+        title: "回到应用",
+        from: "sso.rho.im", to: "app1.rho.im",
+        desc: "重定向回原应用，Cookie 自动携带",
+        detail: "因为 Cookie 的 Domain=.rho.im，所有 *.rho.im 子域都能访问此 Cookie",
+        color: "green",
+      },
+      {
+        title: "访问另一个应用",
+        from: "用户", to: "app2.rho.im",
+        desc: "用户访问 app2.rho.im，自动登录！",
+        detail: "浏览器自动携带 domain=.rho.im 的 Cookie → 无需再次登录",
+        color: "green",
+      },
+    ];
+
+    const oauthSteps = [
+      {
+        title: "用户访问应用",
+        from: "用户", to: "app.rho.social",
+        desc: "用户访问 rho.social 域下的应用",
+        detail: "与 rho.im 完全不同的域名，Cookie 无法共享",
+        color: "blue",
+      },
+      {
+        title: "重定向到 SSO",
+        from: "app.rho.social", to: "sso.rho.im",
+        desc: "带上 redirect_uri 参数重定向",
+        detail: "Location: https://sso.rho.im/authorize?client_id=social&redirect_uri=https://app.rho.social/callback",
+        color: "yellow",
+      },
+      {
+        title: "SSO 验证登录态",
+        from: "sso.rho.im", to: "sso.rho.im",
+        desc: "SSO 检查自己域下的 Cookie",
+        detail: "用户之前已在 sso.rho.im 登录过 → 有有效 session → 无需再次输入密码",
+        color: "purple",
+      },
+      {
+        title: "生成授权码",
+        from: "sso.rho.im", to: "app.rho.social",
+        desc: "重定向回应用，携带一次性授权码",
+        detail: "Location: https://app.rho.social/callback?code=AUTHZ_CODE_7f3a9b",
+        color: "yellow",
+      },
+      {
+        title: "后端换 Token",
+        from: "app.rho.social (后端)", to: "sso.rho.im",
+        desc: "后端用授权码换取 access_token",
+        detail: "POST https://sso.rho.im/token { code, client_secret } → 后端到后端，不受 CORS 限制！",
+        color: "green",
+      },
+      {
+        title: "登录完成",
+        from: "app.rho.social", to: "用户",
+        desc: "应用设置自己域的 Cookie，登录成功",
+        detail: "Set-Cookie: session=xxx; Domain=app.rho.social; 此后该域下的请求都带此 Cookie",
+        color: "green",
+      },
+    ];
+
+    const solutions = [
+      {
+        name: "CORS 响应头",
+        difficulty: "⭐⭐",
+        desc: "服务器添加 Access-Control-Allow-Origin 等头",
+        pros: ["标准规范", "灵活控制", "支持所有 HTTP 方法"],
+        cons: ["需要修改服务端", "配置不当会有安全风险"],
+        code: `// Express.js 示例\napp.use((req, res, next) => {\n  res.header('Access-Control-Allow-Origin',\n    'https://app.rho.im');\n  res.header('Access-Control-Allow-Methods',\n    'GET, POST, PUT, DELETE');\n  res.header('Access-Control-Allow-Headers',\n    'Content-Type, Authorization');\n  res.header('Access-Control-Allow-Credentials',\n    'true');\n  if (req.method === 'OPTIONS') {\n    return res.sendStatus(204);\n  }\n  next();\n});`,
+        best: "前后端分离的 API 服务",
+      },
+      {
+        name: "反向代理",
+        difficulty: "⭐⭐⭐",
+        desc: "通过 Nginx/网关将不同服务统一到同一源",
+        pros: ["前端无感知", "无需改业务代码", "生产环境最佳实践"],
+        cons: ["需要运维配置", "增加网络链路"],
+        code: `# Nginx 配置\nserver {\n  server_name app.rho.im;\n  \n  location / {\n    root /var/www/frontend;\n    try_files $uri /index.html;\n  }\n  \n  location /api/ {\n    proxy_pass http://backend:3000/;\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP\n      $remote_addr;\n  }\n}`,
+        best: "生产环境部署",
+      },
+      {
+        name: "postMessage",
+        difficulty: "⭐⭐",
+        desc: "窗口间安全通信 API",
+        pros: ["官方 API", "安全（可验证来源）", "双向通信"],
+        cons: ["仅限窗口间通信", "需要两端配合"],
+        code: `// 发送方 (app.rho.im)\nconst iframe = document\n  .getElementById('sso-frame');\niframe.contentWindow.postMessage(\n  { action: 'getToken' },\n  'https://sso.rho.social'\n);\n\n// 接收方 (sso.rho.social)\nwindow.addEventListener('message', (e) => {\n  if (e.origin !== 'https://app.rho.im')\n    return; // 安全验证！\n  if (e.data.action === 'getToken') {\n    e.source.postMessage(\n      { token: '...' },\n      e.origin\n    );\n  }\n});`,
+        best: "SSO、iframe 嵌入、微前端",
+      },
+    ];
+
+    function renderTabs() {
+      const el = document.getElementById("tabs");
+      el.innerHTML = "";
+      TABS.forEach((name, i) => {
+        const btn = document.createElement("button");
+        btn.className = `tab-btn ${state.activeTab === i ? "active" : ""}`;
+        btn.textContent = name;
+        btn.addEventListener("click", () => {
+          state.activeTab = i;
+          renderApp();
+        });
+        el.appendChild(btn);
+      });
+    }
+
+    function renderOriginExplainer() {
+      const container = document.createElement("div");
+      container.innerHTML = `
+        <h3 class="text-lg font-semibold">同源策略判定</h3>
+        <p class="text-sm text-muted">基准源：<span class="code">${originBaseUrl}</span></p>
+      `;
+
+      const list = document.createElement("div");
+      list.className = "list";
+
+      originExamples.forEach((ex, i) => {
+        const parts = ex.url.match(/^(https?):\/\/([^:/]+):?(\d+)?(\/.*)?$/);
+        const baseP = originBaseUrl.match(/^(https?):\/\/([^:/]+):?(\d+)?(\/.*)?$/);
+        const protoDiff = parts[1] !== baseP[1];
+        const hostDiff = parts[2] !== baseP[2];
+        const portA = parts[3] || (parts[1] === "https" ? "443" : "80");
+        const portB = baseP[3] || (baseP[1] === "https" ? "443" : "80");
+        const portDiff = portA !== portB;
+
+        const row = document.createElement("div");
+        row.className = `row ${state.originHover === i ? (ex.same ? "hover-green" : "hover-red") : ""}`;
+        row.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <code class="text-sm" style="font-family: var(--mono);">
+              <span style="${protoDiff ? "background:#fecaca;padding:2px 4px;border-radius:4px;" : "color:#374151;"}">${parts[1]}://</span>
+              <span style="${hostDiff ? "background:#fecaca;padding:2px 4px;border-radius:4px;" : "color:#374151;"}">${parts[2]}</span>
+              ${parts[3] ? `<span style=\"${portDiff ? "background:#fecaca;padding:2px 4px;border-radius:4px;" : "color:#374151;"}\">:${parts[3]}</span>` : ""}
+              <span style="color:#9ca3af;">${parts[4] || "/"}</span>
+            </code>
+            <span class="badge ${ex.same ? "badge-green" : "badge-red"}">${ex.same ? "✅ 同源" : "❌ 跨域"}</span>
+          </div>
+          ${state.originHover === i ? `<p class="text-xs text-muted" style="margin:6px 0 0;">${ex.reason}</p>` : ""}
+        `;
+
+        row.addEventListener("mouseenter", () => { state.originHover = i; renderApp(); });
+        row.addEventListener("mouseleave", () => { state.originHover = null; renderApp(); });
+        list.appendChild(row);
+      });
+
+      const note = document.createElement("div");
+      note.className = "note";
+      note.innerHTML = `
+        <p class="text-sm font-semibold" style="margin:0 0 6px; color:#92400e;">⚠️ 关键理解</p>
+        <p class="text-sm" style="margin:0; color:#b45309;">
+          同源策略<strong>不阻止请求发出</strong>，而是<strong>阻止浏览器读取响应</strong>。
+          服务器实际上收到了请求并返回了响应——浏览器只是拒绝将响应暴露给 JavaScript。
+        </p>
+      `;
+
+      container.appendChild(list);
+      container.appendChild(note);
+      return container;
+    }
+
+    function renderLiveDemo() {
+      const container = document.createElement("div");
+      const api = apis[state.live.selectedApi];
+
+      container.innerHTML = `
+        <h3 class="text-lg font-semibold">实时跨域请求演示</h3>
+        <p class="text-xs text-muted">提示：请打开浏览器 DevTools（F12）→ Network 面板观察请求详情</p>
+      `;
+
+      const pills = document.createElement("div");
+      pills.className = "pill-group";
+      apis.forEach((a, i) => {
+        const btn = document.createElement("button");
+        btn.className = `pill ${state.live.selectedApi === i ? "active" : ""}`;
+        btn.textContent = a.name;
+        btn.addEventListener("click", () => {
+          state.live.selectedApi = i;
+          state.live.result = null;
+          renderApp();
+        });
+        pills.appendChild(btn);
+      });
+
+      const terminal = document.createElement("div");
+      terminal.className = "terminal";
+      terminal.innerHTML = `
+        <div class="muted">// 请求详情</div>
+        <div><span class="accent">${api.method || "GET"}</span> ${api.url}</div>
+        ${api.headers ? `<div class="muted">Headers: ${JSON.stringify(api.headers)}</div>` : ""}
+        <div class="muted" style="margin-top:6px;">// 预期: ${api.expectSuccess ? "✅ 成功" : "❌ CORS 错误"}</div>
+      `;
+
+      const btn = document.createElement("button");
+      btn.className = "btn-primary";
+      btn.textContent = state.live.loading ? "请求中..." : "▶ 发送请求";
+      btn.disabled = state.live.loading;
+      btn.addEventListener("click", runRequest);
+
+      container.appendChild(pills);
+      container.appendChild(terminal);
+      container.appendChild(btn);
+
+      if (state.live.result) {
+        const result = state.live.result;
+        const box = document.createElement("div");
+        box.className = `result ${result.success ? "success" : "fail"}`;
+        box.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="font-bold" style="color:${result.success ? "#15803d" : "#b91c1c"};">
+              ${result.success ? "✅ 请求成功" : "❌ 请求失败（CORS 阻止）"}
+            </span>
+            <span class="text-xs text-muted">${result.elapsed}ms</span>
+          </div>
+          ${result.success ? `
+            <div class="text-sm" style="display:grid; gap:8px;">
+              <div><strong>Status:</strong> ${result.status}</div>
+              <div>
+                <strong>响应头 (部分):</strong>
+                <pre class="code-block" style="background:#fff; color:#0f172a; max-height:120px;">${JSON.stringify(result.headers, null, 2)}</pre>
+              </div>
+              <div>
+                <strong>响应体预览:</strong>
+                <pre class="code-block" style="background:#fff; color:#0f172a; max-height:120px;">${result.bodyPreview}</pre>
+              </div>
+            </div>
+          ` : `
+            <div class="text-sm" style="display:grid; gap:8px;">
+              <div style="color:#dc2626;"><strong>Error:</strong> ${result.error}</div>
+              <div class="text-xs" style="background:#fff; padding:8px; border-radius:8px; color:#ef4444;">${result.explanation}</div>
+            </div>
+          `}
+        `;
+        container.appendChild(box);
+      }
+
+      return container;
+    }
+
+    async function runRequest() {
+      const api = apis[state.live.selectedApi];
+      state.live.loading = true;
+      state.live.result = null;
+      renderApp();
+
+      const startTime = performance.now();
+
+      try {
+        const options = { method: api.method || "GET", mode: "cors" };
+        if (api.headers) options.headers = api.headers;
+        if (api.body) options.body = api.body;
+
+        const response = await fetch(api.url, options);
+        const data = await response.text();
+        const elapsed = Math.round(performance.now() - startTime);
+
+        state.live.result = {
+          success: true,
+          status: response.status,
+          headers: Object.fromEntries([...response.headers.entries()].slice(0, 8)),
+          bodyPreview: data.substring(0, 300),
+          elapsed,
+        };
+      } catch (error) {
+        const elapsed = Math.round(performance.now() - startTime);
+        state.live.result = {
+          success: false,
+          error: error.message,
+          elapsed,
+          explanation: "浏览器阻止了响应的读取。打开 DevTools → Console 可以看到详细的 CORS 错误信息。",
+        };
+      } finally {
+        state.live.loading = false;
+        renderApp();
+      }
+    }
+
+    function renderSSOFlow() {
+      const container = document.createElement("div");
+      const steps = state.sso.mode === "cookie" ? cookieSteps : oauthSteps;
+      const step = steps[state.sso.step];
+
+      container.innerHTML = `
+        <h3 class="text-lg font-semibold">SSO 单点登录流程</h3>
+      `;
+
+      const modeSwitch = document.createElement("div");
+      modeSwitch.className = "pill-group";
+      const cookieBtn = document.createElement("button");
+      cookieBtn.className = `pill ${state.sso.mode === "cookie" ? "active" : ""}`;
+      cookieBtn.textContent = "🍪 共享 Cookie（同父域）";
+      cookieBtn.addEventListener("click", () => {
+        state.sso.mode = "cookie";
+        state.sso.step = 0;
+        renderApp();
+      });
+      const oauthBtn = document.createElement("button");
+      oauthBtn.className = `pill ${state.sso.mode === "oauth" ? "active" : ""}`;
+      oauthBtn.textContent = "🔑 OAuth 授权码（跨域）";
+      oauthBtn.addEventListener("click", () => {
+        state.sso.mode = "oauth";
+        state.sso.step = 0;
+        renderApp();
+      });
+      modeSwitch.appendChild(cookieBtn);
+      modeSwitch.appendChild(oauthBtn);
+
+      const hint = document.createElement("div");
+      hint.className = "text-xs text-muted";
+      hint.style.margin = "8px 0";
+      hint.textContent = state.sso.mode === "cookie"
+        ? "适用场景: *.rho.im 同一父域下的多个子应用"
+        : "适用场景: rho.im ↔ rho.social 完全不同的域";
+
+      const progress = document.createElement("div");
+      progress.className = "progress";
+      steps.forEach((_, i) => {
+        const dot = document.createElement("div");
+        dot.className = `dot ${i <= state.sso.step ? "active" : ""}`;
+        dot.textContent = i + 1;
+        dot.addEventListener("click", () => { state.sso.step = i; renderApp(); });
+        progress.appendChild(dot);
+        if (i < steps.length - 1) {
+          const bar = document.createElement("div");
+          bar.className = `bar ${i < state.sso.step ? "active" : ""}`;
+          progress.appendChild(bar);
+        }
+      });
+
+      const stepCard = document.createElement("div");
+      stepCard.className = `step ${step.color}`;
+      stepCard.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <span class="font-bold">步骤 ${state.sso.step + 1}: ${step.title}</span>
+          <span class="text-xs" style="opacity:0.7;">${step.from} → ${step.to}</span>
+        </div>
+        <p class="text-sm" style="margin:0 0 6px;">${step.desc}</p>
+        <code class="text-xs" style="display:block; background: rgba(255,255,255,0.6); padding:8px; border-radius:8px;">${step.detail}</code>
+      `;
+
+      const nav = document.createElement("div");
+      nav.style.display = "flex";
+      nav.style.gap = "8px";
+
+      const prev = document.createElement("button");
+      prev.className = "pill";
+      prev.style.flex = "1";
+      prev.textContent = "← 上一步";
+      prev.disabled = state.sso.step === 0;
+      prev.style.opacity = prev.disabled ? "0.4" : "1";
+      prev.addEventListener("click", () => {
+        state.sso.step = Math.max(0, state.sso.step - 1);
+        renderApp();
+      });
+
+      const next = document.createElement("button");
+      next.className = "pill";
+      next.style.flex = "1";
+      next.style.background = "#4f46e5";
+      next.style.color = "#fff";
+      next.textContent = "下一步 →";
+      next.disabled = state.sso.step === steps.length - 1;
+      next.style.opacity = next.disabled ? "0.4" : "1";
+      next.addEventListener("click", () => {
+        state.sso.step = Math.min(steps.length - 1, state.sso.step + 1);
+        renderApp();
+      });
+
+      nav.appendChild(prev);
+      nav.appendChild(next);
+
+      container.appendChild(modeSwitch);
+      container.appendChild(hint);
+      container.appendChild(progress);
+      container.appendChild(stepCard);
+      container.appendChild(nav);
+      return container;
+    }
+
+    function renderSolutions() {
+      const container = document.createElement("div");
+      const sol = solutions[state.solutions.selected];
+
+      container.innerHTML = `
+        <h3 class="text-lg font-semibold">解决方案对比</h3>
+      `;
+
+      const pills = document.createElement("div");
+      pills.className = "pill-group";
+      solutions.forEach((s, i) => {
+        const btn = document.createElement("button");
+        btn.className = `pill ${state.solutions.selected === i ? "active" : ""}`;
+        btn.textContent = s.name;
+        btn.addEventListener("click", () => { state.solutions.selected = i; renderApp(); });
+        pills.appendChild(btn);
+      });
+
+      const meta = document.createElement("div");
+      meta.style.display = "flex";
+      meta.style.alignItems = "center";
+      meta.style.gap = "10px";
+      meta.style.margin = "10px 0";
+      meta.innerHTML = `
+        <span class="text-sm text-muted">复杂度: ${sol.difficulty}</span>
+        <span class="chip">最适合: ${sol.best}</span>
+      `;
+
+      const desc = document.createElement("p");
+      desc.className = "text-sm";
+      desc.textContent = sol.desc;
+
+      const grid = document.createElement("div");
+      grid.className = "grid-2";
+      const pros = document.createElement("div");
+      pros.style.background = "#ecfdf5";
+      pros.style.borderRadius = "10px";
+      pros.style.padding = "10px";
+      pros.innerHTML = `<p class="text-xs font-bold" style="color:#15803d; margin:0 0 6px;">✅ 优点</p>`
+        + sol.pros.map(p => `<p class="text-xs" style="color:#16a34a; margin:0 0 4px;">• ${p}</p>`).join("");
+
+      const cons = document.createElement("div");
+      cons.style.background = "#fef2f2";
+      cons.style.borderRadius = "10px";
+      cons.style.padding = "10px";
+      cons.innerHTML = `<p class="text-xs font-bold" style="color:#b91c1c; margin:0 0 6px;">⚠️ 注意</p>`
+        + sol.cons.map(c => `<p class="text-xs" style="color:#dc2626; margin:0 0 4px;">• ${c}</p>`).join("");
+
+      grid.appendChild(pros);
+      grid.appendChild(cons);
+
+      const code = document.createElement("div");
+      code.innerHTML = `
+        <p class="text-xs font-bold text-muted" style="margin:10px 0 6px;">代码示例</p>
+        <pre class="code-block">${sol.code}</pre>
+      `;
+
+      container.appendChild(pills);
+      container.appendChild(meta);
+      container.appendChild(desc);
+      container.appendChild(grid);
+      container.appendChild(code);
+      return container;
+    }
+
+    function renderContent() {
+      const content = document.getElementById("content");
+      content.innerHTML = "";
+      let node;
+      if (state.activeTab === 0) node = renderOriginExplainer();
+      if (state.activeTab === 1) node = renderLiveDemo();
+      if (state.activeTab === 2) node = renderSSOFlow();
+      if (state.activeTab === 3) node = renderSolutions();
+      content.appendChild(node);
+    }
+
+    function renderApp() {
+      renderTabs();
+      renderContent();
+    }
+
+    renderApp();
+  </script>
+</body>
+</html>
