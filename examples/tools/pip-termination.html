@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚖️ 绩效改善 → 解除劳动合同 · AI辅助全流程管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .animate-spin { animation: spin 1s linear infinite; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ===== OpenRouter Config (user-provided) =====
+const _cfg = { key: "", model: "" };
+const setCfg = (k, m) => { _cfg.key = k; _cfg.model = m; };
+const getCfg = () => _cfg;
+const hasCfg = () => _cfg.key.length > 10 && _cfg.model.length > 1;
+
+const orChat = async (sys, usr, maxTk = 4000) => {
+  if (!hasCfg()) throw new Error("未配置 API Key 或模型名");
+  const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${_cfg.key}` },
+    body: JSON.stringify({ model: _cfg.model, messages: [{ role: "system", content: sys }, { role: "user", content: usr }], temperature: 0.7, max_tokens: maxTk }),
+  });
+  if (!r.ok) throw new Error(`API ${r.status}`);
+  const d = await r.json();
+  return d.choices?.[0]?.message?.content || "";
+};
+
+const orJSON = async (sys, usr) => {
+  const txt = await orChat(sys, usr);
+  const c = txt.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+  return JSON.parse(c);
+};
+
+// ===== Employee Templates for Generation =====
+const EMP_TEMPLATES = [
+  { name: "张明远", gender: "男", dept: "产品研发部", position: "高级产品经理", level: "P7", joinYear: 2019, salary: 38000, ratings: ["B+","B","C+","C"], hasEquity: true, equityDetail: "期权12000股(未归属8000股)", nonCompete: true, managesTeam: true, teamSize: 5, hasTrade: true, tradeDetail: "产品路线图/用户数据", specialRisk: "none" },
+  { name: "李思琪", gender: "女", dept: "市场营销部", position: "营销总监", level: "P8", joinYear: 2017, salary: 52000, ratings: ["B","C+","C","C"], hasEquity: true, equityDetail: "RSU 5000股(未归属3200股)", nonCompete: true, managesTeam: true, teamSize: 12, hasTrade: true, tradeDetail: "客户资源/渠道协议", specialRisk: "none" },
+  { name: "王浩然", gender: "男", dept: "技术架构部", position: "架构师", level: "P8", joinYear: 2016, salary: 62000, ratings: ["A","B+","C","C+"], hasEquity: true, equityDetail: "期权20000股(未归属15000股)", nonCompete: true, managesTeam: false, teamSize: 0, hasTrade: true, tradeDetail: "核心技术架构/专利", specialRisk: "none" },
+  { name: "陈雅婷", gender: "女", dept: "运营部", position: "运营经理", level: "P6", joinYear: 2021, salary: 25000, ratings: ["B","B","C+","C"], hasEquity: false, equityDetail: "", nonCompete: false, managesTeam: true, teamSize: 3, hasTrade: false, tradeDetail: "", specialRisk: "pregnant" },
+  { name: "刘建国", gender: "男", dept: "销售部", position: "大客户总监", level: "P7", joinYear: 2015, salary: 45000, ratings: ["A","B","C","D"], hasEquity: true, equityDetail: "期权8000股(已全部归属)", nonCompete: true, managesTeam: true, teamSize: 8, hasTrade: true, tradeDetail: "大客户信息/报价体系", specialRisk: "nearRetirement" },
+  { name: "赵雪晴", gender: "女", dept: "数据分析部", position: "数据分析师", level: "P5", joinYear: 2022, salary: 18000, ratings: ["C+","C","C","C"], hasEquity: false, equityDetail: "", nonCompete: false, managesTeam: false, teamSize: 0, hasTrade: false, tradeDetail: "", specialRisk: "none" },
+];
+
+const buildEmpFromTemplate = (t) => {
+  const now = new Date();
+  const joinDate = `${t.joinYear}-${String(Math.floor(Math.random()*6)+3).padStart(2,'0')}-${String(Math.floor(Math.random()*20)+5).padStart(2,'0')}`;
+  const wy = parseFloat(((now - new Date(joinDate)) / (365.25*86400000)).toFixed(1));
+  const N = Math.ceil(wy);
+  const base = Math.min(t.salary, 31000);
+  return {
+    name: t.name, gender: t.gender, empId: `EMP-${t.joinYear}-${String(Math.floor(Math.random()*9000)+1000)}`,
+    dept: t.dept, position: t.position, level: t.level, joinDate,
+    contractEnd: `${now.getFullYear()+1}-${String(Math.floor(Math.random()*6)+6).padStart(2,'0')}-30`,
+    monthlySalary: t.salary, workYears: wy, recentRatings: t.ratings,
+    hasEquity: t.hasEquity, equityDetail: t.equityDetail, nonCompete: t.nonCompete,
+    managesTeam: t.managesTeam, teamSize: t.teamSize, hasTrade: t.hasTrade, tradeDetail: t.tradeDetail,
+    isPregnant: t.specialRisk === "pregnant", hasWorkInjury: t.specialRisk === "injury",
+    nearRetirement: t.specialRisk === "nearRetirement",
+    socialInsuranceBase: base,
+    estimatedN: N, estimatedCompMin: N * base, estimatedCompNPlus1: (N + 1) * base,
+  };
+};
+
+// ===== Prompt Builders =====
+const buildPrompt = (type, ctx) => {
+  const P = {
+    emp_generate: `你是一位资深HR法律顾问。请根据以下模板信息，生成该员工的详细情况概述，供HR决策参考。
+
+员工基本信息：
+- 姓名：${ctx.name}，${ctx.gender}，${ctx.dept} ${ctx.position}(${ctx.level})
+- 工龄：约${ctx.workYears}年，月薪：¥${ctx.salary?.toLocaleString()}
+- 近4季度绩效：${ctx.ratings}
+- 股权：${ctx.equityDetail || "无"}
+- 竞业限制：${ctx.nonCompete ? "有" : "无"}
+- 管理团队：${ctx.managesTeam ? ctx.teamSize + "人" : "无"}
+- 特殊情况：${ctx.specialRisk || "无"}
+
+请严格按以下JSON格式输出，不要输出任何其他内容：
+{"summary":"[用2-3句话概括该员工绩效问题的核心表现]","performanceIssues":["[具体绩效问题1]","[具体绩效问题2]","[具体绩效问题3]"],"terminationCostEstimate":"[预估直接解除成本区间，如N+1标准]","keyRisks":["[关键风险1]","[关键风险2]"],"recommendation":"[简要建议：是否适合进入PIP流程]"}`,
+
+    pip_plan: `你是一位资深HR法律顾问。请为以下员工生成3个绩效改善计划(PIP)方案。
+
+员工信息：${ctx.name}，${ctx.position}(${ctx.level})，工龄约${ctx.workYears}年
+近期绩效评级：${ctx.ratings}
+绩效问题：${ctx.issues || "持续绩效下滑"}
+
+请严格按以下JSON数组格式输出，不要输出任何其他内容：
+[
+  {"id":1,"title":"方案A：[标题]","content":"[详细内容含KPI、时间、评估方式、法律提示]","tag":"推荐","risk":"低","duration":60,"evidencePoints":["[证据要点1]","[证据要点2]"]},
+  {"id":2,"title":"方案B：[标题]","content":"[详细内容]","tag":"稳妥","risk":"低","duration":90,"evidencePoints":["[证据要点1]","[证据要点2]"]},
+  {"id":3,"title":"方案C：[标题]","content":"[详细内容]","tag":"激进","risk":"高","duration":30,"evidencePoints":["[证据要点1]","[证据要点2]"]}
+]
+
+要求：
+- 每个方案需包含可量化KPI、评估周期、引用《劳动合同法》条款
+- evidencePoints列出该方案中应留存的关键证据（用于应对仲裁）
+- content中用\\n表示换行`,
+
+    notification_draft: `你是一位资深HR法律顾问。请为PIP通知生成2个版本的通知书。
+
+员工：${ctx.name}，改善周期：${ctx.duration || 60}天，原因：近两季度绩效C+/C，未达${ctx.level}岗位要求。
+
+请严格按以下JSON数组格式输出：
+[
+  {"id":1,"title":"正式书面通知","content":"[正式通知全文，含改善原因、周期、目标、评估方式、签收要求、员工权利告知]","tag":"推荐","evidenceNotes":"[该通知的证据效力说明和签收注意事项]"},
+  {"id":2,"title":"温和沟通版本","content":"[温和措辞版本]","tag":"温和","evidenceNotes":"[措辞委婉版本的证据效力分析及潜在风险]"}
+]
+
+content中用\\n表示换行。`,
+
+    eval_result: `你是一位资深HR法律顾问。请为PIP评估生成2个可能的评估结论。
+
+员工：${ctx.name}，改善期：${ctx.duration || 60}天，职位：${ctx.position || "高级产品经理"}(${ctx.level || "P7"})。
+
+请严格按以下JSON数组格式输出：
+[
+  {"id":1,"title":"评估结论：未达标","content":"[含3个具体指标评估数据、综合评定、后续路径建议，引用劳动合同法]","arbitrationDefense":"[未达标结论在仲裁中的证据效力分析和注意事项]"},
+  {"id":2,"title":"评估结论：部分达标","content":"[部分达标情况说明、延长改善期vs直接解除的风险对比]","arbitrationDefense":"[部分达标时直接解除的仲裁风险分析]"}
+]
+
+content中用\\n表示换行，用•表示列表项。`,
+
+    compensation: `你是一位资深HR法律顾问。请为解除劳动合同生成2个经济补偿方案。
+
+员工：${ctx.name}，工龄：${ctx.workYears}年，月薪：¥${ctx.salary?.toLocaleString()}，社保基数：¥${ctx.socialBase?.toLocaleString()}。
+持有未归属期权：${ctx.equityDetail || "无"}。N=${Math.ceil(ctx.workYears)}。
+
+请严格按以下JSON数组格式输出：
+[
+  {"id":1,"title":"经济补偿方案（N+1）","content":"[根据劳动合同法第40条+第47条详细计算，含工作年限、月工资基数、代通知金、合计金额，注明社平工资3倍封顶规则]","tag":"法定标准","totalAmount":"[具体金额]","arbitrationRisk":"[该方案的仲裁胜诉率评估]"},
+  {"id":2,"title":"协商解除方案（N+X）","content":"[在法定标准上加协商溢价和期权折现处理，给出合计金额]","tag":"推荐","risk":"低","totalAmount":"[具体金额]","arbitrationRisk":"[协商方案的风险对比分析]"}
+]
+
+请用具体数字计算。content中用\\n表示换行。`,
+
+    noncompete: `你是一位资深HR法律顾问。请为竞业限制处理生成2个方案。
+
+员工：${ctx.name}，${ctx.position}，接触核心产品路线图及商业数据，月薪：¥${ctx.salary?.toLocaleString()}。
+
+请严格按以下JSON数组格式输出：
+[
+  {"id":1,"title":"启动竞业限制","content":"[含限制期限、竞业补偿金额(不低于月薪30%)、补偿总额、限制范围、未按时支付的法律后果]","costEstimate":"[总成本]"},
+  {"id":2,"title":"不启动竞业限制","content":"[分析成本、挖角可能性、信息时效性，建议替代措施如保密承诺函]","costEstimate":"[替代措施成本]"}
+]
+
+content中用\\n表示换行，用•表示列表项。`,
+
+    legal_counsel: `你是一位与该公司合作的外部律师，专精中国劳动法。请针对当前HR操作步骤给出专业法律风险提示和建议。
+
+当前步骤：${ctx.stepName}
+员工情况：${ctx.name}，${ctx.position}(${ctx.level})，工龄${ctx.workYears}年，近4季度绩效${ctx.ratings}
+${ctx.specialInfo || ""}
+
+请从以下角度给出300-500字的专业建议：
+1. 当前步骤的法律合规要点
+2. 可能引发仲裁/诉讼的风险点
+3. 证据留存的具体建议
+4. 是否有更优的操作方式
+
+直接输出建议文本，不要JSON。`,
+
+    arbitration_risk: `你是一位资深劳动法律师。请对当前案件进行仲裁风险评估。
+
+案件概况：
+- 员工：${ctx.name}，${ctx.position}(${ctx.level})，工龄${ctx.workYears}年
+- 绩效记录：${ctx.ratings}
+- 处理路径：${ctx.path}
+- 已采取步骤：${ctx.steps}
+- 法律顾问建议采纳情况：${ctx.counselAdoption}
+- 特殊因素：${ctx.specialFactors}
+
+请严格按以下JSON格式输出：
+{"overallRisk":"[高/中/低]","winRate":"[预估企业胜诉率百分比]","keyRisks":[{"point":"[风险点]","severity":"[高/中/低]","mitigation":"[缓解建议]"}],"evidenceChecklist":["[必要证据1]","[必要证据2]","[必要证据3]"],"summary":"[200字综合评估]"}`,
+  };
+  return P[type] || "";
+};
+
+// Fallback data
+const getFallback = (type, ctx) => {
+  const F = {
+    emp_generate: { summary: `${ctx.name}近两季度绩效持续下滑，从B级降至C级，未达${ctx.level}岗位核心要求。`, performanceIssues: ["季度OKR完成率不足60%", "跨部门协作评分连续低于及格线", "核心项目交付延期"], terminationCostEstimate: `N+1标准约¥${((Math.ceil(ctx.workYears)+1)*Math.min(ctx.salary,31000)).toLocaleString()}`, keyRisks: ctx.specialRisk !== "none" ? ["存在特殊保护情形，需额外评估"] : ["工龄较长，补偿成本较高"], recommendation: "建议进入PIP流程，完善证据链后再做解除决策。" },
+    pip_plan: [
+      { id: 1, title: "方案A：产出导向型（60天）", content: `[备用] 针对${ctx.name}设定60天改善计划，包含3个量化KPI目标。\n\n⚠️ 此为离线备用方案。`, tag: "推荐", risk: "低", duration: 60, evidencePoints: ["书面PIP通知签收记录", "双周review会议纪要"] },
+      { id: 2, title: "方案B：能力提升型（90天）", content: "[备用] 90天深度改善，含培训+辅导+独立评估三阶段。", tag: "稳妥", risk: "低", duration: 90, evidencePoints: ["培训签到记录", "辅导日志"] },
+      { id: 3, title: "方案C：快速评估型（30天）", content: "[备用] 30天快速评估，风险较高。", tag: "激进", risk: "高", duration: 30, evidencePoints: ["每周评估记录"] },
+    ],
+    notification_draft: [
+      { id: 1, title: "正式书面通知", content: "[备用] PIP正式通知书模板。", tag: "推荐", evidenceNotes: "需员工签字确认收到" },
+      { id: 2, title: "温和沟通版本", content: "[备用] 温和版通知模板。", tag: "温和", evidenceNotes: "措辞温和但证据效力稍弱" },
+    ],
+    eval_result: [
+      { id: 1, title: "评估结论：未达标", content: "[备用] 改善期评估未达标。", arbitrationDefense: "需确保评估标准事先告知" },
+      { id: 2, title: "评估结论：部分达标", content: "[备用] 部分达标，建议延长改善期。", arbitrationDefense: "部分达标时直接解除风险较高" },
+    ],
+    compensation: [
+      { id: 1, title: "经济补偿方案（N+1）", content: "[备用] 法定标准补偿方案。", tag: "法定标准", totalAmount: `¥${((Math.ceil(ctx.workYears||7)+1)*Math.min(ctx.salary||38000,31000)).toLocaleString()}`, arbitrationRisk: "符合法定标准，仲裁风险低" },
+      { id: 2, title: "协商解除方案（N+X）", content: "[备用] 协商溢价方案。", tag: "推荐", risk: "低", totalAmount: `¥${((Math.ceil(ctx.workYears||7)+3)*Math.min(ctx.salary||38000,31000)).toLocaleString()}`, arbitrationRisk: "协商方案风险最低" },
+    ],
+    noncompete: [
+      { id: 1, title: "启动竞业限制", content: "[备用] 竞业限制方案。", costEstimate: `约¥${(Math.min(ctx.salary||38000,31000)*0.3*12).toLocaleString()}` },
+      { id: 2, title: "不启动竞业限制", content: "[备用] 不启动方案。", costEstimate: "仅保密协议成本" },
+    ],
+  };
+  return F[type];
+};
+
+const llmGenerate = async (type, ctx) => {
+  const prompt = buildPrompt(type, ctx);
+  if (!prompt) return getFallback(type, ctx);
+  try {
+    const sys = type === "legal_counsel" ? "你是一位精通中国劳动法的外部合作律师。直接输出建议文本。" : "你是一位精通中国劳动法的资深HR法律顾问。你的回复必须是纯JSON，不要包含markdown代码块标记、解释文字或任何其他内容。直接输出JSON。";
+    const txt = await orChat(sys, prompt);
+    if (type === "legal_counsel") return txt.trim();
+    const c = txt.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    const parsed = JSON.parse(c);
+    return parsed;
+  } catch (e) {
+    console.error("LLM failed:", e);
+    return getFallback(type, ctx);
+  }
+};
+
+// ===== Node Definitions =====
+const NODES = {
+  employee_select: { id: "employee_select", label: "选择/生成员工档案", icon: "👤", desc: "选择预设员工或AI生成员工信息", phase: "准备阶段" },
+  employee_info: { id: "employee_info", label: "员工信息确认与风险预评", icon: "📋", desc: "确认员工信息，AI预评解除成本与风险", phase: "准备阶段" },
+  pip_reason: { id: "pip_reason", label: "绩效问题认定", icon: "📊", desc: "明确绩效不达标的事实依据", phase: "准备阶段" },
+  pip_plan: { id: "pip_plan", label: "改善计划制定", icon: "📝", desc: "AI生成PIP方案（含证据要点）", phase: "PIP阶段" },
+  pip_notify: { id: "pip_notify", label: "通知送达", icon: "📨", desc: "生成通知文书并送达员工", phase: "PIP阶段" },
+  pip_monitor: { id: "pip_monitor", label: "改善期跟踪", icon: "📅", desc: "记录改善期间的跟踪数据", phase: "PIP阶段" },
+  pip_eval: { id: "pip_eval", label: "改善评估", icon: "✅", desc: "AI综合评估改善结果", phase: "评估阶段" },
+  decision: { id: "decision", label: "路径决策", icon: "🔀", desc: "基于评估结果选择后续路径", phase: "决策阶段" },
+  termination_prep: { id: "termination_prep", label: "解除合规审查", icon: "⚖️", desc: "法律合规检查与材料准备", phase: "解除路径" },
+  compensation: { id: "compensation", label: "补偿方案", icon: "💰", desc: "计算并确定经济补偿方案", phase: "解除路径" },
+  special_handling: { id: "special_handling", label: "特殊事项处理", icon: "🔒", desc: "期权/竞业限制/交接等", phase: "解除路径" },
+  arbitration_assess: { id: "arbitration_assess", label: "仲裁风险终评", icon: "🛡️", desc: "AI评估全流程仲裁风险", phase: "风控阶段" },
+  final_docs: { id: "final_docs", label: "文书生成", icon: "📄", desc: "生成全套法律文书", phase: "执行阶段" },
+  result_terminated: { id: "result_terminated", label: "解除完成", icon: "🏁", desc: "劳动合同解除流程完成", phase: "完成" },
+  result_transferred: { id: "result_transferred", label: "调岗完成", icon: "🔄", desc: "员工调岗安排完成", phase: "完成" },
+  result_improved: { id: "result_improved", label: "改善达标", icon: "🎉", desc: "员工绩效改善达标", phase: "完成" },
+};
+
+const getNextNode = (id, s) => {
+  const m = {
+    employee_select: "employee_info",
+    employee_info: "pip_reason",
+    pip_reason: "pip_plan",
+    pip_plan: "pip_notify",
+    pip_notify: "pip_monitor",
+    pip_monitor: "pip_eval",
+    pip_eval: st => st.evalResult === "pass" ? "result_improved" : "decision",
+    decision: st => {
+      if (st.decisionPath === "transfer") return "result_transferred";
+      if (st.decisionPath === "extend_pip") return "pip_monitor";
+      return "termination_prep";
+    },
+    termination_prep: "compensation",
+    compensation: "special_handling",
+    special_handling: "arbitration_assess",
+    arbitration_assess: "final_docs",
+    final_docs: "result_terminated",
+  };
+  const n = m[id];
+  return typeof n === "function" ? n(s) : n;
+};
+
+// ===== UI Components =====
+const Badge = ({ children, color = "blue" }) => {
+  const c = { blue: "bg-blue-100 text-blue-700", red: "bg-red-100 text-red-700", green: "bg-green-100 text-green-700", amber: "bg-amber-100 text-amber-700", purple: "bg-purple-100 text-purple-700", gray: "bg-gray-100 text-gray-600", emerald: "bg-emerald-100 text-emerald-700" };
+  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c[color] || c.blue}`}>{children}</span>;
+};
+
+// ===== Legal Counsel Panel (Enhanced) =====
+const LegalCounselPanel = ({ stepId, stepName, emp, state, onAdvice, counselLog }) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [advice, setAdvice] = useState(null);
+  const [src, setSrc] = useState("ai");
+  const [decision, setDecision] = useState(counselLog?.[stepId] || null);
+
+  const getAdvice = async () => {
+    setLoading(true); setSrc("ai");
+    try {
+      const specialInfo = [
+        emp?.hasEquity ? `持有${emp.equityDetail}` : "",
+        emp?.nonCompete ? "签有竞业限制协议" : "",
+        emp?.isPregnant ? "⚠️三期女职工" : "",
+        emp?.nearRetirement ? "⚠️距退休不足5年" : "",
+        state?.pipPlan ? `已选PIP方案：${state.pipPlan.title}` : "",
+        state?.decisionPath ? `决策路径：${state.decisionPath}` : "",
+      ].filter(Boolean).join("；");
+      const txt = await llmGenerate("legal_counsel", {
+        stepName, name: emp?.name, position: emp?.position, level: emp?.level,
+        workYears: emp?.workYears, ratings: emp?.recentRatings?.join("→"),
+        specialInfo,
+      });
+      if (typeof txt === "string" && txt.length > 20) { setAdvice(txt); }
+      else throw new Error("bad response");
+    } catch {
+      setAdvice("当前步骤建议：确保所有操作有书面记录，重要沟通应有第三方在场见证。具体法律意见需结合案件细节进一步分析。");
+      setSrc("fallback");
+    }
+    setLoading(false);
+  };
+
+  const handleDecision = (d) => { setDecision(d); onAdvice?.(stepId, d); };
+
+  return (
+    <div className="border-t border-dashed border-amber-300 mt-4 pt-3">
+      <button onClick={() => { setOpen(!open); if (!open && !advice) getAdvice(); }}
+        className="flex items-center gap-2 text-sm text-amber-700 hover:text-amber-900 font-medium w-full text-left">
+        <span>⚖️</span>
+        <span className="flex-1">{open ? "收起法律顾问建议" : "咨询法律顾问"}</span>
+        {decision && <Badge color={decision === "accept" ? "green" : decision === "partial" ? "amber" : "gray"}>
+          {decision === "accept" ? "已采纳" : decision === "partial" ? "部分采纳" : "未采纳"}
+        </Badge>}
+        <span className="text-xs text-amber-500">· 外部合作律师</span>
+      </button>
+      {open && (
+        <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-amber-600">
+              <span className="animate-spin">⏳</span> 法律顾问正在分析（模拟外部律师响应）...
+            </div>
+          ) : advice ? (
+            <div>
+              <div className="text-xs text-amber-500 mb-2 font-medium flex items-center gap-1">
+                📋 法律顾问意见
+                {src === "ai" && <span className="text-emerald-500">· AI 生成</span>}
+                {src === "fallback" && <span className="text-gray-400">· 备用建议</span>}
+                <span className="text-gray-400 ml-auto">⚠️ 现实中此环节可能产生律师咨询费用</span>
+              </div>
+              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{advice}</div>
+              <div className="mt-3 pt-3 border-t border-amber-200">
+                <div className="text-xs text-amber-600 mb-2 font-medium">用人单位决定：</div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDecision("accept")} className={`text-xs px-3 py-1.5 rounded-lg transition-all ${decision === "accept" ? "bg-emerald-600 text-white" : "bg-amber-600 text-white hover:bg-amber-700"}`}>
+                    ✅ 全部采纳
+                  </button>
+                  <button onClick={() => handleDecision("partial")} className={`text-xs px-3 py-1.5 rounded-lg transition-all ${decision === "partial" ? "bg-amber-500 text-white" : "border border-amber-400 text-amber-700 hover:bg-amber-100"}`}>
+                    ⚡ 部分采纳
+                  </button>
+                  <button onClick={() => handleDecision("reject")} className={`text-xs px-3 py-1.5 rounded-lg transition-all ${decision === "reject" ? "bg-gray-500 text-white" : "text-gray-500 hover:text-gray-700"}`}>
+                    ❌ 暂不采纳
+                  </button>
+                </div>
+                {decision === "reject" && (
+                  <div className="mt-2 text-xs text-red-500 bg-red-50 p-2 rounded-lg">
+                    ⚠️ 未采纳法律顾问建议可能增加后续仲裁风险，请确认已知晓相关风险。
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===== LLM Options Component =====
+const LLMOptions = ({ type, context, onSelect, extraAction }) => {
+  const [opts, setOpts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sel, setSel] = useState(null);
+  const [src, setSrc] = useState("ai");
+
+  const doGen = useCallback(() => {
+    setLoading(true); setSrc("ai");
+    llmGenerate(type, context).then(o => {
+      if (Array.isArray(o)) {
+        setOpts(o);
+        if (o[0]?.content?.startsWith("[备用]") || o[0]?.content?.startsWith("[Fallback]")) setSrc("fallback");
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [type]);
+
+  useEffect(() => { doGen(); }, [type]);
+
+  if (loading) return (
+    <div className="py-6 text-center space-y-2">
+      <div className="inline-flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-full">
+        <span className="animate-spin">🤖</span> AI 正在生成方案...
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="text-xs text-gray-500 flex items-center gap-1">
+        🤖 AI 生成了 {opts.length} 个方案
+        {src === "fallback" && <span className="text-amber-500">（API失败，使用备用）</span>}
+        {src === "ai" && <span className="text-emerald-500">· 由 {getCfg().model} 生成</span>}
+      </div>
+      {opts.map(opt => (
+        <div key={opt.id} onClick={() => setSel(opt.id)}
+          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${sel === opt.id ? "border-blue-500 bg-blue-50 shadow-md" : "border-gray-200 hover:border-gray-300"}`}>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="font-semibold text-sm">{opt.title}</span>
+            {opt.tag && <Badge color={opt.tag === "推荐" ? "green" : opt.tag === "稳妥" ? "blue" : opt.tag === "激进" ? "red" : opt.tag === "法定标准" ? "blue" : opt.tag === "温和" ? "amber" : "gray"}>{opt.tag}</Badge>}
+            {opt.risk && <Badge color={opt.risk === "低" ? "green" : opt.risk === "高" ? "red" : "amber"}>风险{opt.risk}</Badge>}
+            {opt.totalAmount && <Badge color="purple">{opt.totalAmount}</Badge>}
+            {opt.costEstimate && <Badge color="purple">{opt.costEstimate}</Badge>}
+          </div>
+          <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{opt.content}</div>
+          {opt.evidencePoints && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="text-xs font-medium text-blue-600 mb-1">📎 证据留存要点：</div>
+              {opt.evidencePoints.map((ep, i) => <div key={i} className="text-xs text-blue-500">• {ep}</div>)}
+            </div>
+          )}
+          {opt.evidenceNotes && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="text-xs text-amber-600">📎 证据效力：{opt.evidenceNotes}</div>
+            </div>
+          )}
+          {opt.arbitrationDefense && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="text-xs text-purple-600">🛡️ 仲裁分析：{opt.arbitrationDefense}</div>
+            </div>
+          )}
+          {opt.arbitrationRisk && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="text-xs text-purple-600">🛡️ 仲裁风险：{opt.arbitrationRisk}</div>
+            </div>
+          )}
+        </div>
+      ))}
+      {sel && (
+        <button onClick={() => onSelect(opts.find(o => o.id === sel))}
+          className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+          确认选择此方案
+        </button>
+      )}
+      {extraAction}
+      {src === "ai" && (
+        <button onClick={doGen} className="w-full py-1.5 text-xs text-gray-400 hover:text-blue-500">
+          🔄 不满意？重新生成
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ===== Step: Employee Select =====
+const StepEmployeeSelect = ({ onNext }) => {
+  const [mode, setMode] = useState(null); // "preset" | "ai"
+  const [selIdx, setSelIdx] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiEmp, setAiEmp] = useState(null);
+  const [aiProfile, setAiProfile] = useState(null);
+
+  const selectPreset = (idx) => {
+    setSelIdx(idx);
+    const emp = buildEmpFromTemplate(EMP_TEMPLATES[idx]);
+    setAiEmp(emp);
+    setAiProfile(null);
+    // Auto-generate AI profile
+    generateProfile(emp, EMP_TEMPLATES[idx]);
+  };
+
+  const generateProfile = async (emp, tpl) => {
+    setAiLoading(true);
+    try {
+      const result = await llmGenerate("emp_generate", {
+        name: emp.name, gender: emp.gender, dept: emp.dept, position: emp.position, level: emp.level,
+        workYears: emp.workYears, salary: emp.monthlySalary, ratings: emp.recentRatings.join("→"),
+        equityDetail: emp.equityDetail, nonCompete: emp.nonCompete, managesTeam: emp.managesTeam,
+        teamSize: emp.teamSize, specialRisk: tpl?.specialRisk || "none",
+      });
+      setAiProfile(result);
+    } catch { setAiProfile(null); }
+    setAiLoading(false);
+  };
+
+  const generateRandom = async () => {
+    setMode("ai"); setAiLoading(true);
+    const tpl = EMP_TEMPLATES[Math.floor(Math.random() * EMP_TEMPLATES.length)];
+    const emp = buildEmpFromTemplate(tpl);
+    setAiEmp(emp); setSelIdx(null);
+    await generateProfile(emp, tpl);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl">
+        💡 演示说明：真实环境下员工信息从ERP系统导入。这里可选择预设案例或让AI随机生成。
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button onClick={() => setMode("preset")} className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${mode === "preset" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
+          📁 选择预设案例
+        </button>
+        <button onClick={generateRandom} className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
+          🤖 AI随机生成
+        </button>
+      </div>
+
+      {mode === "preset" && (
+        <div className="space-y-2">
+          {EMP_TEMPLATES.map((t, i) => (
+            <button key={i} onClick={() => selectPreset(i)}
+              className={`w-full text-left p-3 rounded-xl border-2 transition-all ${selIdx === i ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-sm">{t.name}</span>
+                <Badge color="blue">{t.level}</Badge>
+                <Badge color="gray">{t.dept}</Badge>
+                {t.specialRisk === "pregnant" && <Badge color="red">三期</Badge>}
+                {t.specialRisk === "nearRetirement" && <Badge color="red">临退休</Badge>}
+              </div>
+              <div className="text-xs text-gray-500">
+                {t.position} · 绩效{t.ratings.join("→")} · 月薪¥{t.salary.toLocaleString()}
+                {t.hasEquity && " · 有期权"}{t.nonCompete && " · 竞业限制"}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {aiLoading && (
+        <div className="py-4 text-center">
+          <div className="inline-flex items-center gap-2 text-sm text-purple-600 bg-purple-50 px-4 py-2 rounded-full">
+            <span className="animate-spin">🤖</span> AI正在分析员工档案...
+          </div>
+        </div>
+      )}
+
+      {aiEmp && !aiLoading && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-sm">{aiEmp.name} 的档案预览</span>
+            <Badge color="blue">{aiEmp.level} · {aiEmp.position}</Badge>
+          </div>
+          <div className="grid grid-cols-2 gap-1 text-xs">
+            <div className="text-gray-500">工龄：<span className="text-gray-800 font-medium">{aiEmp.workYears}年</span></div>
+            <div className="text-gray-500">月薪：<span className="text-gray-800 font-medium">¥{aiEmp.monthlySalary.toLocaleString()}</span></div>
+            <div className="text-gray-500">绩效：<span className="text-gray-800 font-medium">{aiEmp.recentRatings.join("→")}</span></div>
+            <div className="text-gray-500">预估N+1：<span className="text-red-600 font-medium">¥{aiEmp.estimatedCompNPlus1.toLocaleString()}</span></div>
+          </div>
+          {aiProfile && (
+            <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+              <div className="text-xs font-medium text-purple-700">🤖 AI 分析摘要</div>
+              <div className="text-xs text-gray-700">{aiProfile.summary}</div>
+              {aiProfile.performanceIssues && (
+                <div>
+                  <div className="text-xs font-medium text-gray-600 mt-1">绩效问题：</div>
+                  {aiProfile.performanceIssues.map((p, i) => <div key={i} className="text-xs text-gray-600">• {p}</div>)}
+                </div>
+              )}
+              {aiProfile.terminationCostEstimate && (
+                <div className="text-xs text-red-600 font-medium">💰 预估解除成本：{aiProfile.terminationCostEstimate}</div>
+              )}
+              {aiProfile.keyRisks && (
+                <div>
+                  <div className="text-xs font-medium text-amber-600">⚠️ 关键风险：</div>
+                  {aiProfile.keyRisks.map((r, i) => <div key={i} className="text-xs text-amber-600">• {r}</div>)}
+                </div>
+              )}
+              {aiProfile.recommendation && (
+                <div className="text-xs text-blue-700 font-medium pt-1 border-t border-purple-200">
+                  📌 {aiProfile.recommendation}
+                </div>
+              )}
+            </div>
+          )}
+          <button onClick={() => onNext({ employee: aiEmp, aiProfile })}
+            className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+            选择此员工，进入流程
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===== Step: Employee Info Confirm =====
+const StepEmployeeInfo = ({ emp, profile, onNext }) => {
+  const [confirmed, setConfirmed] = useState(false);
+  const fields = [
+    ["姓名", emp.name], ["工号", emp.empId], ["部门", emp.dept],
+    ["职位", `${emp.position}(${emp.level})`], ["入职日期", emp.joinDate],
+    ["合同到期", emp.contractEnd], ["月薪", `¥${emp.monthlySalary.toLocaleString()}`],
+    ["工龄", `${emp.workYears}年`], ["近4季度绩效", emp.recentRatings.join(" → ")],
+  ];
+  const flags = [
+    emp.hasEquity && ["🦁 股权激励", emp.equityDetail],
+    emp.nonCompete && ["🔒 竞业限制协议", ""],
+    emp.managesTeam && ["👥 管理团队", `${emp.teamSize}人`],
+    emp.hasTrade && ["🔑 接触商业机密", emp.tradeDetail],
+  ].filter(Boolean);
+  const risks = [
+    emp.isPregnant && "⚠️ 三期女职工 — 不得依据第40条解除（第42条）",
+    emp.hasWorkInjury && "⚠️ 工伤职工 — 需确认是否在医疗期",
+    emp.nearRetirement && "⚠️ 距退休不足5年 — 不得依据第40条解除（第42条）",
+  ].filter(Boolean);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gray-50 rounded-xl p-4">
+        <div className="text-xs text-gray-400 mb-2">📡 ERP系统数据（演示）</div>
+        <div className="grid grid-cols-2 gap-2">
+          {fields.map(([k, v]) => (
+            <div key={k} className="flex justify-between text-sm py-1">
+              <span className="text-gray-500">{k}</span>
+              <span className="font-medium text-gray-800">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-blue-50 rounded-xl p-3 space-y-1 text-xs">
+        <div className="font-medium text-blue-700 mb-1">💰 解除成本预估</div>
+        <div className="text-blue-600">N+1法定标准：约¥{emp.estimatedCompNPlus1.toLocaleString()} （N={emp.estimatedN}，基数¥{Math.min(emp.monthlySalary, emp.socialInsuranceBase).toLocaleString()}）</div>
+        {emp.nonCompete && <div className="text-blue-600">竞业限制（12个月）：约¥{(Math.min(emp.monthlySalary, emp.socialInsuranceBase) * 0.3 * 12).toLocaleString()}</div>}
+        {emp.hasEquity && <div className="text-purple-600">期权处理：{emp.equityDetail}（需另行协商）</div>}
+      </div>
+      {flags.length > 0 && (
+        <div className="bg-purple-50 rounded-xl p-3 space-y-1">
+          <div className="text-xs font-medium text-purple-700 mb-1">📌 特殊标记</div>
+          {flags.map(([l, d]) => <div key={l} className="text-xs text-purple-600">{l} {d && <span className="text-purple-400">· {d}</span>}</div>)}
+        </div>
+      )}
+      {risks.length > 0 ? (
+        <div className="bg-red-50 rounded-xl p-3 border border-red-200">
+          <div className="text-xs font-bold text-red-700 mb-1">🚨 法定限制警告</div>
+          {risks.map(r => <div key={r} className="text-xs text-red-600">{r}</div>)}
+          <div className="text-xs text-red-500 mt-2 pt-2 border-t border-red-200">
+            ⚠️ 存在法定解除限制，建议优先考虑协商解除路径，并务必咨询法律顾问。
+          </div>
+        </div>
+      ) : (
+        <div className="bg-green-50 rounded-xl p-3 border border-green-200">
+          <div className="text-xs text-green-700">✅ 未检测到法定解除限制情形（第42条）</div>
+        </div>
+      )}
+      <label className="flex items-start gap-2 bg-blue-50 p-3 rounded-xl cursor-pointer">
+        <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="mt-0.5" />
+        <span className="text-xs text-gray-600">我已核实以上信息准确无误，确认对该员工发起绩效改善流程，并已知晓解除成本预估及潜在风险</span>
+      </label>
+      {confirmed && <button onClick={() => onNext({})} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">确认并继续</button>}
+    </div>
+  );
+};
+
+// ===== Step: PIP Reason =====
+const StepPipReason = ({ onNext }) => {
+  const [reasons, setReasons] = useState([]);
+  const [detail, setDetail] = useState("");
+  const opts = ["连续两个季度绩效评级C或以下", "未完成岗位核心KPI", "多次未按时交付项目", "跨部门协作反馈差", "违反工作流程规范", "客户/业务方重大投诉"];
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 p-3 rounded-xl text-xs text-amber-700">
+        ⚠️ 仲裁关键：绩效不达标的事实认定是整个流程的基础。选择的理由需有对应的书面证据支撑。
+      </div>
+      <div className="text-xs text-gray-500">选择适用的绩效问题（可多选）：</div>
+      <div className="space-y-2">
+        {opts.map(o => (
+          <label key={o} className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${reasons.includes(o) ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
+            <input type="checkbox" checked={reasons.includes(o)} onChange={() => setReasons(p => p.includes(o) ? p.filter(x => x !== o) : [...p, o])} />
+            <span className="text-sm">{o}</span>
+          </label>
+        ))}
+      </div>
+      <textarea value={detail} onChange={e => setDetail(e.target.value)} placeholder="补充具体事实描述（强烈建议填写，仲裁时需具体事实支撑）..." className="w-full h-24 p-3 border border-gray-200 rounded-xl text-sm focus:border-blue-400 focus:outline-none resize-none" />
+      <div className="bg-blue-50 p-3 rounded-xl text-xs text-blue-600">
+        📎 证据提示：请确保以下证据已留存——绩效考核制度（经民主程序公示）、近期绩效评分记录、具体问题事件的书面记录。
+      </div>
+      {reasons.length > 0 && <button onClick={() => onNext({ reasons, reasonDetail: detail })} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">下一步：生成改善计划</button>}
+    </div>
+  );
+};
+
+// ===== Step: Decision =====
+const StepDecision = ({ state, onNext }) => {
+  const paths = [
+    { value: "negotiate", label: "🤝 协商解除", desc: "与员工协商一致解除劳动合同，支付经济补偿金", badge: "推荐·风险最低", color: "green" },
+    { value: "unilateral", label: "📋 单方解除(第40条)", desc: "不能胜任→培训/调岗→仍不能胜任→提前30天通知解除", badge: "需充分举证", color: "amber" },
+    { value: "transfer", label: "🔄 调岗", desc: "安排至其他适合岗位（第40条前置条件）", badge: "合规需要", color: "blue" },
+    { value: "extend_pip", label: "📝 延长改善期", desc: "给予额外30天改善机会", badge: "温和", color: "gray" },
+  ];
+  const [sel, setSel] = useState(null);
+  return (
+    <div className="space-y-3">
+      <div className="bg-gray-50 p-3 rounded-xl text-xs text-gray-600">
+        📊 评估结论：改善期内{state.evalResult === "partial" ? "部分指标达标" : "未达标"} | PIP记录 {state.pipDuration || 60} 天
+      </div>
+      <div className="bg-amber-50 p-3 rounded-xl text-xs text-amber-700">
+        ⚖️ 法律提示：协商解除（第36条）风险最低。单方解除（第40条）需满足"不能胜任→培训或调岗→仍不能胜任"全部要件，且需提前30天书面通知或额外支付一个月工资。
+      </div>
+      {paths.map(p => (
+        <button key={p.value} onClick={() => setSel(p.value)}
+          className={`w-full text-left p-4 rounded-xl border-2 transition-all ${sel === p.value ? "border-blue-500 bg-blue-50 shadow-md" : "border-gray-200 hover:border-gray-300"}`}>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm">{p.label}</span>
+            <Badge color={p.color}>{p.badge}</Badge>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">{p.desc}</div>
+        </button>
+      ))}
+      {sel && <button onClick={() => onNext({ decisionPath: sel })} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">确认路径</button>}
+    </div>
+  );
+};
+
+// ===== Step: Arbitration Risk Assessment =====
+const StepArbitrationAssess = ({ state, emp, counselLog, onNext }) => {
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const run = async () => {
+      const counselEntries = Object.entries(counselLog || {});
+      const adopted = counselEntries.filter(([,v]) => v === "accept").length;
+      const partial = counselEntries.filter(([,v]) => v === "partial").length;
+      const rejected = counselEntries.filter(([,v]) => v === "reject").length;
+      const total = counselEntries.length;
+
+      try {
+        const r = await llmGenerate("arbitration_risk", {
+          name: emp.name, position: emp.position, level: emp.level,
+          workYears: emp.workYears, ratings: emp.recentRatings?.join("→"),
+          path: state.decisionPath === "negotiate" ? "协商解除" : state.decisionPath === "unilateral" ? "单方解除(第40条)" : "解除",
+          steps: `PIP ${state.pipDuration||60}天 → 评估${state.evalResult} → ${state.decisionPath}`,
+          counselAdoption: `共${total}步咨询，全部采纳${adopted}次，部分采纳${partial}次，未采纳${rejected}次`,
+          specialFactors: [
+            emp.isPregnant ? "三期女职工" : "",
+            emp.nearRetirement ? "临退休员工" : "",
+            emp.hasEquity ? "持有未归属期权" : "",
+            emp.nonCompete ? "竞业限制" : "",
+          ].filter(Boolean).join("、") || "无特殊因素",
+        });
+        setResult(r);
+      } catch {
+        setResult({
+          overallRisk: "中", winRate: "65%",
+          keyRisks: [{ point: "需确保PIP流程完整记录", severity: "中", mitigation: "补充书面材料" }],
+          evidenceChecklist: ["绩效考核制度公示记录", "PIP通知签收记录", "改善期评估报告", "解除通知送达记录"],
+          summary: "综合评估仲裁风险中等，建议优先协商解除以降低风险。",
+        });
+      }
+      setLoading(false);
+    };
+    run();
+  }, []);
+
+  if (loading) return (
+    <div className="py-8 text-center">
+      <div className="inline-flex items-center gap-2 text-sm text-purple-600 bg-purple-50 px-4 py-2 rounded-full">
+        <span className="animate-spin">🛡️</span> AI正在评估全流程仲裁风险...
+      </div>
+    </div>
+  );
+
+  const riskColor = result?.overallRisk === "低" ? "green" : result?.overallRisk === "高" ? "red" : "amber";
+
+  return (
+    <div className="space-y-4">
+      <div className={`p-4 rounded-xl border-2 ${riskColor === "green" ? "border-green-300 bg-green-50" : riskColor === "red" ? "border-red-300 bg-red-50" : "border-amber-300 bg-amber-50"}`}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-bold text-sm">整体仲裁风险评估</span>
+          <div className="flex gap-2">
+            <Badge color={riskColor}>风险{result?.overallRisk}</Badge>
+            <Badge color={riskColor}>预估企业胜诉率 {result?.winRate}</Badge>
+          </div>
+        </div>
+        <div className="text-xs text-gray-700 leading-relaxed">{result?.summary}</div>
+      </div>
+
+      {result?.keyRisks && (
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-gray-700">⚠️ 关键风险点：</div>
+          {result.keyRisks.map((r, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge color={r.severity === "高" ? "red" : r.severity === "中" ? "amber" : "green"}>{r.severity}</Badge>
+                <span className="text-sm font-medium">{r.point}</span>
+              </div>
+              <div className="text-xs text-gray-500">缓解措施：{r.mitigation}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {result?.evidenceChecklist && (
+        <div className="bg-blue-50 rounded-xl p-3">
+          <div className="text-xs font-medium text-blue-700 mb-2">📋 必要证据清单：</div>
+          {result.evidenceChecklist.map((e, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs text-blue-600 py-0.5">
+              <span>☐</span> {e}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Counsel adoption summary */}
+      <div className="bg-gray-50 rounded-xl p-3">
+        <div className="text-xs font-medium text-gray-700 mb-2">📊 法律顾问建议采纳情况：</div>
+        {Object.entries(counselLog || {}).length === 0 ? (
+          <div className="text-xs text-gray-400">未咨询法律顾问（可能增加仲裁风险）</div>
+        ) : (
+          <div className="space-y-1">
+            {Object.entries(counselLog).map(([step, d]) => (
+              <div key={step} className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">{NODES[step]?.label || step}</span>
+                <Badge color={d === "accept" ? "green" : d === "partial" ? "amber" : "red"}>
+                  {d === "accept" ? "已采纳" : d === "partial" ? "部分采纳" : "未采纳"}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => onNext({ arbitrationAssessment: result })} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+        确认风险评估，生成文书
+      </button>
+    </div>
+  );
+};
+
+// ===== Step: Special Handling =====
+const StepSpecialHandling = ({ emp, state, onNext }) => {
+  const [items, setItems] = useState({ equity: null, noncompete: null });
+  const [phase, setPhase] = useState(emp.hasEquity ? "equity" : emp.nonCompete ? "noncompete" : "done");
+
+  if (phase === "equity") {
+    return (
+      <div className="space-y-3">
+        <div className="text-sm font-medium text-gray-700 mb-2">📦 第1项：未归属期权处理</div>
+        <div className="bg-purple-50 p-3 rounded-xl text-xs text-gray-600">
+          该员工持有 {emp.equityDetail}，需在解除协议中明确处理方式。
+        </div>
+        {[
+          { id: "buyback", label: "公司回购（按约定价格）", desc: "在解除协议中约定已归属部分的回购价格和时间" },
+          { id: "accelerate", label: "加速归属（作为协商筹码）", desc: "将部分未归属期权加速归属，纳入补偿方案" },
+          { id: "forfeit", label: "按原协议自然失效", desc: "未归属部分按股权激励协议约定在离职时自动失效" },
+        ].map(opt => (
+          <button key={opt.id} onClick={() => { setItems(p => ({ ...p, equity: opt.id })); setPhase(emp.nonCompete ? "noncompete" : "done"); }}
+            className="w-full text-left p-3 rounded-xl border-2 border-gray-200 hover:border-blue-400 transition-all">
+            <div className="text-sm font-medium">{opt.label}</div>
+            <div className="text-xs text-gray-500">{opt.desc}</div>
+          </button>
+        ))}
+      </div>
+    );
+  }
+  if (phase === "noncompete") {
+    return (
+      <div>
+        <div className="text-sm font-medium text-gray-700 mb-3">📦 {emp.hasEquity ? "第2项" : "第1项"}：竞业限制处理</div>
+        <LLMOptions type="noncompete" context={{ name: emp.name, salary: emp.monthlySalary }}
+          onSelect={opt => { setItems(p => ({ ...p, noncompete: opt.id })); onNext({ specialItems: { ...items, noncompete: opt.id } }); }} />
+      </div>
+    );
+  }
+  if (phase === "done" || (!emp.hasEquity && !emp.nonCompete)) {
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-green-700 bg-green-50 p-3 rounded-xl">✅ 无需处理特殊事项</div>
+        <button onClick={() => onNext({ specialItems: {} })} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">继续</button>
+      </div>
+    );
+  }
+};
+
+// ===== Doc Generation =====
+const DOC_NAMES = {
+  termination_notice: "解除劳动合同通知书", compensation_confirm: "经济补偿金确认单",
+  negotiation_agreement: "协商解除协议书", unilateral_decision: "单方解除决定书",
+  noncompete_confirm: "竞业限制义务确认函", equity_confirm: "股权激励处理确认书",
+  handover_list: "工作交接清单", separation_cert: "离职证明",
+};
+
+const buildDocPrompt = (key, emp, st) => {
+  const hdr = `用人单位：[示例科技有限公司]（以下简称"甲方"）\n员工：${emp.name}，工号${emp.empId}（以下简称"乙方"）\n部门/职位：${emp.dept} ${emp.position}(${emp.level})\n入职日期：${emp.joinDate}，合同到期：${emp.contractEnd}\n月薪：¥${emp.monthlySalary.toLocaleString()}，工龄：${emp.workYears}年，社保基数：¥${emp.socialInsuranceBase.toLocaleString()}\n近4季度绩效：${emp.recentRatings?.join("→")}`;
+  const N = Math.ceil(emp.workYears);
+  const isNeg = st.decisionPath === "negotiate";
+  const P = {
+    termination_notice: `请生成一份正式的《解除劳动合同通知书》。\n\n${hdr}\n\nPIP改善周期：${st.pipDuration||60}天，改善评估结果：未达岗位要求。\n解除方式：${isNeg ? "双方协商一致解除（《劳动合同法》第36条）" : "用人单位单方解除（《劳动合同法》第40条第2款：劳动者不能胜任工作，经过培训或调整工作岗位，仍不能胜任工作）"}\n\n要求：\n1. 包含正式文书编号（如：[示例]人字〔2026〕解字第XXX号）\n2. 详述解除原因：引用具体绩效数据和PIP过程\n3. 明确法律依据条款\n4. 载明解除日期（通知送达30日后或额外支付1个月工资）\n5. 薪资结算截止日、年假折算、社保公积金截止月\n6. 经济补偿金安排（引用第47条）\n7. 工作交接要求与期限\n8. 员工权利告知（如对解除有异议，可在一年内申请劳动仲裁）\n9. 签收确认栏（含"本人已收到并阅读上述通知"字样、签名、日期）\n10. 落款：公司名称、公章位置、日期`,
+    compensation_confirm: `请生成一份正式的《经济补偿金确认单》。\n\n${hdr}\nN=${N}\n${st.compensationPlan ? "选定方案：" + st.compensationPlan.title : ""}\n\n要求：\n1. 标题和编号\n2. 详细计算过程表格形式：\n   - 工作年限：${emp.workYears}年，计为${N}个月\n   - 月工资基数：¥${Math.min(emp.monthlySalary, emp.socialInsuranceBase).toLocaleString()}（取解除前12个月平均工资，注明是否触发当地社平工资3倍封顶，当地上年度职工月平均工资按¥12000计算参考）\n   - 经济补偿金：${N} × ¥${Math.min(emp.monthlySalary, emp.socialInsuranceBase).toLocaleString()} = ¥${(N * Math.min(emp.monthlySalary, emp.socialInsuranceBase)).toLocaleString()}\n   - 代通知金（如适用）：1 × ¥${Math.min(emp.monthlySalary, emp.socialInsuranceBase).toLocaleString()}\n   - 合计金额\n3. 引用《劳动合同法》第47条原文要点\n4. 支付方式（银行转账）和时间（解除之日起15个工作日内）\n5. 个人所得税处理说明\n6. 双方签字确认栏`,
+    negotiation_agreement: `请生成一份正式的《协商解除劳动合同协议书》。\n\n${hdr}\n${st.compensationPlan ? "补偿方案：" + st.compensationPlan.title : ""}\n${emp.hasEquity ? "期权情况：" + emp.equityDetail + "，处理方式：" + (st.specialItems?.equity === "buyback" ? "公司按约定价格回购" : st.specialItems?.equity === "accelerate" ? "部分加速归属" : "按原协议自然失效") : ""}\n${emp.nonCompete ? "竞业限制：已签订竞业限制协议" : ""}\n\n要求：\n1. 协议编号\n2. 鉴于条款：说明双方经友好协商一致\n3. 第一条：解除日期\n4. 第二条：经济补偿条款（具体金额、支付方式、时间）\n5. 第三条：工资结算与年假折算\n6. 第四条：工作交接（期限、内容、交接人）\n7. 第五条：保密义务（离职后继续有效）\n${emp.nonCompete ? "8. 第X条：竞业限制（确认生效、补偿金额¥" + (emp.monthlySalary * 0.3).toLocaleString() + "/月、期限12个月、违约金）" : ""}\n${emp.hasEquity ? "9. 第X条：股权激励处理（已归属/未归属分别处理方式）" : ""}\n10. 权利放弃条款：双方确认本协议为全部和最终解决方案，乙方确认不再就劳动关系向甲方主张其他权利\n11. 争议解决：协商→劳动仲裁\n12. 协议份数、效力\n13. 双方签字盖章栏`,
+    unilateral_decision: `请生成一份正式的《解除劳动合同决定书》（单方解除）。\n\n${hdr}\nPIP周期：${st.pipDuration||60}天\n\n要求：\n1. 文书编号\n2. 事实部分：详述绩效不达标的具体表现（引用绩效评级数据B+→B→C+→C）\n3. PIP过程：说明已给予${st.pipDuration||60}天改善期，提供了培训/辅导支持\n4. 评估结论：改善期满仍未达岗位要求\n5. 法律依据：《劳动合同法》第40条第（二）项\n6. 解除决定：提前30天书面通知或额外支付1个月工资\n7. 经济补偿安排\n8. 员工权利告知：对本决定有异议的，可依法申请劳动仲裁\n9. 工会意见：已事先通知工会（《劳动合同法》第43条）\n10. 签收栏`,
+    noncompete_confirm: `请生成一份《竞业限制义务确认函》。\n\n${hdr}\n\n要求：\n1. 确认函编号\n2. 确认双方于入职时签订的竞业限制协议自离职之日起生效\n3. 竞业限制期限：12个月（自劳动合同解除之日起计算）\n4. 竞业限制范围：\n   - 竞争企业清单（列5-8家行业内主要竞争对手，用[竞品A][竞品B]等替代）\n   - 限制地域范围\n   - 限制行为范围\n5. 竞业限制补偿金：¥${(emp.monthlySalary * 0.3).toLocaleString()}/月，共计¥${(emp.monthlySalary * 0.3 * 12).toLocaleString()}，按月支付\n6. 支付方式：每月X日前支付至乙方指定银行账户\n7. 甲方连续3个月未支付的，乙方有权解除竞业限制义务\n8. 违约责任：违约金为已支付补偿金总额的X倍\n9. 乙方定期报告义务（每月报告就业状态）\n10. 双方签字确认栏\n引用《劳动合同法》第23条、第24条`,
+    equity_confirm: `请生成一份《股权激励处理确认书》。\n\n${hdr}\n期权情况：${emp.equityDetail}\n处理方式：${st.specialItems?.equity === "buyback" ? "公司回购已归属部分" : st.specialItems?.equity === "accelerate" ? "部分加速归属作为补偿" : "未归属部分按原协议条款失效"}\n\n要求：\n1. 确认书编号\n2. 确认乙方参与的股权激励计划名称和授予日期\n3. 截至离职日的归属情况：\n   - 已归属股份/期权数量及处理\n   - 未归属股份/期权数量及处理\n4. ${st.specialItems?.equity === "buyback" ? "回购价格计算方式、支付时间" : st.specialItems?.equity === "accelerate" ? "加速归属的数量、条件、行权安排" : "失效条款引用及确认"}\n5. 税务处理说明\n6. 保密义务（不得泄露公司估值等信息）\n7. 双方确认无其他股权争议\n8. 签字确认栏`,
+    handover_list: `请生成一份详细的《工作交接清单》。\n\n${hdr}\n${emp.managesTeam ? "直接下属：" + emp.teamSize + "人" : ""}\n${emp.hasTrade ? "涉及商业信息：" + emp.tradeDetail : ""}\n\n要求按以下分类列出交接事项（每项有"交接内容"、"接收人"、"完成状态"列）：\n1. 工作文档与资料：项目文档、技术文档、会议纪要、客户资料等\n2. 进行中项目：列出3-5个典型项目名称及当前状态和交接要求\n3. 系统账号与权限：邮箱、OA、代码库、产品管理工具、云服务等\n4. 实物资产：电脑、手机、门禁卡、工牌等\n${emp.managesTeam ? "5. 团队管理权移交：直接汇报关系调整、团队成员1:1沟通安排、团队OKR/KPI移交" : ""}\n${emp.hasTrade ? "6. 机密信息确认：确认已归还/删除所有机密资料的副本，签署信息清除确认书" : ""}\n7. 财务结算：报销单据、借款归还、预算权限\n8. 客户/外部关系交接：需通知的客户和合作方列表\n\n底部包含：交接完成确认栏（交出人、接收人、监交人三方签字）、交接期限`,
+    separation_cert: `请生成一份《离职证明》。\n\n${hdr}\n\n要求严格遵守《劳动合同法》第50条的规定：\n1. 格式正式简洁\n2. 必须包含：劳动合同期限、解除或终止日期、工作岗位、在本单位的工作年限\n3. 重要：不得记载对劳动者不利的内容（不写绩效评价、不写解除原因、不写PIP）\n4. 仅客观陈述事实\n5. 落款：公司全称、公章位置、出具日期\n6. 编号\n\n注意：这是法定必须出具的文件，内容要中性客观，仅证明劳动关系存续期间的基本事实。`,
+  };
+  return P[key] || `请生成${DOC_NAMES[key]}。\n\n${hdr}`;
+};
+
+// ===== Step: Final Docs =====
+const StepFinalDocs = ({ state, emp, onNext }) => {
+  const [contents, setContents] = useState({});
+  const [loadMap, setLoadMap] = useState({});
+  const [expandMap, setExpandMap] = useState({});
+  const [batchRunning, setBatchRunning] = useState(false);
+  const batchRef = useRef(false);
+
+  const docList = [
+    { key: "termination_notice", icon: "📄" },
+    { key: "compensation_confirm", icon: "💰" },
+    { key: state.decisionPath === "negotiate" ? "negotiation_agreement" : "unilateral_decision", icon: "🤝" },
+    ...(emp?.nonCompete ? [{ key: "noncompete_confirm", icon: "🔒" }] : []),
+    ...(emp?.hasEquity && state.specialItems?.equity ? [{ key: "equity_confirm", icon: "🦁" }] : []),
+    { key: "handover_list", icon: "📋" },
+    { key: "separation_cert", icon: "📜" },
+  ];
+
+  const genSingle = async (key, force) => {
+    if (contents[key] && !force) { setExpandMap(p => ({ ...p, [key]: !p[key] })); return; }
+    setLoadMap(p => ({ ...p, [key]: true }));
+    setExpandMap(p => ({ ...p, [key]: true }));
+    if (force) setContents(p => { const n = { ...p }; delete n[key]; return n; });
+    try {
+      const txt = await orChat(
+        "你是一位资深HR法律顾问兼法律文书专家。请严格按照中国劳动法规定生成正式法律文书。直接输出文书全文正文。不要输出JSON、markdown代码块、额外说明或寒暄语。注意这是演示用途，公司名称用[示例科技有限公司]替代。",
+        buildDocPrompt(key, emp, state), 3000
+      );
+      setContents(p => ({ ...p, [key]: txt.replace(/```/g, "").trim() }));
+    } catch {
+      setContents(p => ({ ...p, [key]: `⚠️ ${DOC_NAMES[key]} 生成失败，请点击"🔄 重新生成"重试。` }));
+    }
+    setLoadMap(p => ({ ...p, [key]: false }));
+  };
+
+  const genAll = async () => {
+    setBatchRunning(true); batchRef.current = true;
+    for (const d of docList) {
+      if (!batchRef.current) break;
+      if (!contents[d.key]) {
+        setLoadMap(p => ({ ...p, [d.key]: true }));
+        setExpandMap(p => ({ ...p, [d.key]: true }));
+        try {
+          const txt = await orChat(
+            "你是一位资深HR法律顾问兼法律文书专家。请严格按照中国劳动法规定生成正式法律文书。直接输出文书全文正文。不要输出JSON、markdown代码块、额外说明或寒暄语。注意这是演示用途，公司名称用[示例科技有限公司]替代。",
+            buildDocPrompt(d.key, emp, state), 3000
+          );
+          setContents(p => ({ ...p, [d.key]: txt.replace(/```/g, "").trim() }));
+        } catch {
+          setContents(p => ({ ...p, [d.key]: `⚠️ ${DOC_NAMES[d.key]} 生成失败。` }));
+        }
+        setLoadMap(p => ({ ...p, [d.key]: false }));
+      }
+    }
+    setBatchRunning(false); batchRef.current = false;
+  };
+
+  const stopBatch = () => { batchRef.current = false; setBatchRunning(false); };
+
+  const doneCount = docList.filter(d => contents[d.key]).length;
+  const allDone = doneCount === docList.length;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-xs text-gray-500">共 {docList.length} 份文书 · 已生成 {doneCount}</div>
+        {batchRunning ? (
+          <button onClick={stopBatch} className="text-xs px-3 py-1 rounded-lg bg-red-100 text-red-600 hover:bg-red-200">⏹ 停止生成</button>
+        ) : (
+          <button onClick={genAll} disabled={allDone}
+            className={`text-xs px-3 py-1 rounded-lg transition-all ${allDone ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600 hover:bg-blue-200"}`}>
+            {allDone ? "✅ 全部就绪" : "🤖 一键生成全部"}
+          </button>
+        )}
+      </div>
+
+      {/* progress bar */}
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${(doneCount / docList.length) * 100}%` }} />
+      </div>
+
+      {docList.map(d => (
+        <div key={d.key} className="border border-gray-200 rounded-xl overflow-hidden">
+          <button onClick={() => genSingle(d.key)}
+            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors text-left">
+            <div className="flex items-center gap-2 text-sm">
+              <span>{d.icon}</span>
+              <span className="font-medium">{DOC_NAMES[d.key]}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {loadMap[d.key] && <span className="animate-spin text-xs">⏳</span>}
+              <Badge color={contents[d.key] ? (contents[d.key].startsWith("⚠️") ? "red" : "green") : "gray"}>
+                {contents[d.key] ? (contents[d.key].startsWith("⚠️") ? "失败" : "已生成") : "点击生成"}
+              </Badge>
+              <span className="text-gray-300 text-xs">{expandMap[d.key] ? "▼" : "▶"}</span>
+            </div>
+          </button>
+          {expandMap[d.key] && (
+            <div className="border-t border-gray-100 bg-gray-50">
+              {loadMap[d.key] ? (
+                <div className="text-center text-sm text-blue-600 py-8">
+                  <span className="animate-spin inline-block mr-2">🤖</span>正在生成《{DOC_NAMES[d.key]}》...
+                  <div className="text-xs text-gray-400 mt-1">AI根据案件信息撰写中，请稍候</div>
+                </div>
+              ) : contents[d.key] ? (
+                <div className="p-3 space-y-2">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 text-xs text-gray-800 leading-relaxed whitespace-pre-wrap max-h-80 overflow-y-auto" style={{ fontFamily: "SimSun, serif, system-ui" }}>
+                    {contents[d.key]}
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <button onClick={(e) => { e.stopPropagation(); genSingle(d.key, true); }}
+                      className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1">🔄 重新生成</button>
+                    <button onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(contents[d.key]); }}
+                      className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">📋 复制内容</button>
+                    <span className="text-xs text-gray-300 ml-auto">约{contents[d.key].length}字</span>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div className="bg-amber-50 p-3 rounded-xl text-xs text-amber-700 space-y-1">
+        <div>⚠️ 重要提示：</div>
+        <div>• 以上文书为AI根据案件信息生成的参考版本，需经法律顾问审核后方可使用</div>
+        <div>• 正式签署前应由公司法务部门校对所有法律条款引用和金额计算</div>
+        <div>• 建议签署过程全程录音/录像，安排第三方见证人在场</div>
+        <div>• 员工拒签时应采取当面宣读+EMS邮寄+电子送达并行方式</div>
+      </div>
+
+      <button onClick={() => onNext({ docsGenerated: true, docContents: contents })}
+        disabled={!allDone}
+        className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${allDone ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+        {allDone ? "✅ 确认全部文书并完成流程" : `请先生成全部文书（${doneCount}/${docList.length}）`}
+      </button>
+    </div>
+  );
+};
+
+// ===== Step: Result =====
+const StepResult = ({ state, type, emp, counselLog }) => {
+  const msgs = {
+    result_terminated: { icon: "🏁", title: "劳动合同解除流程完成", color: "blue" },
+    result_transferred: { icon: "🔄", title: "员工调岗安排完成", color: "green" },
+    result_improved: { icon: "🎉", title: "绩效改善达标", color: "emerald" },
+  };
+  const m = msgs[type] || msgs.result_terminated;
+  const counselCount = Object.keys(counselLog || {}).length;
+  const adoptedCount = Object.values(counselLog || {}).filter(v => v === "accept").length;
+
+  return (
+    <div className="space-y-4 py-2">
+      <div className="text-center text-3xl mb-2">{m.icon}</div>
+      <div className="text-center font-bold text-lg text-gray-800">{m.title}</div>
+      <div className="bg-gray-50 rounded-xl p-4 text-xs text-gray-600 space-y-2">
+        <div>员工：{emp?.name} ({emp?.empId})</div>
+        {state.compensationPlan && <div>补偿方案：{state.compensationPlan.title}</div>}
+        {state.decisionPath && <div>处理路径：{state.decisionPath === "negotiate" ? "协商解除" : state.decisionPath === "unilateral" ? "单方解除" : "调岗"}</div>}
+        {state.arbitrationAssessment && (
+          <div>仲裁风险评级：{state.arbitrationAssessment.overallRisk} · 预估胜诉率 {state.arbitrationAssessment.winRate}</div>
+        )}
+        <div className="pt-2 border-t border-gray-200">
+          法律顾问咨询：共{counselCount}步 · 采纳{adoptedCount}次
+        </div>
+        <div className="pt-2 text-gray-400">全部流程记录已归档，可在案件管理系统中查阅</div>
+      </div>
+      {type === "result_terminated" && (
+        <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
+          📌 后续注意事项：保留全部原始证据至少2年（仲裁时效1年）。如收到仲裁申请，立即联系法律顾问准备答辩材料。
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===== Main App =====
+function App() {
+  const [curId, setCurId] = useState("employee_select");
+  const [state, setState] = useState({});
+  const [emp, setEmp] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [counselLog, setCounselLog] = useState({});
+  const ref = useRef(null);
+  const [apiKey, setApiKey] = useState("");
+  const [modelName, setModelName] = useState("");
+  const [cfgReady, setCfgReady] = useState(false);
+  const [cfgCollapsed, setCfgCollapsed] = useState(false);
+
+  const applyConfig = () => {
+    setCfg(apiKey.trim(), modelName.trim());
+    setCfgReady(hasCfg());
+    if (hasCfg()) setCfgCollapsed(true);
+  };
+
+  const node = NODES[curId];
+
+  const advance = useCallback((payload) => {
+    const ns = { ...state, ...payload };
+    if (payload?.employee) setEmp(payload.employee);
+    setState(ns);
+    const next = getNextNode(curId, ns);
+    if (next) {
+      setHistory(h => [...h, { id: curId, label: node.label, icon: node.icon, ts: new Date().toLocaleTimeString() }]);
+      setCurId(next);
+      setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [curId, node, state]);
+
+  const timeTravel = (idx) => {
+    setHistory(h => h.slice(0, idx));
+    setCurId(history[idx].id);
+  };
+
+  const handleCounsel = (stepId, decision) => {
+    setCounselLog(p => ({ ...p, [stepId]: decision }));
+  };
+
+  const isResult = curId?.startsWith("result_");
+  const showCounsel = !isResult && !["employee_select", "employee_info"].includes(curId);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-3">
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-4 pt-2">
+          <h1 className="text-lg font-bold text-gray-800">⚖️ 绩效改善 → 解除劳动合同</h1>
+          <p className="text-xs text-gray-500 mt-1">AI辅助 · 法律合规 · 仲裁防御 · 全流程管理</p>
+          {emp && (
+            <div className="mt-2 inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border text-xs">
+              <span>👤 {emp.name}</span>
+              <Badge color="blue">{emp.level}</Badge>
+              <span className="text-gray-400">¥{emp.monthlySalary.toLocaleString()}/月</span>
+            </div>
+          )}
+        </div>
+
+        {/* API Config Panel */}
+        <div className={`mb-4 rounded-2xl border overflow-hidden transition-all ${cfgReady ? "bg-emerald-50 border-emerald-200" : "bg-white border-amber-300 shadow-lg"}`}>
+          <button onClick={() => setCfgCollapsed(!cfgCollapsed)}
+            className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span>{cfgReady ? "🟢" : "🔴"}</span>
+              <span className={cfgReady ? "text-emerald-700" : "text-amber-700"}>
+                {cfgReady ? `已连接 · ${getCfg().model}` : "请先配置 OpenRouter API"}
+              </span>
+            </div>
+            <span className="text-xs text-gray-400">{cfgCollapsed ? "▶ 展开" : "▼ 收起"}</span>
+          </button>
+          {!cfgCollapsed && (
+            <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+              {!cfgReady && (
+                <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg">
+                  ⚠️ 本应用所有AI功能依赖 OpenRouter API。请填入您的 API Key 和模型名称后才能使用全部功能。未配置时将使用静态备用数据。
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-gray-500 font-medium block mb-1">OpenRouter API Key</label>
+                <input type="password" value={apiKey} onChange={e => { setApiKey(e.target.value); setCfgReady(false); }}
+                  placeholder="sk-or-v1-..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none font-mono" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 font-medium block mb-1">模型名称</label>
+                <input type="text" value={modelName} onChange={e => { setModelName(e.target.value); setCfgReady(false); }}
+                  placeholder="例如 openrouter/pony-alpha 或 anthropic/claude-sonnet-4"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none font-mono" />
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={applyConfig}
+                  disabled={!apiKey.trim() || !modelName.trim()}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${apiKey.trim() && modelName.trim() ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+                  ✅ 确认配置
+                </button>
+                {cfgReady && <span className="text-xs text-emerald-600">✓ 已生效</span>}
+              </div>
+              <div className="text-xs text-gray-400 space-y-0.5">
+                <div>🔒 API Key 仅在当前页面内存中使用，不会存储或发送到第三方</div>
+                <div>📡 API 请求直接从您的浏览器发送到 OpenRouter 服务器</div>
+                <div>💡 获取 API Key：<span className="text-blue-500">openrouter.ai/keys</span></div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Counsel Score Bar */}
+        {Object.keys(counselLog).length > 0 && (
+          <div className="mb-3 bg-white rounded-xl shadow-sm border p-2 flex items-center gap-2">
+            <span className="text-xs text-gray-500">⚖️ 法律合规指数</span>
+            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{
+                width: `${Math.round((Object.values(counselLog).filter(v => v === "accept").length * 100 + Object.values(counselLog).filter(v => v === "partial").length * 50) / (Object.keys(counselLog).length * 100) * 100)}%`,
+                backgroundColor: Object.values(counselLog).some(v => v === "reject") ? "#f59e0b" : "#10b981"
+              }} />
+            </div>
+            <span className="text-xs font-medium">
+              {Math.round((Object.values(counselLog).filter(v => v === "accept").length * 100 + Object.values(counselLog).filter(v => v === "partial").length * 50) / (Object.keys(counselLog).length * 100) * 100)}%
+            </span>
+          </div>
+        )}
+
+        {/* History */}
+        {history.length > 0 && (
+          <div className="mb-4 bg-white rounded-2xl shadow-sm border p-3">
+            <div className="text-xs font-medium text-gray-500 mb-2">📍 已完成步骤（点击可回溯）</div>
+            <div className="space-y-1">
+              {history.map((h, i) => (
+                <button key={i} onClick={() => timeTravel(i)}
+                  className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg hover:bg-blue-50 transition-colors group">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✔</span>
+                  <span className="text-xs text-gray-600 flex-1">{h.icon} {h.label}</span>
+                  {counselLog[h.id] && (
+                    <Badge color={counselLog[h.id] === "accept" ? "green" : counselLog[h.id] === "partial" ? "amber" : "red"}>
+                      {counselLog[h.id] === "accept" ? "律" : counselLog[h.id] === "partial" ? "律½" : "律✗"}
+                    </Badge>
+                  )}
+                  <span className="text-xs text-gray-300 group-hover:text-blue-500">⏪</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Current Step */}
+        <div ref={ref} className={`bg-white rounded-2xl shadow-lg border overflow-hidden ${isResult ? "border-emerald-200" : "border-gray-100"}`}>
+          <div className={`p-4 border-b ${isResult ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-100" : "bg-gradient-to-r from-white to-blue-50 border-gray-100"}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Badge color={isResult ? "green" : "blue"}>{node?.phase}</Badge>
+              <span className="text-xs text-gray-400">步骤 {history.length + 1}</span>
+            </div>
+            <h2 className="text-base font-bold text-gray-800">{node?.icon} {node?.label}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{node?.desc}</p>
+          </div>
+          <div className="p-4">
+            {curId === "employee_select" && <StepEmployeeSelect onNext={advance} />}
+            {curId === "employee_info" && emp && <StepEmployeeInfo emp={emp} profile={state.aiProfile} onNext={advance} />}
+            {curId === "pip_reason" && <StepPipReason onNext={advance} />}
+            {curId === "pip_plan" && (
+              <LLMOptions type="pip_plan" context={{ name: emp?.name, ratings: emp?.recentRatings?.join("→"), position: emp?.position, level: emp?.level, workYears: emp?.workYears, issues: state.reasons?.join("；") }}
+                onSelect={opt => advance({ pipPlan: opt, pipDuration: opt.duration || (opt.id === 1 ? 60 : opt.id === 2 ? 90 : 30) })} />
+            )}
+            {curId === "pip_notify" && (
+              <LLMOptions type="notification_draft" context={{ name: emp?.name, duration: state.pipDuration, level: emp?.level }}
+                onSelect={opt => advance({ notification: opt })} />
+            )}
+            {curId === "pip_monitor" && (
+              <div className="space-y-3">
+                <div className="bg-blue-50 p-3 rounded-xl text-xs text-blue-700">📅 改善期：{state.pipDuration || 60}天 | 建议每两周进行一次review并记录</div>
+                <div className="bg-amber-50 p-3 rounded-xl text-xs text-amber-700">📎 证据提示：每次review须有书面纪要、双方签字。跟踪数据应客观量化，避免主观评价。</div>
+                <textarea placeholder="记录本次跟踪要点（日期、具体表现、数据指标）..." className="w-full h-24 p-3 border border-gray-200 rounded-xl text-sm focus:border-blue-400 focus:outline-none resize-none" />
+                <button onClick={() => advance({ monitoring: "recorded" })} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">改善期结束，进入评估</button>
+              </div>
+            )}
+            {curId === "pip_eval" && (
+              <div className="space-y-3">
+                <LLMOptions type="eval_result" context={{ name: emp?.name, duration: state.pipDuration, position: emp?.position, level: emp?.level }}
+                  onSelect={opt => advance({ evalResult: opt.id === 2 ? "partial" : "fail", evalDetail: opt })} />
+                <button onClick={() => advance({ evalResult: "pass" })} className="w-full py-2 border-2 border-dashed border-green-300 text-green-700 rounded-xl text-sm hover:bg-green-50">✅ 员工达标，结束PIP流程</button>
+              </div>
+            )}
+            {curId === "decision" && <StepDecision state={state} onNext={advance} />}
+            {curId === "termination_prep" && (
+              <div className="space-y-3">
+                <div className="text-xs text-gray-500 mb-2">📋 合规检查清单（仲裁必查项）：</div>
+                {[
+                  ["绩效考核制度经民主程序制定并公示", true],
+                  ["PIP计划已书面通知并签收", !!state.notification],
+                  ["改善期不少于30天", (state.pipDuration || 0) >= 30],
+                  ["评估标准事先告知员工", true],
+                  ["评估过程有书面记录", !!state.evalDetail],
+                  ["不存在法定不得解除的情形(第42条)", !emp?.isPregnant && !emp?.nearRetirement && !emp?.hasWorkInjury],
+                  ["工会意见征询（如有工会）", true],
+                ].map(([l, ok]) => (
+                  <div key={l} className={`flex items-center gap-2 p-2.5 rounded-lg text-sm ${ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                    <span>{ok ? "✅" : "❌"}</span>{l}
+                  </div>
+                ))}
+                <button onClick={() => advance({ complianceChecked: true })} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">合规检查通过，下一步</button>
+              </div>
+            )}
+            {curId === "compensation" && (
+              <LLMOptions type="compensation" context={{ workYears: emp?.workYears, salary: emp?.monthlySalary, name: emp?.name, socialBase: emp?.socialInsuranceBase, equityDetail: emp?.equityDetail }}
+                onSelect={opt => advance({ compensationPlan: opt })} />
+            )}
+            {curId === "special_handling" && <StepSpecialHandling emp={emp} state={state} onNext={advance} />}
+            {curId === "arbitration_assess" && <StepArbitrationAssess state={state} emp={emp} counselLog={counselLog} onNext={advance} />}
+            {curId === "final_docs" && <StepFinalDocs state={state} emp={emp} onNext={advance} />}
+            {isResult && <StepResult state={state} type={curId} emp={emp} counselLog={counselLog} />}
+          </div>
+
+          {showCounsel && (
+            <div className="px-4 pb-4">
+              <LegalCounselPanel stepId={curId} stepName={node?.label} emp={emp} state={state}
+                onAdvice={handleCounsel} counselLog={counselLog} />
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 text-center text-xs text-gray-400 space-y-1">
+          <div>基于《劳动合同法》《劳动争议调解仲裁法》等 · 仅供参考，不构成法律意见</div>
+          <div>全流程以应对劳动仲裁/诉讼为导向设计 · 支持从任意步骤回溯</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
