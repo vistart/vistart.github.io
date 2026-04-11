@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TLS / SSL 认证与传输演示</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            padding: 24px 20px 48px;
+        }
+        button { font-family: inherit; cursor: pointer; }
+        button:disabled { opacity: .35; cursor: default; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+        .header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: .5px solid #21262d; }
+        .header h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+        .header p { font-size: 13.5px; color: #8b949e; }
+
+        .tabs { display: flex; gap: 4px; border-bottom: .5px solid #21262d; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn {
+            font-size: 13px; padding: 8px 14px; cursor: pointer;
+            background: transparent; border: none;
+            border-bottom: 2px solid transparent;
+            color: #8b949e; font-weight: 400; margin-bottom: -0.5px; border-radius: 0;
+            transition: all .15s;
+        }
+        .tab-btn.active { border-color: var(--tab-color,#58a6ff); color: #e6edf3; font-weight: 500; }
+
+        .scenario-selector { margin-bottom: 16px; }
+        .scenario-selector .label {
+            font-size: 11px; font-weight: 500; color: #8b949e; letter-spacing: .08em;
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+        .scene-btns { display: flex; gap: 8px; flexWrap: wrap; margin-bottom: 10px; }
+        .scene-btn {
+            font-size: 13px; padding: 7px 16px; border-radius: 8px; cursor: pointer;
+            background: #161b22; color: #8b949e;
+            border: 1px solid #30363d; font-weight: 400; transition: all .15s;
+        }
+        .scene-btn.active {
+            background: var(--btn-bg); color: var(--btn-color);
+            border-color: var(--btn-border); font-weight: 500;
+        }
+        .scene-btn:hover:not(.active) { border-color: #484f58; }
+        .scene-desc {
+            font-size: 12.5px; color: #8b949e; padding: 9px 14px;
+            border-radius: 8px; background: #161b22; border: .5px solid #21262d;
+            border-left: 3px solid var(--desc-color);
+        }
+
+        .handshake-view { display: flex; gap: 16px; }
+        .handshake-sidebar { width: 200px; flex-shrink: 0; }
+        .handshake-sidebar .label {
+            font-size: 11px; font-weight: 500; color: #8b949e; letter-spacing: .08em;
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+        .handshake-step {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 5px 8px; border-radius: 6px;
+            cursor: pointer; margin-bottom: 2px;
+            transition: all .2s;
+        }
+        .handshake-step.cur { background: var(--step-bg); border: 1px solid var(--step-border); }
+        .handshake-step .num {
+            width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; font-weight: 500;
+        }
+        .handshake-step .num.done { background: rgba(8,80,65,.22); color: #3fb950; border: 1px solid #3fb95066; }
+        .handshake-step .num.cur { background: var(--num-bg); color: var(--num-color); border: 1px solid var(--num-border); }
+        .handshake-step .num.idle { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+        .handshake-step .msg { font-size: 11.5px; line-height: 1.4; }
+
+        .handshake-main { flex: 1; min-width: 0; }
+        .hs-header { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .hs-box {
+            padding: 10px 12px; border-radius: 10px; text-align: center;
+            border: var(--box-border) solid; background: var(--box-bg);
+            transition: all .3s;
+        }
+        .hs-box .emoji { font-size: 20px; margin-bottom: 3px; }
+        .hs-box .title { font-size: 13px; font-weight: 500; }
+        .hs-box .sub { font-size: 10px; color: #8b949e; font-family: 'JetBrains Mono', monospace; }
+
+        .hs-action {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid var(--act-border); background: var(--act-bg);
+            margin-bottom: 10px; min-height: 72px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: all .3s;
+        }
+        .hs-action .tag { font-size: 11px; color: #8b949e; margin-bottom: 8px; }
+        .hs-action .msg-box {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 18px; border-radius: 20px;
+            background: var(--msg-bg); border: 1.5px dashed var(--msg-border);
+            color: var(--msg-color); font-size: 12.5px; font-weight: 500;
+        }
+        .hs-action .done-msg { text-align: center; }
+        .hs-action .done-emoji { font-size: 26px; margin-bottom: 4px; }
+        .hs-action .done-title { font-size: 13px; font-weight: 500; color: var(--done-color); }
+        .hs-arrow-row {
+            width: 100%; display: flex; align-items: center;
+        }
+        .hs-arrow-row.rev { flex-direction: row-reverse; }
+        .hs-arrow-row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--arr-color); flex-shrink: 0; }
+        .hs-arrow-row .line { flex: 1; height: 2.5px; background: var(--arr-color); opacity: 0.7; margin: 0 2px; }
+        .hs-arrow-row .tri {
+            width: 0; height: 0; flex-shrink: 0;
+            border-top: 7px solid transparent; border-bottom: 7px solid transparent;
+        }
+        .hs-arrow-row .tri.fwd { border-left: 12px solid var(--arr-color); }
+        .hs-arrow-row .tri.rev { border-right: 12px solid var(--arr-color); }
+        .hs-action .arr-msg { text-align: center; margin-top: 8px; font-size: 13px; font-weight: 500; color: var(--arr-color); }
+
+        .hs-detail {
+            padding: 12px 16px; background: #161b22; border: .5px solid #21262d;
+            border-radius: 8px; font-size: 12.5px; line-height: 1.85;
+            color: #e6edf3; min-height: 80px; margin-bottom: 14px;
+            white-space: pre-line;
+        }
+
+        .hs-controls { display: flex; gap: 8px; justify-content: center; }
+        .hs-ctrl {
+            font-size: 12px; padding: 5px 12px; cursor: pointer;
+            background: transparent; border: 1px solid #30363d; color: #8b949e;
+            border-radius: 6px; transition: all .15s;
+        }
+        .hs-ctrl:disabled { opacity: .4; cursor: not-allowed; }
+        .hs-ctrl.accent { background: var(--accent-bg); color: var(--accent-color); border-color: var(--accent-border); }
+        .hs-ctrl.playing { background: #854f0b22; color: #854f0b; border-color: #854f0b88; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .fade-in { animation: fadeIn .3s ease; }
+
+        .pill-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .pill-btn {
+            font-size: 12px; padding: 5px 14px; border-radius: 20px;
+            background: var(--pill-bg); color: var(--pill-color);
+            border: 1px solid var(--pill-border); cursor: pointer;
+            font-weight: 500; transition: all .15s;
+        }
+        .pill-btn.active { background: var(--pill-active-bg); color: var(--pill-active-color); border-color: var(--pill-active-border); }
+
+        .cert-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.4fr); gap: 20px; }
+        .cert-chain .label {
+            font-size: 11px; font-weight: 500; color: #8b949e; letter-spacing: .08em;
+            text-transform: uppercase; margin-bottom: 10px;
+        }
+        .cert-chain-item {
+            padding: 9px 14px; border-radius: 8px; text-align: center;
+            border: 1px solid var(--chain-border); background: var(--chain-bg);
+            font-size: 12px; line-height: 1.4;
+        }
+        .cert-chain-item.root { font-weight: 500; }
+        .cert-chain-item .arrow { text-align: center; color: #8b949e; font-size: 18px; line-height: 1.4; }
+        .cert-meta {
+            margin-top: 16px; padding: 10px 12px; border-radius: 8px;
+            background: #161b22; border: .5px solid #21262d;
+        }
+        .cert-meta .label { font-size: 11px; color: #8b949e; margin-bottom: 4px; }
+        .cert-meta .value { font-size: 12.5px; }
+
+        .cert-right .label {
+            font-size: 11px; font-weight: 500; color: #8b949e; letter-spacing: .08em;
+            text-transform: uppercase; margin-bottom: 10px;
+        }
+        .cert-use {
+            font-size: 12.5px; padding: 9px 12px; border-radius: 8px;
+            background: var(--use-bg); border: 1px solid var(--use-border);
+            color: #e6edf3; margin-bottom: 14px; line-height: 1.6;
+        }
+        .cert-pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .cert-pros .ttl, .cert-cons .ttl { font-size: 12px; font-weight: 500; margin-bottom: 7px; }
+        .cert-pros .ttl { color: #0f6e56; }
+        .cert-cons .ttl { color: #a32d2d; }
+        .cert-item { font-size: 12px; color: #8b949e; margin-bottom: 5px; line-height: 1.45; }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding: 10px 14px;
+            border-radius: 8px; background: #161b22; border: .5px solid #21262d; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-item .tag {
+            font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500;
+            background: var(--tag-bg); border: 1px solid var(--tag-border); color: var(--tag-color);
+            white-space: nowrap;
+        }
+        .legend-item .tag-desc { font-size: 11px; color: #8b949e; }
+
+        .ver-btns { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .ver-btns .divider { width: 1px; height: 20px; background: #21262d; }
+
+        .plain-section { margin-bottom: 14px; }
+        .plain-section .hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .plain-section .layer {
+            font-size: 10px; font-weight: 600; letter-spacing: .05em; padding: 2px 8px; border-radius: 4px;
+            background: var(--layer-bg); color: var(--layer-color);
+            border: 1px solid var(--layer-border); text-transform: uppercase;
+        }
+        .plain-section .phase { font-size: 12px; color: #8b949e; font-weight: 500; }
+        .plain-table { border-radius: 8px; border: .5px solid #21262d; overflow: hidden; }
+        .plain-row {
+            display: grid; grid-template-columns: 1fr auto; gap: 10px;
+            padding: 8px 12px; align-items: start;
+            border-bottom: .5px solid #21262d;
+            background: var(--row-bg);
+        }
+        .plain-row:last-child { border-bottom: none; }
+        .plain-row .lbl { font-size: 12.5px; margin-bottom: 3px; font-weight: 500; }
+        .plain-row .note { font-size: 11.5px; color: #8b949e; line-height: 1.5; }
+
+        .callout-warning {
+            padding: 12px 16px; border-radius: 8px; background: #854f0b10; border: 1px solid #854f0b33;
+            margin-top: 8px;
+        }
+        .callout-warning .title { font-size: 12.5px; font-weight: 500; color: #854f0b; margin-bottom: 6px; }
+        .callout-warning .body { font-size: 12px; color: #8b949e; line-height: 1.7; }
+
+        .ws-steps { display: flex; gap: 12px; margin-bottom: 14px; }
+        .ws-steps .num {
+            width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+            background: rgba(29,158,117,.22); border: 1px solid rgba(29,158,117,.55);
+            color: #1d9e75; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; margin-top: 2px;
+        }
+        .ws-steps .content { flex: 1; }
+        .ws-steps .step-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+        .ws-steps .step-body { font-size: 12px; color: #8b949e; white-space: pre-line; line-height: 1.7; }
+
+        .code-block {
+            position: relative; margin: 10px 0;
+            background: #161b22; border: .5px solid #21262d; border-radius: 8px;
+            padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            line-height: 1.75; overflow-x: auto; color: #e6edf3;
+            white-space: pre;
+        }
+        .copy-btn {
+            position: absolute; top: 8px; right: 8px;
+            font-size: 11px; padding: 2px 8px; cursor: pointer;
+            background: #0d1117; border: .5px solid #30363d; border-radius: 6px;
+            color: #8b949e;
+        }
+
+        .ws-table { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 1; }
+        .ws-table .head { padding: 8px 10px; border-right: .5px solid #21262d; }
+        .ws-table .cell { padding: 8px 10px; border-right: .5px solid #21262d; }
+
+        .tls13-callout {
+            padding: 8px 14px; margin-bottom: 14px; border-radius: 8px;
+            background: rgba(29,158,117,.12); border: 1px solid rgba(29,158,117,.33);
+            font-size: 12px; color: #e6edf3;
+        }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        @media (max-width: 900px) {
+            .handshake-view { flex-direction: column; }
+            .handshake-sidebar { width: 100%; }
+            .cert-grid { grid-template-columns: 1fr; }
+            .cert-pros-cons { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>TLS / SSL 认证与传输演示</h1>
+        <p>交互式讲解握手流程 · 四大场景（含浏览器 mTLS）· 明文/加密分析 · Wireshark 抓包解密 · 开发实战</p>
+    </div>
+
+    <div class="tabs" id="mainTabs"></div>
+
+    <div id="handshakePanel" class="panel active">
+        <div class="scenario-selector" id="scenarioSel"></div>
+        <div id="handshakeViz"></div>
+    </div>
+
+    <div id="certsPanel" class="panel">
+        <div class="pill-btns" id="certPills"></div>
+        <div class="cert-grid" id="certView"></div>
+    </div>
+
+    <div id="plaintextPanel" class="panel">
+        <div class="legend" id="plainLegend"></div>
+        <div class="ver-btns" id="verBtns"></div>
+        <div id="tls13Callout"></div>
+        <div id="plainView"></div>
+    </div>
+
+    <div id="wiresharkPanel" class="panel">
+        <div class="tabs" id="wsTabs"></div>
+        <div id="wsView"></div>
+    </div>
+
+    <div id="devPanel" class="panel">
+        <div class="tabs" id="devTabs"></div>
+        <div id="devView"></div>
+    </div>
+
+    <script>
+const C = {
+    blue:"#185FA5", dkBlue:"#0C447C", green:"#0F6E56", dkGreen:"#085041",
+    purple:"#3C3489", ltPurple:"#534AB7", amber:"#854F0B", red:"#A32D2D",
+    teal:"#1D9E75", coral:"#993C1D", pink:"#8B3A6E", orange:"#9A4F10",
+};
+
+const SCENARIOS = {
+    browser:{
+        label:"浏览器 HTTPS", icon:"🌐",
+        clientLabel:"浏览器", serverLabel:"Web 服务器",
+        clientColor:C.blue, serverColor:C.green,
+        desc:"最常见的TLS场景。浏览器内置了操作系统/自身的受信任根CA证书存储，可以自动验证服务器证书链，无需手动配置。",
+        steps:[
+            { from:"C", msg:"Client Hello", color:C.blue,
+                detail:"客户端发送以下信息：\n\n① TLS 版本：如 TLS 1.2 / TLS 1.3\n② Client Random：32字节随机数（防重放攻击）\n③ Cipher Suites：支持的密码套件列表\n   如 TLS_AES_256_GCM_SHA384（TLS1.3）\n④ 扩展字段（Extensions）：\n   • SNI（Server Name Indication）：指定目标域名\n   • ALPN：协议协商（HTTP/2、HTTP/1.1）\n   • SessionTicket：会话复用支持" },
+            { from:"S", msg:"Server Hello", color:C.green,
+                detail:"服务器从客户端列表中选择并返回：\n\n① 选定的 TLS 版本\n② 选定的 Cipher Suite\n③ Server Random：服务器端随机数\n④ Session ID（TLS 1.2）或 KeyShare（TLS 1.3）\n\nTLS 1.3 改进：Server Hello 之后消息立即加密，安全性更高。" },
+            { from:"S", msg:"Certificate", color:C.green,
+                detail:"服务器发送 X.509 证书（PEM/DER格式），包含：\n\n• Subject：证书主体（域名/组织）\n• SubjectAltName（SAN）：覆盖的域名列表\n• Public Key：服务器公钥（RSA/ECDSA）\n• Issuer：颁发机构（CA）\n• Validity：有效期（NotBefore ~ NotAfter）\n• Signature：CA 的数字签名\n\n可能同时发送证书链（Intermediate CA 证书）。" },
+            { from:"S", msg:"Server Hello Done", color:C.green,
+                detail:"（仅 TLS 1.2）服务器通知客户端：Hello 握手阶段完成，等待客户端响应。\n\nTLS 1.3 不需要此消息，握手更精简（1-RTT）。" },
+            { local:"C", msg:"验证服务器证书", color:C.amber,
+                detail:"浏览器/操作系统执行完整证书链验证：\n\n① 证书链构建：Leaf Cert → Intermediate CA → Root CA\n② 签名验证：用 CA 公钥验证每层证书的签名\n③ 有效期：当前时间必须在 NotBefore ~ NotAfter 内\n④ 域名匹配：检查 SAN 字段（或 CN）是否匹配当前域名\n⑤ 吊销检查：\n   • OCSP Stapling（在线证书状态协议）\n   • CRL（证书吊销列表）\n⑥ CT 日志：证书透明度验证（现代浏览器）\n\n任何一步失败 → 显示「您的连接不是私密连接」警告。" },
+            { from:"C", msg:"Client Key Exchange", color:C.blue,
+                detail:"TLS 1.2（RSA 密钥交换）：\n  客户端生成 Pre-master Secret（48字节），用服务器公钥加密发送。\n\nTLS 1.2/1.3（ECDHE 密钥交换，推荐）：\n  基于椭圆曲线 Diffie-Hellman，提供前向保密（PFS）。\n\n双方各自计算：\n  Master Secret = PRF(pre_master, \"master secret\",\n                      ClientRandom + ServerRandom)\n\n从 Master Secret 派生：Session Key、IV 等。" },
+            { from:"C", msg:"Change Cipher Spec + Finished", color:C.blue,
+                detail:"Change Cipher Spec：通知服务器，之后的消息都将使用协商好的加密密钥和算法传输。\n\nFinished（加密）：对所有握手消息做哈希，用会话密钥加密发送，验证握手完整性。" },
+            { from:"S", msg:"Change Cipher Spec + Finished", color:C.green,
+                detail:"服务器同样切换到加密模式，并发送加密的 Finished 消息。\n\n两端 Finished 消息均验证成功后，握手正式完成。" },
+            { done:true, msg:"🔒 加密通信建立", color:C.dkGreen,
+                detail:"握手完成！建立了端到端加密通道：\n\n加密方式：对称加密（AES-256-GCM / ChaCha20-Poly1305）\n完整性保护：AEAD 认证加密，每条消息均有 MAC\n抗重放：TLS Record 序列号 + 随机 IV\n前向保密：ECDHE 密钥交换（即使私钥泄露，历史记录安全）\n\n之后所有 HTTPS 数据均在此加密隧道中传输，ISP/中间人无法读取或篡改。" },
+        ],
+    },
+    browser_mtls:{
+        label:"浏览器 mTLS", icon:"🛡️",
+        clientLabel:"浏览器（含客户端证书）", serverLabel:"需要身份认证的服务器",
+        clientColor:C.pink, serverColor:C.dkBlue,
+        desc:"浏览器双向TLS认证：服务器不仅验证证书，还要求浏览器出示客户端证书来证明用户/设备身份。常见于企业内网、政务系统、网银 U盾、VPN门户等高安全场景。",
+        steps:[
+            { from:"C", msg:"Client Hello", color:C.pink,
+                detail:"浏览器发起握手，与普通 HTTPS 相同。\n\n浏览器侧准备：\n• 客户端证书存储在操作系统证书库中\n  - Windows：证书管理器（certmgr.msc）\n  - macOS：Keychain Access（钥匙串访问）\n  - Linux：NSS 数据库 / p11-kit\n• 或存储在硬件设备中：\n  - USB Token / 智能卡（U盾）\n  - YubiKey / 企业 HSM\n  - 通过 PKCS#11 接口与浏览器通信" },
+            { from:"S", msg:"Server Hello + Certificate", color:C.dkBlue,
+                detail:"服务器正常发送握手响应和自身证书，供浏览器验证服务器身份。\n\n浏览器验证过程与普通 HTTPS 完全相同：\n• 证书链到达受信任的根 CA\n• 域名与 SAN/CN 匹配\n• 有效期检查\n• OCSP/CRL 吊销检查" },
+            { from:"S", msg:"Certificate Request ⭐", color:C.dkBlue,
+                detail:"🔑 浏览器 mTLS 核心消息！\n\n服务器在 TLS 握手中主动要求浏览器提供客户端证书：\n\n消息内容：\n① 接受的 CA 列表（AcceptableCAs）\n   → 服务器只接受特定 CA 签发的客户端证书\n② 支持的证书类型（rsa_sign / ecdsa_sign）\n③ 支持的签名算法\n\n浏览器行为：\n→ 在本地证书库中寻找符合 CA 列表的证书\n→ 如有多个匹配证书，弹出选择对话框\n→ 如有硬件 token（U盾），触发 PIN 码输入" },
+            { local:"C", msg:"🖱️ 浏览器弹出证书选择对话框", color:C.amber,
+                detail:"这是浏览器 mTLS 独有的用户交互环节：\n\n① 浏览器匹配可用证书\n   → 过滤出由服务器接受的 CA 颁发的证书\n   → 过滤未过期的证书\n\n② 弹出选择框（如有多张）\n   → 用户选择要使用的证书\n   → 常见于企业内网，每台设备有唯一证书\n\n③ 如使用硬件 Token / U盾：\n   → 弹出 PIN 码输入界面\n   → 私钥存储在硬件中，从不导出\n   → 签名操作在硬件内部完成（PKCS#11 接口）\n④ 用户选择/确认后，浏览器继续握手\n   → 拒绝选择 → 握手失败，服务器拒绝连接" },
+            { from:"C", msg:"Client Certificate ⭐", color:C.pink,
+                detail:"🔑 浏览器向服务器发送客户端证书！\n\n证书中的身份标识字段（服务器用于授权）：\n• CN（Common Name）：\n   - 个人证书：如 \"Zhang San\" 或员工工号\n   - 设备证书：如 \"laptop-001.corp.example.com\"\n   - 服务账号：如 \"payment-service\"\n• O（Organization）：部门/组织\n• OU（Org Unit）：岗位/角色\n• SAN Email：如 zhangsan@example.com\n\n企业常见应用：\n• 员工入职时，IT 部门签发个人设备证书\n• 政务系统：CA 机构颁发的个人数字证书（如 EID）\n• 网银 U盾：银行为客户颁发的证书存入 USB 硬件" },
+            { from:"C", msg:"Client Key Exchange + Certificate Verify ⭐", color:C.pink,
+                detail:"① Client Key Exchange：协商会话密钥（同普通 TLS）\n\n② Certificate Verify（关键！）：\n   浏览器用客户端私钥对握手记录签名，发送给服务器。\n\n私钥的来源（决定安全级别）：\n• 软件证书：私钥存储在 OS 证书库（文件加密保护）\n• 硬件 Token / U盾：\n   - 私钥存储在安全芯片中，永远不离开硬件\n   - 签名操作在芯片内部完成\n   - 即使电脑被黑，攻击者也无法导出私钥\n   - 安全级别远高于软件证书\n\n此步骤证明客户端确实持有私钥，而非仅仅拥有证书副本。" },
+            { local:"S", msg:"服务器验证客户端证书 + 授权 ⭐", color:C.dkBlue,
+                detail:"服务器执行以下验证和授权决策：\n\n① 证书链验证：由受信任的 CA 签发\n② Certificate Verify 签名校验：确认私钥所有权\n③ 有效期检查\n④ 吊销状态（CRL / OCSP）\n⑤ 授权决策（基于证书字段）：\n   • 检查 CN/OU/O 字段 → 映射到用户角色\n   • SAN Email → 查询用户数据库\n   • 自定义 VerifyPeerCertificate 回调\n\n典型授权模式：\n• 企业 VPN：CN = 员工编号 → 查 LDAP/AD 判断权限\n• 政务系统：证书 SN → 查身份认证库\n• 网银：客户证书序列号 → 绑定银行账户\n\n验证失败 → TLS Alert: bad_certificate → 拒绝连接" },
+            { from:"C", msg:"Change Cipher Spec + Finished", color:C.pink,
+                detail:"双方切换到加密模式，完成握手。\n\n此时双方已完成双向身份验证：\n• 浏览器已验证服务器身份（防钓鱼/中间人）\n• 服务器已验证用户/设备身份（防未授权访问）" },
+            { from:"S", msg:"Change Cipher Spec + Finished", color:C.dkBlue,
+                detail:"服务器确认握手完成，切换加密通信。" },
+            { done:true, msg:"🔒 双向认证浏览器会话建立", color:C.dkGreen,
+                detail:"浏览器 mTLS 建立成功！\n\n安全保障：\n• 服务器身份已验证（防中间人 / 防钓鱼）\n• 用户/设备身份已验证（防未授权访问，无需密码！）\n• 端到端加密通信\n• 强认证：无法被密码泄露、钓鱼攻击击穿\n\n对比密码登录的优势：\n• 私钥从不通过网络传输（与密码根本不同）\n• 硬件 Token 可防止私钥被恶意软件窃取\n• 可与 HTTP Session 结合：握手建立后服务器创建 Session Cookie\n\n典型应用：\n• 企业 VPN 门户（Cisco AnyConnect / OpenVPN + 证书）\n• 政府/金融内部系统\n• 中国网银 U盾（USB Key 认证）\n• 企业零信任（BeyondCorp / ZTA）\n• 企业 Wi-Fi 认证（802.1X / EAP-TLS）" },
+        ],
+    },
+    server:{
+        label:"服务器间 TLS", icon:"🖥️",
+        clientLabel:"客户端服务", serverLabel:"目标服务（DB/API）",
+        clientColor:C.blue, serverColor:C.teal,
+        desc:"服务与服务之间的TLS通信：应用连接数据库、Redis，微服务间调用，Docker Engine，gRPC等。与浏览器的核心区别是：程序没有内置的公共CA证书库，需要显式配置信任。",
+        steps:[
+            { from:"C", msg:"Client Hello", color:C.blue,
+                detail:"发起方是程序进程，而非浏览器。常见场景：\n\n• Go: tls.Dial() / http.Client with TLS\n• Python: requests(verify=\"ca.crt\")\n• PostgreSQL client: sslmode=verify-full\n• Redis client: TLS 配置\n• gRPC: credentials.NewTLS()\n• Docker client: --tlsverify\n• MySQL: ssl-ca=ca.pem\n\n握手消息格式与浏览器完全相同。" },
+            { from:"S", msg:"Certificate", color:C.teal,
+                detail:"目标服务器的证书，类型可能是：\n\n① 公共 CA 签发（适合对外 API）\n   → 程序使用系统根证书库自动验证\n\n② 企业私有 CA 签发（推荐内网场景）\n   → 需配置信任该私有 CA 的根证书\n\n③ 自签名证书（开发/测试环境）\n   → 需将该证书加入信任列表\n\n数据库（PostgreSQL、MySQL）、消息队列、\netcd、Docker Engine 常使用自签名或私有CA证书。" },
+            { local:"C", msg:"⚠️ 证书验证（关键差异）", color:C.amber,
+                detail:"与浏览器最大不同：程序没有内置的公共 CA 根证书库。\n\n需要显式配置（以 Go 为例）：\n\n// 信任私有 CA\npool := x509.NewCertPool()\npool.AppendCertsFromPEM(caCertPEM)\ntlsCfg := &tls.Config{RootCAs: pool}\n\n// 信任自签名证书（将证书本身作为CA）\npool.AppendCertsFromPEM(serverCertPEM)\n\n⛔ 禁止生产环境使用：\nInsecureSkipVerify: true  // 完全跳过验证！\n\nDocker TLS 配置路径：\n/etc/docker/certs.d/<host>/ca.crt" },
+            { from:"C", msg:"Key Exchange + 密钥协商", color:C.blue,
+                detail:"密钥交换过程与浏览器TLS完全相同，协商出对称加密密钥。" },
+            { done:true, msg:"🔒 服务间加密通信", color:C.dkGreen,
+                detail:"建立加密通道后的服务间数据传输示例：\n\n• PostgreSQL：SQL 查询/结果在 TLS 隧道传输\n  连接串：postgres://host/db?sslmode=verify-full&sslrootcert=ca.crt\n\n• Redis：RESP 协议数据加密传输\n  配置：tls.enable=true, tls.ca=/path/ca.crt\n\n• gRPC：Protobuf 数据加密传输\n  credentials.NewTLS(&tls.Config{RootCAs: pool})\n\n• Kubernetes：组件间使用 TLS 通信\n  kubeconfig 中配置 certificate-authority-data\n\n• Istio Sidecar：自动注入 TLS，业务无感知" },
+        ],
+    },
+    mtls:{
+        label:"服务间 mTLS", icon:"🔐",
+        clientLabel:"客户端（含证书）", serverLabel:"服务器（含证书）",
+        clientColor:C.purple, serverColor:C.ltPurple,
+        desc:"双向TLS认证（Mutual TLS）：不仅服务器需要向客户端证明身份，客户端也必须向服务器出示证书。双方都验证对方的证书，实现双向身份认证。",
+        steps:[
+            { from:"C", msg:"Client Hello", color:C.purple,
+                detail:"握手开始，与普通 TLS 相同。\n\n客户端需要预先准备：\n• 自己的证书（client.crt）— 用于向服务器证明身份\n• 自己的私钥（client.key）— 用于 Certificate Verify\n• 服务端 CA 证书（ca.crt）— 用于验证服务器证书" },
+            { from:"S", msg:"Server Hello + Certificate", color:C.ltPurple,
+                detail:"服务器发送自己的证书（服务端身份证明），同单向 TLS。\n\nmTLS 场景中，服务端和客户端的证书通常由同一个私有 CA 颁发，形成统一的信任体系（PKI）。\n\n例如 Kubernetes 集群中，所有组件（API Server、kubelet、etcd）的证书均由 Kubernetes CA 签发。" },
+            { from:"S", msg:"Certificate Request ⭐", color:C.ltPurple,
+                detail:"🔑 mTLS 核心握手消息！\n\n服务器通过 CertificateRequest 消息告知客户端：\n① 我需要你的证书来验证你的身份\n② 我接受以下 CA 颁发的客户端证书（ClientCAs 列表）\n③ 支持的证书类型（RSA / ECDSA）\n\nGo 服务器配置：\nClientAuth: tls.RequireAndVerifyClientCert\nClientCAs: clientCAPool\n\n如果客户端没有合适的证书 → TLS 握手失败，连接被拒绝。" },
+            { from:"S", msg:"Server Hello Done", color:C.ltPurple,
+                detail:"（TLS 1.2）服务器 Hello 阶段结束，等待客户端发送证书。" },
+            { local:"C", msg:"验证服务器证书", color:C.amber,
+                detail:"客户端验证服务器证书，流程同单向 TLS：\n① 证书链验证\n② 签名有效性\n③ 有效期\n④ 服务器标识（SNI匹配）" },
+            { from:"C", msg:"Client Certificate ⭐", color:C.purple,
+                detail:"🔑 客户端向服务器发送自己的证书！\n\n证书内容（Subject 字段可用于标识客户端身份）：\n• CN (Common Name)：如 \"my-service\" 或 \"system:node:worker-1\"\n• O (Organization)：如 \"system:nodes\"（Kubernetes RBAC 使用）\n• OU (Org Unit)：如 \"payment-service\"\n\nKubernetes 中客户端证书 CN/O 字段直接映射到 RBAC 权限，\n是 Kubernetes 认证授权的核心机制之一。" },
+            { from:"C", msg:"Client Key Exchange", color:C.purple,
+                detail:"标准密钥交换过程，协商会话密钥。" },
+            { from:"C", msg:"Certificate Verify ⭐", color:C.purple,
+                detail:"🔑 关键步骤：证明客户端真正持有私钥！\n\n客户端用自己的私钥对之前所有握手消息的摘要进行数字签名，\n并将签名发送给服务器。\n\n这防止了证书伪造攻击：\n攻击者即使有客户端证书（公钥），没有对应私钥，\n也无法生成有效的 CertificateVerify 签名。\n\n签名算法与证书公钥类型匹配（RSA-PKCS1v15 / ECDSA）。" },
+            { local:"S", msg:"验证客户端证书 ⭐", color:C.ltPurple,
+                detail:"服务器验证客户端证书（授权决策）：\n\n① 证书链：是否由受信的 ClientCA 签发\n② 有效期检查\n③ Certificate Verify 签名验证（证明私钥所有权）\n④ 自定义授权逻辑（可选）：\n   • 检查 CN/OU/SAN 是否在白名单\n   • 自定义 VerifyPeerCertificate 回调\n   • 对比 CRL 或 OCSP\n\n验证失败 → TLS Alert: bad_certificate\n连接被立即关闭，不返回任何业务数据。" },
+            { done:true, msg:"🔒 双向认证通道建立", color:C.dkGreen,
+                detail:"双方身份均已通过证书加密验证！\n\n安全保障：\n• 服务器身份已验证（防中间人）\n• 客户端身份已验证（只有持有有效客户端证书的服务才能连接）\n• 端到端加密（防窃听和篡改）\n\n典型应用场景：\n• 零信任网络（Zero Trust Architecture）\n• 服务网格（Istio/Linkerd 自动 mTLS）\n• Kubernetes 组件间通信\n• 金融/支付 API（高安全要求）\n• IoT 设备到云端双向认证\n• gRPC 服务间调用\n• HashiCorp Vault Agent Auth\n• etcd 集群节点间通信" },
+        ],
+    },
+};
+
+const PLAIN_PHASES = {
+    tls12: [
+        { layer:"TCP", phase:"建立连接", items:[
+            { label:"TCP SYN / SYN-ACK / ACK", vis:"plain", note:"完全明文：源IP、目的IP、端口号" },
+        ]},
+        { layer:"TLS握手", phase:"握手阶段（明文）", items:[
+            { label:"Client Hello", vis:"plain", note:"明文：TLS版本、支持的密码套件、SNI域名⚠️、Client Random" },
+            { label:"Server Hello", vis:"plain", note:"明文：选定版本、选定密码套件、Server Random、Session ID" },
+            { label:"Certificate（服务器证书）", vis:"plain", note:"明文：服务器域名/组织信息、公钥、CA签名 — 中间人可看到完整证书！" },
+            { label:"Certificate Request（mTLS）", vis:"plain", note:"明文：服务器接受的CA列表" },
+            { label:"Server Hello Done", vis:"plain", note:"明文：1字节通知消息" },
+            { label:"Client Certificate（mTLS，TLS1.2）", vis:"plain", note:"⚠️ TLS 1.2 中客户端证书明文传输！包含客户端身份信息" },
+            { label:"Client Key Exchange", vis:"plain", note:"明文：加密后的Pre-master Secret（RSA）或ECDH公钥参数" },
+            { label:"Change Cipher Spec", vis:"plain", note:"明文：1字节通知消息（0x01）" },
+        ]},
+        { layer:"TLS握手", phase:"握手末尾（加密）", items:[
+            { label:"Finished（客户端）", vis:"enc", note:"加密：握手摘要，用协商的会话密钥加密" },
+            { label:"Finished（服务器）", vis:"enc", note:"加密：握手摘要，用协商的会话密钥加密" },
+        ]},
+        { layer:"应用数据", phase:"加密通信阶段", items:[
+            { label:"HTTP 请求头（含 Cookie/Authorization）", vis:"enc", note:"加密：所有HTTP头部均不可见" },
+            { label:"HTTP 请求体（POST数据/JSON）", vis:"enc", note:"加密：表单数据、密码、业务数据均不可见" },
+            { label:"HTTP 响应体（HTML/JSON/文件）", vis:"enc", note:"加密：响应内容不可见" },
+            { label:"URL路径 / Query参数", vis:"enc", note:"加密：/login?user=abc 等路径不可见（仅域名可见）" },
+        ]},
+        { layer:"永远可见", phase:"TLS 无法隐藏的信息", items:[
+            { label:"IP 地址（源和目的）", vis:"always", note:"IP层信息，TLS无法加密" },
+            { label:"TCP 端口号（如443）", vis:"always", note:"传输层信息，TLS无法加密" },
+            { label:"SNI 域名（Server Name）", vis:"always", note:"⚠️ Client Hello 中明文发送，用于服务器选择证书；可暴露你访问的网站（ECH可解决）" },
+            { label:"数据包大小和时序", vis:"always", note:"流量分析：即使加密，包大小和时序可推测行为" },
+            { label:"TLS 握手版本和密码套件", vis:"always", note:"Client Hello 中明文，可用于指纹识别客户端" },
+        ]},
+    ],
+    tls13: [
+        { layer:"TCP", phase:"建立连接", items:[
+            { label:"TCP SYN / SYN-ACK / ACK", vis:"plain", note:"完全明文，同 TLS 1.2" },
+        ]},
+        { layer:"TLS握手", phase:"握手阶段（部分加密，TLS 1.3改进）", items:[
+            { label:"Client Hello", vis:"plain", note:"明文：TLS版本、密码套件、SNI⚠️、KeyShare（DH公钥）" },
+            { label:"Server Hello", vis:"plain", note:"明文：选定版本、密码套件、ServerKeyShare" },
+            { label:"Certificate（服务器证书）", vis:"enc13", note:"🔒 TLS 1.3 改进！Certificate 已加密，中间人看不到证书内容" },
+            { label:"CertificateVerify", vis:"enc13", note:"🔒 加密传输" },
+            { label:"Certificate Request（mTLS）", vis:"enc13", note:"🔒 TLS 1.3 中 CertificateRequest 也已加密" },
+            { label:"Client Certificate（mTLS）", vis:"enc13", note:"🔒 TLS 1.3 改进！客户端证书也加密，身份信息不泄露" },
+            { label:"Finished", vis:"enc13", note:"🔒 加密" },
+        ]},
+        { layer:"应用数据", phase:"加密通信阶段", items:[
+            { label:"所有 HTTP/HTTPS 应用数据", vis:"enc", note:"加密，同 TLS 1.2" },
+        ]},
+        { layer:"永远可见", phase:"TLS 1.3 仍无法隐藏", items:[
+            { label:"IP 地址和端口", vis:"always", note:"TLS 1.3 同样无法加密" },
+            { label:"SNI 域名", vis:"always", note:"⚠️ 仍然明文！ECH（Encrypted Client Hello）是草案中的解决方案，尚未普及" },
+            { label:"数据量和时序", vis:"always", note:"TLS 1.3 新增 padding 机制可混淆数据长度，但不完全" },
+        ]},
+    ],
+};
+
+const CERTS = [
+    { name:"自签名", en:"Self-Signed", icon:"🔐", color:C.red,
+        trust:"无公共信任，需手动配置", validity:"任意天数",
+        pros:["立即生成，无需CA","完全免费","适合内网服务和mTLS","无需域名验证"],
+        cons:["浏览器显示「不安全」警告","需手动分发到所有客户端","没有CRL/OCSP吊销机制","误配置易产生安全风险"],
+        use:"开发/测试环境、数据库TLS、Docker Engine、服务间mTLS客户端证书",
+        chain:["自签名证书\n（Issuer = Subject，自己签自己）"],
+        chainColors:[C.red] },
+    { name:"DV 证书", en:"Domain Validation", icon:"🌐", color:C.blue,
+        trust:"公共 CA，浏览器自动信任", validity:"90天（Let's Encrypt）",
+        pros:["浏览器自动信任","Let's Encrypt 完全免费","ACME 协议自动续期","分钟级颁发"],
+        cons:["仅验证域名控制权","不含组织身份","无法用于内网IP/域名"],
+        use:"个人网站、博客、开发工具对外接口",
+        chain:["ISRG Root X1（Root CA）","Let's Encrypt R3（Intermediate）","域名证书（Leaf）"],
+        chainColors:[C.dkGreen, C.green, C.teal] },
+    { name:"OV 证书", en:"Organization Validation", icon:"🏢", color:C.green,
+        trust:"公共 CA，需验证组织真实性", validity:"1-2年",
+        pros:["包含组织身份信息","更高可信度","适合企业对外服务"],
+        cons:["需人工审核（1-3天）","有费用","不如 DV 颁发快"],
+        use:"企业官网、对外 API、电商平台",
+        chain:["Root CA","Intermediate CA","组织证书（含 O 字段）"],
+        chainColors:[C.dkGreen, C.green, C.teal] },
+    { name:"EV 证书", en:"Extended Validation", icon:"🏦", color:C.purple,
+        trust:"严格审核的公共 CA", validity:"1-2年",
+        pros:["最严格的身份验证流程","法律实体信息完整","适合高安全合规场景"],
+        cons:["严格审核（数天~数周）","费用高","现代浏览器视觉展示已弱化"],
+        use:"银行、支付平台、金融机构",
+        chain:["EV Root CA","EV Intermediate CA","EV 证书（含完整法律实体）"],
+        chainColors:[C.purple, C.ltPurple, "#7F77DD"] },
+    { name:"通配符", en:"Wildcard *.domain.com", icon:"✱", color:C.amber,
+        trust:"公共 CA", validity:"1年",
+        pros:["覆盖所有二级子域（*.example.com）","一张证书管理所有子域","降低运维复杂度"],
+        cons:["不覆盖多级子域（a.b.example.com）","私钥泄露影响所有子域","Let's Encrypt 通配符需 DNS 验证"],
+        use:"SaaS平台（api/www/mail.x.com）、多子域产品",
+        chain:["Root CA","Intermediate CA","通配符证书（*.domain.com）"],
+        chainColors:[C.dkGreen, C.green, C.amber] },
+    { name:"私有 CA", en:"Private/Internal CA", icon:"🏛️", color:C.ltPurple,
+        trust:"私有 CA 根证书（需统一分发）", validity:"自定义",
+        pros:["完全自主控制颁发策略","支持内网IP和自定义域名","最适合大规模mTLS","可结合 cert-manager 自动化","适合 Kubernetes/服务网格"],
+        cons:["需维护CA基础设施","根证书需分发到所有客户端","Root CA 私钥安全是核心挑战"],
+        use:"企业内网全部服务、Kubernetes集群、零信任架构、服务网格、大规模mTLS",
+        chain:["Private Root CA（离线保存私钥）","Private Intermediate CA（在线签发）","服务证书（Leaf）"],
+        chainColors:[C.purple, C.ltPurple, "#7F77DD"] },
+];
+
+const CODE = {
+    selfSigned:`# 生成自签名证书（带 SAN，现代浏览器要求）
+openssl req -x509 \\
+  -newkey rsa:4096 \\
+  -keyout server.key -out server.crt \\
+  -days 365 -nodes \\
+  -subj "/CN=myservice/O=MyOrg" \\
+  -addext "subjectAltName=DNS:myservice,DNS:localhost,IP:127.0.0.1"
+
+# 查看生成的证书
+openssl x509 -in server.crt -text -noout`,
+
+    privateCA:`# ── Step 1：创建私有根 CA（Root CA）──────────────────────────
+# 生成 Root CA 私钥（4096 位，保存在离线安全环境）
+openssl genrsa -out ca.key 4096
+
+# 生成自签名 Root CA 证书（有效期 10 年）
+openssl req -new -x509 -key ca.key -out ca.crt -days 3650 \\
+  -subj "/CN=My Private Root CA/O=MyOrg/C=CN"
+
+# ── Step 2：生成服务器证书──────────────────────────────────────
+openssl genrsa -out server.key 2048
+
+# 生成 CSR（Certificate Signing Request）
+openssl req -new -key server.key -out server.csr \\
+  -subj "/CN=myservice.internal/O=MyOrg"
+
+# 用 Root CA 签发服务器证书（含 SAN）
+openssl x509 -req -in server.csr \\
+  -CA ca.crt -CAkey ca.key -CAcreateserial \\
+  -out server.crt -days 365 \\
+  -extfile <(printf "subjectAltName=DNS:myservice.internal,DNS:myservice,IP:10.0.0.1")
+
+# ── Step 3：生成客户端证书（mTLS）────────────────────────────
+openssl genrsa -out client.key 2048
+openssl req -new -key client.key -out client.csr \\
+  -subj "/CN=payment-service/O=MyOrg/OU=backend"
+openssl x509 -req -in client.csr \\
+  -CA ca.crt -CAkey ca.key -CAcreateserial \\
+  -out client.crt -days 365`,
+
+    letsencrypt:`# ── Let's Encrypt（ACME 协议）─────────────────────────────────
+# 安装 Certbot
+apt install certbot python3-certbot-nginx
+
+# 方式①：Standalone（暂停 Web 服务使用 80 端口）
+certbot certonly --standalone -d example.com -d www.example.com
+
+# 方式②：Webroot（不中断现有 Web 服务）
+certbot certonly --webroot -w /var/www/html -d example.com
+
+# 方式③：DNS 验证（通配符证书 必须 使用此方式）
+certbot certonly --manual --preferred-challenges=dns \\
+  -d "*.example.com" -d "example.com"
+
+# 证书文件位置：/etc/letsencrypt/live/example.com/
+#   fullchain.pem  → 完整证书链（Leaf + Intermediate CA）
+#   privkey.pem    → 私钥
+#   cert.pem       → 仅叶证书
+
+# 自动续期配置（加入 crontab 或 systemd timer）
+echo "0 3 * * * certbot renew --quiet --deploy-hook 'nginx -s reload'" | crontab -`,
+
+    goServer:`// ── Go 单向 TLS HTTP 服务器 ──────────────────────────────────
+package main
+
+import (
+    "crypto/tls"
+    "net/http"
+)
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/api", handler)
+
+    server := &http.Server{
+        Addr:    ":8443",
+        Handler: mux,
+        TLSConfig: &tls.Config{
+            MinVersion: tls.VersionTLS12,
+            CipherSuites: []uint16{
+                tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+            },
+        },
+    }
+    server.ListenAndServeTLS("server.crt", "server.key")
+}
+
+// ── Go 单向 TLS 客户端（信任私有CA / 自签名）──────────────────
+func newTLSClient(caFile string) *http.Client {
+    caCert, _ := os.ReadFile(caFile)
+    pool := x509.NewCertPool()
+    pool.AppendCertsFromPEM(caCert)
+
+    return &http.Client{
+        Transport: &http.Transport{
+            TLSClientConfig: &tls.Config{
+                RootCAs:    pool,
+                ServerName: "myservice",
+            },
+        },
+    }
+}`,
+
+    goMTLS:`// ── Go mTLS 服务器 ────────────────────────────────────────────
+func newMTLSServer() *http.Server {
+    serverCert, _ := tls.LoadX509KeyPair("server.crt", "server.key")
+    clientCAData, _ := os.ReadFile("ca.crt")
+    clientCAPool := x509.NewCertPool()
+    clientCAPool.AppendCertsFromPEM(clientCAData)
+
+    return &http.Server{
+        Addr: ":8443",
+        TLSConfig: &tls.Config{
+            Certificates: []tls.Certificate{serverCert},
+            ClientCAs:    clientCAPool,
+            ClientAuth:   tls.RequireAndVerifyClientCert,
+            MinVersion:   tls.VersionTLS12,
+        },
+    }
+}
+
+// ── Go mTLS 客户端 ─────────────────────────────────────────────
+func newMTLSClient() *http.Client {
+    clientCert, _ := tls.LoadX509KeyPair("client.crt", "client.key")
+    serverCAData, _ := os.ReadFile("ca.crt")
+    pool := x509.NewCertPool()
+    pool.AppendCertsFromPEM(serverCAData)
+
+    return &http.Client{
+        Transport: &http.Transport{
+            TLSClientConfig: &tls.Config{
+                Certificates: []tls.Certificate{clientCert},
+                RootCAs:      pool,
+            },
+        },
+    }
+}`,
+
+    pythonTLS:`# ── Python 单向 TLS ────────────────────────────────────────────
+import requests
+
+resp = requests.get(
+    "https://myservice:8443/api",
+    verify="ca.crt",
+)
+
+# ── Python mTLS ────────────────────────────────────────────────
+resp = requests.get(
+    "https://myservice:8443/api",
+    verify="ca.crt",
+    cert=("client.crt", "client.key"),
+)`,
+
+    nodeJS:`// ── Node.js 单向 TLS 服务器 ───────────────────────────────────
+const https = require("https");
+const fs    = require("fs");
+
+const server = https.createServer({
+  key:  fs.readFileSync("server.key"),
+  cert: fs.readFileSync("server.crt"),
+}, (req, res) => res.end("Hello TLS!"));
+server.listen(8443);
+
+// ── Node.js mTLS 服务器 ────────────────────────────────────────
+const mtlsServer = https.createServer({
+  key:             fs.readFileSync("server.key"),
+  cert:            fs.readFileSync("server.crt"),
+  ca:              fs.readFileSync("ca.crt"),
+  requestCert:     true,
+  rejectUnauthorized: true,
+}, (req, res) => {
+  const cert = req.socket.getPeerCertificate();
+  res.end(\`Authenticated as: \${cert.subject.CN}\`);
+});`,
+
+    manage:`# ── 证书检查工具箱 ────────────────────────────────────────────
+openssl x509 -in server.crt -text -noout
+openssl x509 -in server.crt -noout -dates
+openssl verify -CAfile ca.crt server.crt
+
+# ── 在线检测远端服务器证书 ────────────────────────────────────
+openssl s_client -connect example.com:443 -servername example.com
+
+# 检查证书剩余天数
+echo | openssl s_client -servername example.com -connect example.com:443 2>/dev/null | openssl x509 -noout -enddate`,
+};
+
+const WS_CODE = {
+    noKey: `# Wireshark 抓包到的 TLS 流量（未解密状态）
+
+Frame 1: TCP SYN
+  Src: 192.168.1.100:54321
+  Dst: 93.184.216.34:443
+
+Frame 4: TLSv1.3 Record Layer
+  Content Type: Handshake (22)
+  Version: TLS 1.0 (0x0301)
+  Length: 512
+  Handshake Protocol: Client Hello
+    Version: TLS 1.2 (0x0303)
+    Session ID: (empty)
+    Cipher Suites: TLS_AES_256_GCM_SHA384, ...
+    Extension: server_name
+      Server Name: example.com           ← ⚠️ 域名明文可见！
+
+Frame 6-N: TLSv1.3 Record Layer
+  Content Type: Application Data (23)
+  Length: 1420
+  Encrypted Application Data:
+    [ENCRYPTED DATA - 无法读取]`,
+
+    keylog: `# 方法：SSLKEYLOGFILE（推荐）
+
+# 启动时设置环境变量
+export SSLKEYLOGFILE=/tmp/tls-keys.log
+google-chrome
+
+# Wireshark 加载
+# Edit → Preferences → TLS
+# (Pre)-Master-Secret log filename: /tmp/tls-keys.log`,
+
+    afterDecrypt: `# 解密后 Wireshark 能看到什么？
+
+GET /api/v1/user/profile HTTP/1.1
+Host: api.example.com
+Cookie: session=eyJhbGciOi...    ← ⚠️ Cookie 完全可见
+Authorization: Bearer eyJhbGci... ← ⚠️ JWT Token 完全可见
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+{"user_id": 42, "email": "user@example.com"}
+
+# 这说明 HTTPS 只加密"在途"数据（防中间人）
+# 拥有私钥的一方仍能看到明文`,
+};
+
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+let mainTab = 'handshake';
+let hsScenario = 'browser';
+let hsStep = 0;
+let hsPlaying = false;
+let hsTimer = null;
+let certSel = 0;
+let plainVer = 'tls12';
+let plainMTLS = false;
+let wsTab = 'overview';
+let devSection = 'gen';
+let devLang = 'self';
+
+function renderMainTabs() {
+    const tabs = [
+        { key:'handshake', label:'🔄 握手流程' },
+        { key:'certs', label:'📜 证书类型' },
+        { key:'plaintext', label:'🔍 明文/加密' },
+        { key:'wireshark', label:'🦈 Wireshark' },
+        { key:'dev', label:'💻 开发实战' },
+    ];
+    const el = document.getElementById('mainTabs');
+    el.innerHTML = tabs.map(t => {
+        const active = t.key === mainTab;
+        return `<button class="tab-btn${active ? ' active' : ''}"
+            style="--tab-color:${active ? '#58a6ff' : ''}"
+            onclick="setMainTab('${t.key}')">${t.label}</button>`;
+    }).join('');
+}
+
+function setMainTab(t) {
+    mainTab = t;
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(t + 'Panel').classList.add('active');
+    renderMainTabs();
+    if (t === 'handshake') renderHandshake();
+    else if (t === 'certs') renderCerts();
+    else if (t === 'plaintext') renderPlaintext();
+    else if (t === 'wireshark') renderWireshark();
+    else if (t === 'dev') renderDev();
+}
+
+function renderHandshake() {
+    const scenario = SCENARIOS[hsScenario];
+    const steps = scenario.steps;
+    const cur = hsStep;
+    const step = steps[cur];
+    const total = steps.length;
+    const atStart = cur === 0;
+    const atEnd = cur === total - 1;
+
+    // Scenario selector
+    const selEl = document.getElementById('scenarioSel');
+    selEl.innerHTML = `
+        <div class="label">选择 TLS 场景</div>
+        <div class="scene-btns">
+            ${Object.entries(SCENARIOS).map(([k,v]) => {
+                const active = k === hsScenario;
+                return `<button class="scene-btn${active ? ' active' : ''}"
+                    style="--btn-bg:${active ? v.clientColor+'18' : ''};--btn-color:${active ? v.clientColor : ''};--btn-border:${active ? v.clientColor+'55' : ''}"
+                    onclick="setHSSc('${k}')">${v.icon} ${v.label}</button>`;
+            }).join('')}
+        </div>
+        <div class="scene-desc" style="--desc-color:${scenario.clientColor}">${scenario.desc}</div>
+    `;
+
+    // Handshake viz
+    const vizEl = document.getElementById('handshakeViz');
+    vizEl.innerHTML = `
+        <div class="handshake-view">
+            <div class="handshake-sidebar">
+                <div class="label">握手步骤</div>
+                ${steps.map((s, i) => {
+                    const isCur = i === cur;
+                    const isDone = i < cur && !s.done;
+                    const isDoneFlag = s.done;
+                    return `<div class="handshake-step${isCur ? ' cur' : ''}"
+                        style="--step-bg:${isCur ? s.color+'18' : ''};--step-border:${isCur ? s.color+'44' : ''}"
+                        onclick="setHSStep(${i})">
+                        <div class="num${isDone ? ' done' : ''}${isCur ? ' cur' : ''}${!isCur && !isDone ? ' idle' : ''}"
+                            style="--num-bg:${isDone ? C.dkGreen+'22' : isCur ? s.color+'22' : ''};--num-color:${isDone ? C.dkGreen : isCur ? s.color : ''};--num-border:${isDone ? C.dkGreen+'66' : isCur ? s.color+'66' : ''}">
+                            ${isDoneFlag ? '🔒' : isDone ? '✓' : i+1}
+                        </div>
+                        <div class="msg" style="color:${isCur ? s.color : isDone ? '#8b949e' : '#8b949e'};font-weight:${isCur ? 500 : 400}">
+                            ${s.msg.replace(" ⭐","")}
+                            ${s.msg.includes("⭐") ? '<span style="color:#854f0b;margin-left:3px">★</span>' : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+            <div class="handshake-main">
+                <div class="hs-header">
+                    <div class="hs-box" style="--box-border:${!step.done && (step.from === 'C' || step.local === 'C') ? 2 : 0.5};--box-bg:${!step.done && (step.from === 'C' || step.local === 'C') ? step.color+'12' : '#161b22'}">
+                        <div class="emoji">💻</div>
+                        <div class="title">${scenario.clientLabel}</div>
+                        <div class="sub">CLIENT</div>
+                    </div>
+                    <div class="hs-box" style="--box-border:${!step.done && (step.from === 'S' || step.local === 'S') ? 2 : 0.5};--box-bg:${!step.done && (step.from === 'S' || step.local === 'S') ? step.color+'12' : '#161b22'}">
+                        <div class="emoji">🖥️</div>
+                        <div class="title">${scenario.serverLabel}</div>
+                        <div class="sub">SERVER</div>
+                    </div>
+                </div>
+                <div class="hs-action" style="--act-border:${step.color}44;--act-bg:${step.color+'08'}">
+                    ${step.done ? `
+                        <div class="done-msg">
+                            <div class="done-emoji">🔒</div>
+                            <div class="done-title" style="color:${step.color}">加密通道建立成功</div>
+                        </div>
+                    ` : step.local ? `
+                        <div class="tag">${step.local === 'C' ? '⬅ 客户端本地操作' : '服务器本地操作 ➡'}</div>
+                        <div class="msg-box" style="--msg-bg:${step.color+'22'};--msg-border:${step.color};--msg-color:${step.color}">
+                            ⚙️ ${step.msg.replace(" ⭐","").replace("⚠️ ","").replace("🖱️ ","")}
+                            ${step.msg.includes("⭐") ? '<span style="color:#854f0b">★</span>' : ''}
+                        </div>
+                    ` : `
+                        <div class="hs-arrow-row${step.from === 'S' ? ' rev' : ''}">
+                            <div class="dot" style="--arr-color:${step.color}"></div>
+                            <div class="line" style="--arr-color:${step.color}"></div>
+                            <div class="tri ${step.from === 'C' ? 'fwd' : 'rev'}" style="--arr-color:${step.color}"></div>
+                        </div>
+                        <div class="arr-msg" style="--arr-color:${step.color}">
+                            ${step.msg.replace(" ⭐","")}
+                            ${step.msg.includes("⭐") ? '<span style="color:#854f0b;margin-left:4px">★ 关键</span>' : ''}
+                        </div>
+                    `}
+                </div>
+                <div class="hs-detail">${step.detail}</div>
+                <div class="hs-controls">
+                    <button class="hs-ctrl" onclick="resetHS()">⟳ 重置</button>
+                    <button class="hs-ctrl" onclick="prevHS()" ${atStart ? 'disabled' : ''}>← 上一步</button>
+                    <button class="hs-ctrl accent${hsPlaying ? ' playing' : ''}" onclick="toggleHSPlay()">
+                        ${hsPlaying ? '⏸ 暂停' : atEnd ? '↺ 重播' : '▶ 自动播放'}
+                    </button>
+                    <button class="hs-ctrl" onclick="nextHS()" ${atEnd ? 'disabled' : ''}>下一步 →</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setHSSc(k) {
+    hsScenario = k;
+    hsStep = 0;
+    hsPlaying = false;
+    clearInterval(hsTimer);
+    renderHandshake();
+}
+
+function setHSStep(i) {
+    hsStep = i;
+    hsPlaying = false;
+    clearInterval(hsTimer);
+    renderHandshake();
+}
+
+function resetHS() {
+    hsStep = 0;
+    hsPlaying = false;
+    clearInterval(hsTimer);
+    renderHandshake();
+}
+
+function prevHS() {
+    if (hsStep > 0) { hsStep--; renderHandshake(); }
+}
+
+function nextHS() {
+    const total = SCENARIOS[hsScenario].steps.length;
+    if (hsStep < total - 1) { hsStep++; renderHandshake(); }
+}
+
+function toggleHSPlay() {
+    if (hsPlaying) {
+        hsPlaying = false;
+        clearInterval(hsTimer);
+    } else {
+        hsPlaying = true;
+        hsTimer = setInterval(() => {
+            const total = SCENARIOS[hsScenario].steps.length;
+            if (hsStep >= total - 1) {
+                hsPlaying = false;
+                clearInterval(hsTimer);
+                return;
+            }
+            hsStep++;
+            renderHandshake();
+        }, 2200);
+    }
+    renderHandshake();
+}
+
+function renderCerts() {
+    const cert = CERTS[certSel];
+    document.getElementById('certPills').innerHTML = CERTS.map((c, i) => {
+        const active = i === certSel;
+        return `<button class="pill-btn${active ? ' active' : ''}"
+            style="--pill-bg:${active ? c.color+'22' : ''};--pill-color:${active ? c.color : ''};--pill-border:${active ? c.color+'77' : ''};--pill-active-bg:${c.color+'22'};--pill-active-color:${c.color};--pill-active-border:${c.color+'77'}"
+            onclick="setCert(${i})">${c.icon} ${c.name}</button>`;
+    }).join('');
+
+    const right = document.getElementById('certView');
+    right.innerHTML = `
+        <div class="cert-chain">
+            <div class="label">证书链</div>
+            ${cert.chain.map((item, i) => `
+                <div style="display:flex;flex-direction:column;align-items:stretch">
+                    <div class="cert-chain-item root" style="--chain-border:${cert.chainColors[i]}${i===0?'99':'55'};--chain-bg:${cert.chainColors[i]}${i===0?'18':'0d'};color:${i===0?cert.chainColors[i]:'#e6edf3'}">
+                        ${i===0?'🏛️':i===cert.chain.length-1?'📄':'🔗'} ${item}
+                    </div>
+                    ${i < cert.chain.length - 1 ? '<div class="arrow">↓</div>' : ''}
+                </div>
+            `).join('')}
+            <div class="cert-meta">
+                <div class="label">信任方式</div>
+                <div class="value">🔐 ${cert.trust}</div>
+            </div>
+            <div class="cert-meta">
+                <div class="label">有效期</div>
+                <div class="value">📅 ${cert.validity}</div>
+            </div>
+        </div>
+        <div class="cert-right">
+            <div class="label">适用场景</div>
+            <div class="cert-use" style="--use-bg:${cert.color+'12'};--use-border:${cert.color+'33'}">${cert.use}</div>
+            <div class="cert-pros-cons">
+                <div class="cert-pros">
+                    <div class="ttl">✓ 优点</div>
+                    ${cert.pros.map(p => `<div class="cert-item">• ${p}</div>`).join('')}
+                </div>
+                <div class="cert-cons">
+                    <div class="ttl">✗ 局限</div>
+                    ${cert.cons.map(c => `<div class="cert-item">• ${c}</div>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setCert(i) {
+    certSel = i;
+    renderCerts();
+}
+
+const VIS_TAGS = {
+    plain:{ label:"明文可见", bg:C.red+'18', border:C.red+'66', color:C.red, icon:"👁" },
+    enc:{ label:"已加密", bg:C.dkGreen+'14', border:C.dkGreen+'55', color:C.dkGreen, icon:"🔒" },
+    enc13:{ label:"TLS1.3 加密", bg:C.teal+'14', border:C.teal+'55', color:C.teal, icon:"🔒+" },
+    always:{ label:"永远明文", bg:C.amber+'14', border:C.amber+'55', color:C.amber, icon:"⚠️" },
+};
+
+function renderPlaintext() {
+    const phases = PLAIN_PHASES[plainVer];
+    const layerColors = { "TCP":C.blue, "TLS握手":C.purple, "应用数据":C.dkGreen, "永远可见":C.amber };
+
+    document.getElementById('plainLegend').innerHTML = `
+        <span style="font-size:12px;color:#8b949e;margin-right:4px">图例：</span>
+        ${[
+            { vis:"plain", desc:"握手期间明文传输" },
+            { vis:"enc", desc:"已加密（不可读）" },
+            { vis:"enc13", desc:"TLS 1.3 新增加密" },
+            { vis:"always", desc:"TLS 无法隐藏" },
+        ].map(l => `
+            <div class="legend-item">
+                <span class="tag" style="--tag-bg:${VIS_TAGS[l.vis].bg};--tag-border:${VIS_TAGS[l.vis].border};--tag-color:${VIS_TAGS[l.vis].color}">
+                    ${VIS_TAGS[l.vis].icon} ${VIS_TAGS[l.vis].label}
+                </span>
+                <span class="tag-desc">${l.desc}</span>
+            </div>
+        `).join('')}
+    `;
+
+    document.getElementById('verBtns').innerHTML = `
+        <button class="pill-btn${plainVer==='tls12'?' active':''}"
+            style="--pill-bg:${plainVer==='tls12'?C.blue+'22':''};--pill-color:${plainVer==='tls12'?C.blue:''};--pill-border:${plainVer==='tls12'?C.blue+'77':''};--pill-active-bg:${C.blue+'22'};--pill-active-color:${C.blue};--pill-active-border:${C.blue+'77'}"
+            onclick="setPlainVer('tls12')">TLS 1.2</button>
+        <button class="pill-btn${plainVer==='tls13'?' active':''}"
+            style="--pill-bg:${plainVer==='tls13'?C.teal+'22':''};--pill-color:${plainVer==='tls13'?C.teal:''};--pill-border:${plainVer==='tls13'?C.teal+'77':''};--pill-active-bg:${C.teal+'22'};--pill-active-color:${C.teal};--pill-active-border:${C.teal+'77'}"
+            onclick="setPlainVer('tls13')">TLS 1.3（更安全）</button>
+        <div class="divider"></div>
+        <button class="pill-btn${plainMTLS?' active':''}"
+            style="--pill-bg:${plainMTLS?C.purple+'22':''};--pill-color:${plainMTLS?C.purple:''};--pill-border:${plainMTLS?C.purple+'77':''};--pill-active-bg:${C.purple+'22'};--pill-active-color:${C.purple};--pill-active-border:${C.purple+'77'}"
+            onclick="setPlainMTLS(${!plainMTLS})">${plainMTLS?'✓':'含'} mTLS 差异</button>
+    `;
+
+    document.getElementById('tls13Callout').innerHTML = plainVer === 'tls13' ? `
+        <div class="tls13-callout">
+            🔒+ <strong>TLS 1.3 重大改进</strong>：Server Hello 之后的所有握手消息（含服务器证书、mTLS客户端证书）均已加密。中间人无法读取证书内容。
+        </div>
+    ` : '';
+
+    document.getElementById('plainView').innerHTML = phases.map(section => `
+        <div class="plain-section">
+            <div class="hdr">
+                <span class="layer" style="--layer-bg:${layerColors[section.layer]+'18'};--layer-color:${layerColors[section.layer]};--layer-border:${layerColors[section.layer]+'44'}">${section.layer}</span>
+                <span class="phase">${section.phase}</span>
+            </div>
+            <div class="plain-table">
+                ${section.items
+                    .filter(item => {
+                        if (!plainMTLS && (item.label.includes('mTLS') || item.label.includes('Certificate Request') || item.label.includes('Client Certificate'))) return false;
+                        return true;
+                    })
+                    .map(item => `
+                        <div class="plain-row" style="--row-bg:${item.vis==='plain'?C.red+'06':item.vis==='always'?C.amber+'06':item.vis==='enc13'?C.teal+'06':'transparent'}">
+                            <div>
+                                <div class="lbl" style="font-weight:${item.vis==='always'?500:400}">${item.label}</div>
+                                <div class="note">${item.note}</div>
+                            </div>
+                            <span class="tag" style="--tag-bg:${VIS_TAGS[item.vis].bg};--tag-border:${VIS_TAGS[item.vis].border};--tag-color:${VIS_TAGS[item.vis].color}">
+                                ${VIS_TAGS[item.vis].icon} ${VIS_TAGS[item.vis].label}
+                            </span>
+                        </div>
+                    `).join('')}
+            </div>
+        </div>
+    `).join('') + `
+        <div class="callout-warning">
+            <div class="title">⚠️ SNI 隐私警告</div>
+            <div class="body">
+                SNI（Server Name Indication）在 Client Hello 中以<strong>明文</strong>发送，意味着 ISP、网络监控设备都能看到你正在访问哪个域名。
+                <strong>ECH（Encrypted Client Hello）</strong>是 IETF 草案标准，可加密 SNI，但目前尚未广泛部署。
+            </div>
+        </div>
+    `;
+}
+
+function setPlainVer(v) {
+    plainVer = v;
+    renderPlaintext();
+}
+
+function setPlainMTLS(v) {
+    plainMTLS = v;
+    renderPlaintext();
+}
+
+function renderWireshark() {
+    const tabs = [
+        { key:'overview', label:'📦 抓包内容' },
+        { key:'rsa', label:'🔑 RSA私钥解密' },
+        { key:'keylog', label:'📋 SSLKEYLOG（推荐）' },
+        { key:'decrypted', label:'🔓 解密后内容' },
+    ];
+    document.getElementById('wsTabs').innerHTML = tabs.map(t => `
+        <button class="tab-btn${wsTab===t.key?' active':''}"
+            style="--tab-color:${wsTab===t.key?'#1d9e75':''}"
+            onclick="setWSTab('${t.key}')">${t.label}</button>
+    `).join('');
+
+    if (wsTab === 'overview') {
+        document.getElementById('wsView').innerHTML = `
+            <div class="code-block">${WS_CODE.noKey}</div>
+        `;
+    } else if (wsTab === 'rsa') {
+        document.getElementById('wsView').innerHTML = `
+            <div style="padding:10px 14px;border-radius:8px;background:#854f0b10;border:1px solid #854f0b44;margin-bottom:14px;font-size:12.5px;line-height:1.7">
+                <strong>⚠️ 重大限制</strong>：RSA 私钥解密只适用于 RSA 密钥交换。现代 TLS 1.3 和 ECDHE 无法用此方法解密。
+            </div>
+            <div class="code-block">${WS_CODE.noKey}</div>
+        `;
+    } else if (wsTab === 'keylog') {
+        document.getElementById('wsView').innerHTML = `
+            <div style="padding:10px 14px;border-radius:8px;background:#1d9e7510;border:1px solid #1d9e7533;margin-bottom:14px;font-size:12.5px;line-height:1.7">
+                <strong>✅ 推荐方案</strong>：SSLKEYLOGFILE 适用于所有 TLS 版本、所有密钥交换算法。
+            </div>
+            <div class="code-block">${WS_CODE.keylog}</div>
+        `;
+    } else if (wsTab === 'decrypted') {
+        document.getElementById('wsView').innerHTML = `
+            <div class="code-block">${WS_CODE.afterDecrypt}</div>
+        `;
+    }
+}
+
+function setWSTab(t) {
+    wsTab = t;
+    renderWireshark();
+}
+
+function renderDev() {
+    const sections = [
+        { key:'gen', label:'🔧 证书生成' },
+        { key:'oneway', label:'🔒 单向 TLS' },
+        { key:'mtls', label:'🔐 双向 mTLS' },
+        { key:'manage', label:'📊 证书管理' },
+    ];
+    document.getElementById('devTabs').innerHTML = sections.map(s => `
+        <button class="tab-btn${devSection===s.key?' active':''}"
+            style="--tab-color:${devSection===s.key?'#534ab7':''}"
+            onclick="setDevSection('${s.key}')">${s.label}</button>
+    `).join('');
+
+    let content = '';
+    if (devSection === 'gen') {
+        content = `
+            <div class="pill-btns">
+                <button class="pill-btn${devLang==='self'?' active':''}"
+                    style="--pill-bg:${devLang==='self'?C.red+'22':''};--pill-color:${devLang==='self'?C.red:''};--pill-border:${devLang==='self'?'#30363d':''};--pill-active-bg:${C.red+'22'};--pill-active-color:${C.red};--pill-active-border:${C.red+'77'}"
+                    onclick="setDevLang('self')">自签名（开发/内网）</button>
+                <button class="pill-btn${devLang==='ca'?' active':''}"
+                    style="--pill-bg:${devLang==='ca'?C.ltPurple+'22':''};--pill-color:${devLang==='ca'?C.ltPurple:''};--pill-border:${devLang==='ca'?'#30363d':''};--pill-active-bg:${C.ltPurple+'22'};--pill-active-color:${C.ltPurple};--pill-active-border:${C.ltPurple+'77'}"
+                    onclick="setDevLang('ca')">私有CA + 服务证书（推荐内网）</button>
+                <button class="pill-btn${devLang==='le'?' active':''}"
+                    style="--pill-bg:${devLang==='le'?C.green+'22':''};--pill-color:${devLang==='le'?C.green:''};--pill-border:${devLang==='le'?'#30363d':''};--pill-active-bg:${C.green+'22'};--pill-active-color:${C.green};--pill-active-border:${C.green+'77'}"
+                    onclick="setDevLang('le')">Let's Encrypt（公网）</button>
+            </div>
+            ${devLang==='self'?'<div style="font-size:12px;color:#8b949e;margin-bottom:8px">适合开发测试、Docker、数据库 TLS、mTLS 客户端证书。</div><div class="code-block">'+CODE.selfSigned+'</div>':''}
+            ${devLang==='ca'?'<div style="font-size:12px;color:#8b949e;margin-bottom:8px">企业内网推荐方案：建立私有 PKI，用同一个 CA 颁发所有内部服务证书。</div><div class="code-block">'+CODE.privateCA+'</div>':''}
+            ${devLang==='le'?'<div style="font-size:12px;color:#8b949e;margin-bottom:8px">免费的公共 CA，适合所有对外暴露的服务，支持自动续期。</div><div class="code-block">'+CODE.letsencrypt+'</div>':''}
+        `;
+    } else if (devSection === 'oneway' || devSection === 'mtls') {
+        const codeMap = {
+            oneway:{ go:CODE.goServer, python:CODE.pythonTLS, node:CODE.nodeJS },
+            mtls:{ go:CODE.goMTLS, python:CODE.pythonTLS, node:CODE.nodeJS },
+        };
+        content = `
+            <div class="pill-btns">
+                <button class="pill-btn${devLang==='go'?' active':''}"
+                    style="--pill-bg:${devLang==='go'?C.teal+'22':''};--pill-color:${devLang==='go'?C.teal:''};--pill-border:${devLang==='go'?'#30363d':''};--pill-active-bg:${C.teal+'22'};--pill-active-color:${C.teal};--pill-active-border:${C.teal+'77'}"
+                    onclick="setDevLang('go')">Go</button>
+                <button class="pill-btn${devLang==='python'?' active':''}"
+                    style="--pill-bg:${devLang==='python'?C.blue+'22':''};--pill-color:${devLang==='python'?C.blue:''};--pill-border:${devLang==='python'?'#30363d':''};--pill-active-bg:${C.blue+'22'};--pill-active-color:${C.blue};--pill-active-border:${C.blue+'77'}"
+                    onclick="setDevLang('python')">Python</button>
+                <button class="pill-btn${devLang==='node'?' active':''}"
+                    style="--pill-bg:${devLang==='node'?C.green+'22':''};--pill-color:${devLang==='node'?C.green:''};--pill-border:${devLang==='node'?'#30363d':''};--pill-active-bg:${C.green+'22'};--pill-active-color:${C.green};--pill-active-border:${C.green+'77'}"
+                    onclick="setDevLang('node')">Node.js</button>
+            </div>
+            ${devSection==='oneway'?'<div style="font-size:12px;color:#8b949e;margin-bottom:8px">单向TLS：只有服务器出示证书。客户端需配置信任的CA。</div>':'<div style="font-size:12px;color:#8b949e;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:#534ab712;border:1px solid #534ab733">双向mTLS：服务器需配置 ClientAuth: RequireAndVerifyClientCert；客户端需同时配置客户端证书。</div>'}
+            <div class="code-block">${codeMap[devSection][devLang]}</div>
+        `;
+    } else if (devSection === 'manage') {
+        content = `
+            <div style="font-size:12px;color:#8b949e;margin-bottom:10px">证书管理核心工作：检查有效期、验证证书链、监控到期时间。</div>
+            <div class="code-block">${CODE.manage}</div>
+        `;
+    }
+    document.getElementById('devView').innerHTML = content;
+}
+
+function setDevSection(s) {
+    devSection = s;
+    if (s === 'oneway' || s === 'mtls') devLang = 'go';
+    else if (s === 'gen') devLang = 'self';
+    renderDev();
+}
+
+function setDevLang(l) {
+    devLang = l;
+    renderDev();
+}
+
+renderMainTabs();
+renderHandshake();
+    </script>
+</body>
+</html>
