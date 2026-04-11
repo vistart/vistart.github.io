@@ -1,0 +1,1429 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600&display=swap');
+.dns-root { font-family: 'Sora', sans-serif; }
+.dns-mono { font-family: 'JetBrains Mono', monospace; }
+.dns-tab { cursor:pointer; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500; transition:all .15s; border:none; background:transparent; }
+.dns-tab.active { background:var(--color-background-info); color:var(--color-text-info); }
+.dns-tab:not(.active) { color:var(--color-text-secondary); }
+.dns-tab:not(.active):hover { background:var(--color-background-secondary); color:var(--color-text-primary); }
+.node-box { border-radius:10px; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); padding:10px 14px; text-align:center; transition:all .3s; }
+.node-box.active { border-color:#1D9E75; background:#E1F5EE; box-shadow:0 0 0 3px rgba(29,158,117,.15); }
+.node-box.sending { border-color:#378ADD; background:#E6F1FB; }
+.node-box.done { border-color:#639922; background:#EAF3DE; }
+.packet { position:absolute; width:10px; height:10px; border-radius:50%; pointer-events:none; transition:all .6s cubic-bezier(.4,0,.2,1); }
+.record-card { border-radius:10px; border:0.5px solid var(--color-border-tertiary); background:var(--color-background-primary); padding:14px; cursor:pointer; transition:all .15s; }
+.record-card:hover { border-color:var(--color-border-primary); background:var(--color-background-secondary); }
+.record-card.selected { border-color:#1D9E75; background:#E1F5EE; }
+.tag { display:inline-block; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:500; }
+.lb-server { border-radius:10px; border:1.5px solid var(--color-border-secondary); padding:10px 14px; text-align:center; transition:all .3s; }
+.lb-server.active { border-color:#378ADD; background:#E6F1FB; transform:scale(1.04); }
+.lb-server.down { opacity:.4; border-color:var(--color-border-tertiary); }
+.proto-card { border-radius:10px; border:0.5px solid var(--color-border-tertiary); background:var(--color-background-primary); padding:16px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes flow { 0%{stroke-dashoffset:30} 100%{stroke-dashoffset:0} }
+.pulse { animation: pulse 1s infinite; }
+.flow-line { stroke-dasharray:6 4; animation: flow .8s linear infinite; }
+`;
+
+function buildSteps(domain, info, recordType = "A") {
+    const { baseDomain, tld, tldServer, ns1, records = [], ttl, rootServer, cnameChain = [] } = info;
+    const ip = records[0] || info.ip || "—";
+    const rtMeta = QUERY_RECORD_TYPES.find(r => r.type === recordType) || { desc: recordType };
+    const hasCname = cnameChain && cnameChain.length > 0;
+    const chainStr = hasCname ? [cnameChain[0].from_name, ...cnameChain.map(h => h.to_name)].join(" → ") : null;
+
+    let step7msg, step7note;
+    if (hasCname && recordType === "CNAME") {
+        step7msg = `CNAME ${ip}`;
+        step7note = `权威服务器返回 CNAME 别名记录。完整映射链：${chainStr}。客户端拿到 CNAME 后需再次查询目标域名的 A/AAAA 才能获得 IP。`;
+    } else if (hasCname) {
+        step7msg = `CNAME→${recordType} ${ip}`;
+        step7note = `权威服务器先返回 CNAME 跳转（${chainStr}），解析器沿链追踪，最终找到 ${recordType} 记录：${records.join(", ")}。整个 CNAME 链对客户端透明。`;
+    } else if (recordType === "MX") {
+        step7msg = `MX ${ip}`;
+        step7note = `权威服务器返回 ${records.length} 条 MX 邮件交换记录（格式：优先级 服务器）：${records.join("; ")}。`;
+    } else if (recordType === "TXT") {
+        step7msg = `TXT "${(ip || "").slice(0, 40)}${ip?.length > 40 ? "…" : ""}"`;
+        step7note = `权威服务器返回 ${records.length} 条 TXT 记录，常用于 SPF/DKIM 邮件安全、域名所有权验证等。`;
+    } else {
+        step7msg = `${recordType} ${ip}${records.length > 1 ? ` (+${records.length - 1})` : ""}`;
+        step7note = `权威服务器返回 ${records.length} 条 ${recordType}（${rtMeta.desc}）记录：${records.join(", ")}。TTL=${ttl || 300} 秒。`;
+    }
+
+    return [
+        { from: "client", to: "resolver", dir: "right", type: "Q", msg: `递归查询 ${domain} ${recordType}`, note: `客户端向 DNS 解析器发起递归查询，请求 ${domain} 的 ${recordType}（${rtMeta.desc}）记录（UDP 53 端口）` },
+        { from: "resolver", to: "root", dir: "right", type: "Q", msg: `谁负责 .${tld} 顶级域？`, note: `解析器缓存未命中，向根服务器 ${rootServer} 发起迭代查询。根服务器不关心记录类型，只负责 TLD 委派` },
+        { from: "root", to: "resolver", dir: "left", type: "R", msg: `→ ${tldServer} (NS .${tld})`, note: `根服务器返回负责 .${tld} 的 TLD 服务器地址，只是委派，不包含最终答案` },
+        { from: "resolver", to: "tld", dir: "right", type: "Q", msg: `${baseDomain} 的 NS 记录？`, note: `无论查询哪种记录类型，步骤 2-5 始终固定查 NS 委派链。解析器向 .${tld} TLD 服务器查询 ${baseDomain} 的权威服务器` },
+        { from: "tld", to: "resolver", dir: "left", type: "R", msg: `→ ${ns1} (NS)`, note: `TLD 服务器返回 ${baseDomain} 的权威 NS 服务器，委派给权威服务器处理` },
+        { from: "resolver", to: "auth", dir: "right", type: "Q", msg: `${domain} ${recordType} 记录？`, note: `解析器向权威服务器 ${ns1} 发起最终查询，请求 ${recordType}（${rtMeta.desc}）记录。这是整个递归查询中第一次真正指定记录类型` },
+        { from: "auth", to: "resolver", dir: "left", type: "R", msg: `${step7msg} TTL=${ttl || 300}`, note: step7note },
+        { from: "resolver", to: "client", dir: "left", type: "R", msg: `${recordType} ${ip} ✓`, note: `解析器将结果缓存并返回给客户端，此后 ${ttl || 300} 秒内同域名同类型查询直接命中缓存，无需重新递归` },
+    ];
+}
+
+const LOCAL_SERVER = "http://localhost:8000";
+
+// 解析页支持的记录类型（与服务端对齐）
+const QUERY_RECORD_TYPES = [
+    { type: "A", color: "blue", label: "A", desc: "IPv4 地址" },
+    { type: "AAAA", color: "blue", label: "AAAA", desc: "IPv6 地址" },
+    { type: "CNAME", color: "teal", label: "CNAME", desc: "域名别名" },
+    { type: "MX", color: "coral", label: "MX", desc: "邮件服务器" },
+    { type: "TXT", color: "amber", label: "TXT", desc: "文本记录" },
+    { type: "NS", color: "purple", label: "NS", desc: "权威服务器" },
+    { type: "CAA", color: "coral", label: "CAA", desc: "证书授权" },
+    { type: "SRV", color: "purple", label: "SRV", desc: "服务位置" },
+];
+
+// 从 Python 服务拿真实解析数据
+async function fetchFromServer(domain, recordType) {
+    const url = `${LOCAL_SERVER}/resolve?domain=${encodeURIComponent(domain)}&record_type=${recordType}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `服务返回 ${res.status}`);
+    }
+    const data = await res.json();
+    return {
+        serverData: data,
+        steps: data.steps.map(s => ({
+            from: s.from_node, to: s.to_node,
+            dir: s.direction, type: s.type,
+            msg: s.msg, note: s.note,
+            latency: s.latency_ms
+        })),
+        info: {
+            baseDomain: data.base_domain, tld: data.tld,
+            tldServer: data.tld_server, rootServer: data.root_server,
+            ns1: data.ns1, ip: data.records?.[0] || null, ttl: data.ttl,
+            records: data.records || [],
+            cnameChain: data.cname_chain || [],
+            recordType: data.record_type,
+        }
+    };
+}
+
+// AI 模拟模式（无后端时的降级方案）
+async function fetchFromAI(domain, recordType) {
+    const rtDesc = QUERY_RECORD_TYPES.find(r => r.type === recordType)?.desc || recordType;
+    const prompt = `你是一个DNS数据模拟器。根据以下域名和记录类型，返回一个真实合理的DNS解析数据JSON（无需真实查询，根据域名特征模拟）。
+
+域名: ${domain}
+记录类型: ${recordType}（${rtDesc}）
+
+返回格式（只返回JSON，不要其他文字）:
+{
+  "baseDomain": "二级域名，如 google.com",
+  "tld": "顶级域，如 com、cn、org",
+  "tldServer": "对应TLD的权威服务器",
+  "ns1": "该域名的主权威DNS服务器",
+  "records": ["记录值1", "记录值2"],
+  "ttl": TTL秒数,
+  "rootServer": "根服务器（a到m.root-servers.net中选）",
+  "cnameChain": []
+}
+
+记录值格式规范：
+- A: IPv4地址字符串，如 "142.250.80.46"
+- AAAA: IPv6地址，如 "2607:f8b0:4004:c1b::71"
+- MX: "优先级 服务器域名"，如 "10 smtp.google.com"，返回多条
+- TXT: 完整TXT内容字符串，返回常见的SPF/验证记录
+- NS: 权威NS域名，如 "ns1.google.com"，返回多条
+- CNAME: 目标域名，且cnameChain填入[{"from_name":"${domain}","to_name":"目标域名","ttl":3600}]
+- CAA: "0 issue letsencrypt.org" 格式
+- SRV: "优先级 权重 端口 目标主机" 格式
+
+注意：对知名域名（google/baidu/cloudflare等）使用真实数据。`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1000,
+            messages: [{ role: "user", content: prompt }]
+        })
+    });
+    const data = await response.json();
+    const text = data.content.map(i => i.text || "").join("");
+    const clean = text.replace(/```json|```/g, "").trim();
+    const ai = JSON.parse(clean);
+    const info = {
+        baseDomain: ai.baseDomain, tld: ai.tld,
+        tldServer: ai.tldServer, rootServer: ai.rootServer,
+        ns1: ai.ns1, ip: ai.records?.[0] || null, ttl: ai.ttl,
+        records: ai.records || [],
+        cnameChain: ai.cnameChain || [],
+        recordType,
+    };
+    return { serverData: null, steps: buildSteps(domain, info, recordType), info };
+}
+
+async function fetchDnsInfo(domain, useServer, recordType) {
+    if (useServer) return fetchFromServer(domain, recordType);
+    return fetchFromAI(domain, recordType);
+}
+
+const RECORD_TYPES = [
+    { type: "A", color: "blue", cat: "地址", desc: "IPv4 地址映射", example: "example.com.  3600  IN  A  93.184.216.34", detail: "最基础的记录类型，将域名映射到 IPv4 地址。可以有多条 A 记录实现简单的轮询负载均衡。" },
+    { type: "AAAA", color: "blue", cat: "地址", desc: "IPv6 地址映射", example: "example.com.  3600  IN  AAAA  2606:2800:220:1:248:1893:25c8:1946", detail: "IPv6 时代的 A 记录。现代网站应同时配置 A 和 AAAA 记录以支持双栈访问。" },
+    { type: "CNAME", color: "teal", cat: "别名", desc: "域名别名（规范名）", example: "www.example.com.  3600  IN  CNAME  example.com.", detail: "将一个域名指向另一个域名（而非IP）。CNAME 不能与其他记录共存，裸域名不能使用 CNAME。解析时需额外一次查询。" },
+    { type: "MX", color: "coral", cat: "邮件", desc: "邮件交换服务器", example: "example.com.  3600  IN  MX  10  mail.example.com.", detail: "指定接收该域名邮件的服务器，数字为优先级（越小优先级越高）。可配置多条 MX 记录实现邮件冗余。" },
+    { type: "TXT", color: "amber", cat: "验证", desc: "文本记录（多用途）", example: "example.com.  300  IN  TXT  \"v=spf1 include:_spf.google.com ~all\"", detail: "存储任意文本，常用于：域名所有权验证（Google/GitHub）、SPF/DKIM 邮件防伪、DMARC 策略等。" },
+    { type: "NS", color: "purple", cat: "授权", desc: "权威域名服务器", example: "example.com.  172800  IN  NS  ns1.example.com.", detail: "指定该域名的权威服务器。通常配置 2 个以上 NS 记录保证冗余。修改 NS 生效较慢（可能需要 24-48h）。" },
+    { type: "PTR", color: "teal", cat: "反查", desc: "IP 反向解析", example: "34.216.184.93.in-addr.arpa.  3600  IN  PTR  example.com.", detail: "用于 IP→域名的反向查询，存储于特殊的 in-addr.arpa 区域。常用于邮件服务器验证、网络日志分析。" },
+    { type: "SOA", color: "gray", cat: "授权", desc: "域起始授权记录", example: "example.com.  3600  IN  SOA  ns1.example.com. admin.example.com. 2024010101 86400 7200 604800 300", detail: "每个 DNS 区域有且仅有一条 SOA 记录，包含主 NS、管理员邮箱、序列号、刷新时间等区域管理信息。" },
+    { type: "SRV", color: "purple", cat: "服务", desc: "服务位置记录", example: "_sip._tcp.example.com.  IN  SRV  10 20 5060 sip.example.com.", detail: "指定特定服务的服务器、端口、优先级和权重，格式为 _服务._协议。常见于 SIP、XMPP、LDAP 等协议。" },
+    { type: "CAA", color: "coral", cat: "安全", desc: "证书颁发机构授权", example: "example.com.  3600  IN  CAA  0 issue \"letsencrypt.org\"", detail: "限制哪些 CA 可以为该域名签发 TLS 证书，防止错误或恶意签发。是 HTTPS 安全的重要补充。" },
+    { type: "DKIM", color: "amber", cat: "邮件", desc: "邮件签名公钥", example: "mail._domainkey.example.com. IN TXT \"v=DKIM1; k=rsa; p=MIIBIjAN...\"", detail: "将 DKIM 邮件签名公钥以 TXT 记录形式发布，收件方可验证邮件是否来自授权服务器，防止伪造。" },
+    { type: "HTTPS", color: "green", cat: "地址", desc: "HTTPS 服务元数据", example: "example.com.  IN  HTTPS  1 . alpn=\"h2,h3\" ipv4hint=93.184.216.34", detail: "新型记录（RFC 9460），允许一步返回 IP + TLS 协议信息，减少 HTTPS 握手往返，支持 HTTP/3（QUIC）提示。" },
+];
+
+const colorMap = {
+    blue: { bg: "#E6F1FB", text: "#0C447C", border: "#185FA5" },
+    teal: { bg: "#E1F5EE", text: "#085041", border: "#0F6E56" },
+    amber: { bg: "#FAEEDA", text: "#633806", border: "#BA7517" },
+    green: { bg: "#EAF3DE", text: "#27500A", border: "#3B6D11" },
+    coral: { bg: "#FAECE7", text: "#712B13", border: "#993C1D" },
+    purple: { bg: "#EEEDFE", text: "#3C3489", border: "#534AB7" },
+    gray: { bg: "#F1EFE8", text: "#444441", border: "#888780" },
+};
+
+function Tag({ color, children }) {
+    const c = colorMap[color] || colorMap.gray;
+    return <span className="tag" style={{ background: c.bg, color: c.text, border: `0.5px solid ${c.border}` }}>{children}</span>;
+}
+
+// ─── Tab 1: Resolution Process ───────────────────────────────────────────────
+function ResolutionTab() {
+    const [step, setStep] = useState(-1);
+    const [running, setRunning] = useState(false);
+    const timerRef = useRef(null);
+    const [domain, setDomain] = useState("www.google.com");
+    const [recordType, setRecordType] = useState("A");
+    const [cached, setCached] = useState(false);
+    const [dnsInfo, setDnsInfo] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [steps, setSteps] = useState([]);
+    const [useServer, setUseServer] = useState(true);
+    const [serverStatus, setServerStatus] = useState("unknown"); // "unknown"|"ok"|"offline"
+    const [totalMs, setTotalMs] = useState(null);
+
+    // 检测本地服务是否在线
+    useEffect(() => {
+        fetch(`${LOCAL_SERVER}/health`, { signal: AbortSignal.timeout(2000) })
+            .then(r => r.ok ? setServerStatus("ok") : setServerStatus("offline"))
+            .catch(() => setServerStatus("offline"));
+    }, []);
+
+    const nodes = dnsInfo ? [
+        { id: "client", label: "浏览器/客户端", sub: "本地缓存" },
+        { id: "resolver", label: "递归解析器", sub: "ISP / 8.8.8.8" },
+        { id: "root", label: "根域服务器", sub: dnsInfo.rootServer },
+        { id: "tld", label: "TLD 服务器", sub: dnsInfo.tldServer },
+        { id: "auth", label: "权威服务器", sub: dnsInfo.ns1 },
+    ] : [
+        { id: "client", label: "浏览器/客户端", sub: "本地缓存" },
+        { id: "resolver", label: "递归解析器", sub: "ISP / 8.8.8.8" },
+        { id: "root", label: "根域服务器", sub: ". (13组)" },
+        { id: "tld", label: "TLD 服务器", sub: ".com / .cn" },
+        { id: "auth", label: "权威服务器", sub: "—" },
+    ];
+
+    const activeNodes = step >= 0 && steps.length > 0 ? new Set([steps[step].from, steps[step].to]) : new Set();
+    const doneNodes = new Set();
+    if (step === steps.length - 1 && steps.length > 0) nodes.forEach(n => doneNodes.add(n.id));
+
+    const start = async () => {
+        setError(null);
+        if (cached && dnsInfo) { setStep(7); return; }
+        setStep(-1); setRunning(false); clearInterval(timerRef.current);
+        setLoading(true); setTotalMs(null);
+        try {
+            const result = await fetchDnsInfo(domain.trim(), useServer && serverStatus === "ok", recordType);
+            setDnsInfo(result.info);
+            setSteps(result.steps);
+            if (result.serverData?.total_ms) setTotalMs(result.serverData.total_ms);
+            setLoading(false);
+            if (cached) { setStep(7); return; }
+            setTimeout(() => { setStep(0); setRunning(true); }, 50);
+        } catch (e) {
+            setLoading(false);
+            setError(useServer && serverStatus === "ok"
+                ? `服务器查询失败：${e.message}（可切换到 AI 模式）`
+                : "AI 生成解析数据失败，请重试");
+        }
+    };
+    const reset = () => {
+        setStep(-1); setRunning(false); clearInterval(timerRef.current);
+        setDnsInfo(null); setSteps([]); setTotalMs(null); setError(null);
+    };
+
+    useEffect(() => {
+        if (!running || steps.length === 0) return;
+        timerRef.current = setInterval(() => {
+            setStep(s => {
+                if (s >= steps.length - 1) { setRunning(false); clearInterval(timerRef.current); return s; }
+                return s + 1;
+            });
+        }, 1400);
+        return () => clearInterval(timerRef.current);
+    }, [running, steps]);
+
+    const cur = step >= 0 && steps.length > 0 ? steps[step] : null;
+    const modeIsServer = useServer && serverStatus === "ok";
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Mode selector */}
+            <div style={{
+                display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
+                borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)",
+                background: "var(--color-background-secondary)", padding: "8px 12px"
+            }}>
+                <span style={{ fontSize: 12, color: "var(--color-text-secondary)", marginRight: 4 }}>数据来源：</span>
+                {[
+                    { id: true, label: "🖥 本地 Python 服务", sub: "真实 DNS 查询" },
+                    { id: false, label: "🤖 AI 模拟", sub: "离线可用" }
+                ].map(m => (
+                    <button key={String(m.id)} onClick={() => setUseServer(m.id)}
+                        style={{
+                            border: `0.5px solid ${useServer === m.id ? "#1D9E75" : "var(--color-border-secondary)"}`,
+                            background: useServer === m.id ? "#E1F5EE" : "var(--color-background-primary)",
+                            color: useServer === m.id ? "#085041" : "var(--color-text-secondary)",
+                            borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer",
+                            display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1
+                        }}>
+                        <span style={{ fontWeight: 500 }}>{m.label}</span>
+                        <span style={{ fontSize: 10, opacity: .7 }}>{m.sub}</span>
+                    </button>
+                ))}
+                <span style={{
+                    fontSize: 11, padding: "3px 8px", borderRadius: 6,
+                    background: serverStatus === "ok" ? "#EAF3DE" : serverStatus === "offline" ? "#FCEBEB" : "#F1EFE8",
+                    color: serverStatus === "ok" ? "#3B6D11" : serverStatus === "offline" ? "#A32D2D" : "#444441"
+                }}>
+                    {serverStatus === "ok" ? "● 服务在线" : serverStatus === "offline" ? "● 服务离线" : "● 检测中…"}
+                </span>
+                {serverStatus === "offline" && (
+                    <code style={{ fontSize: 10, color: "var(--color-text-secondary)", background: "var(--color-background-primary)", padding: "2px 6px", borderRadius: 4 }}>
+                        uvicorn dns_server:app --port 8000
+                    </code>
+                )}
+            </div>
+
+            {/* Record type selector */}
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12, color: "var(--color-text-secondary)", flexShrink: 0 }}>记录类型：</span>
+                {QUERY_RECORD_TYPES.map(r => {
+                    const c = colorMap[r.color];
+                    const sel = recordType === r.type;
+                    return (
+                        <button key={r.type} onClick={() => { setRecordType(r.type); reset(); }}
+                            style={{
+                                border: `0.5px solid ${sel ? c.border : "var(--color-border-secondary)"}`,
+                                background: sel ? c.bg : "var(--color-background-primary)",
+                                color: sel ? c.text : "var(--color-text-secondary)",
+                                borderRadius: 8, padding: "4px 10px", fontSize: 12, cursor: "pointer",
+                                display: "flex", flexDirection: "column", alignItems: "center", gap: 1
+                            }}>
+                            <span className="dns-mono" style={{ fontWeight: sel ? 600 : 400 }}>{r.label}</span>
+                            <span style={{ fontSize: 9, opacity: .7 }}>{r.desc}</span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Domain input */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>查询域名：</span>
+                <input className="dns-mono" value={domain} onChange={e => { setDomain(e.target.value); reset(); }}
+                    style={{
+                        flex: 1, minWidth: 180, maxWidth: 300, fontSize: 13, padding: "6px 10px",
+                        border: "0.5px solid var(--color-border-secondary)", borderRadius: 8,
+                        background: "var(--color-background-secondary)", color: "var(--color-text-primary)"
+                    }} />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--color-text-secondary)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={cached} onChange={e => setCached(e.target.checked)} />
+                    命中解析器缓存
+                </label>
+                <button className="dns-tab active" onClick={start} disabled={running || loading}>
+                    {loading
+                        ? (modeIsServer ? "⏳ 真实查询中…" : "⏳ AI 生成中…")
+                        : running ? "解析中…" : "▶ 开始解析"}
+                </button>
+                {(step >= 0 || dnsInfo) && <button className="dns-tab" onClick={reset}>重置</button>}
+                {error && <span style={{ fontSize: 12, color: "#A32D2D" }}>{error}</span>}
+            </div>
+
+            {/* Node row */}
+            <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+                {nodes.map((n, i) => {
+                    const isActive = activeNodes.has(n.id);
+                    const isDone = doneNodes.has(n.id);
+                    const cls = `node-box${isDone ? " done" : isActive ? " active" : ""}`;
+                    return (
+                        <div key={n.id} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+                            <div className={cls} style={{ flex: 1, minWidth: 0 }}>
+                                <div className="dns-mono" style={{ fontSize: 11, fontWeight: 600, color: isActive ? "#0F6E56" : isDone ? "#3B6D11" : "var(--color-text-primary)" }}>{n.label}</div>
+                                <div style={{ fontSize: 10, color: "var(--color-text-secondary)", marginTop: 2 }}>{n.sub}</div>
+                                {isActive && <div className="pulse" style={{ width: 8, height: 8, borderRadius: "50%", background: "#1D9E75", margin: "4px auto 0" }} />}
+                            </div>
+                            {i < nodes.length - 1 && (
+                                <div style={{ width: 28, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                                    {cur && ((cur.from === n.id && cur.dir === "right") || (cur.to === n.id && cur.dir === "right")) && (
+                                        <span style={{ fontSize: 14, color: "#378ADD" }}>→</span>
+                                    )}
+                                    {cur && ((cur.from === n.id && cur.dir === "left") || (cur.to === n.id && cur.dir === "left")) && (
+                                        <span style={{ fontSize: 14, color: "#1D9E75" }}>←</span>
+                                    )}
+                                    {!(cur && (cur.from === n.id || cur.to === n.id)) && (
+                                        <span style={{ fontSize: 11, color: "var(--color-border-secondary)" }}>——</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Current step message */}
+            {cur && (
+                <div style={{
+                    borderRadius: 10, border: `1px solid ${cur.type === "Q" ? "#185FA5" : "#0F6E56"}`,
+                    background: cur.type === "Q" ? "#E6F1FB" : "#E1F5EE", padding: "12px 16px"
+                }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                        <Tag color={cur.type === "Q" ? "blue" : "teal"}>{cur.type === "Q" ? "查询" : "响应"}</Tag>
+                        <span className="dns-mono" style={{
+                            fontSize: 13, fontWeight: 600,
+                            color: cur.type === "Q" ? "#0C447C" : "#085041"
+                        }}>{cur.msg}</span>
+                        {cur.latency != null && (
+                            <span style={{ fontSize: 11, color: "#633806", background: "#FAEEDA", border: "0.5px solid #BA7517", borderRadius: 6, padding: "1px 7px" }}>
+                                {cur.latency} ms
+                            </span>
+                        )}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{cur.note}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 4, opacity: .7 }}>
+                        步骤 {step + 1} / {steps.length}{modeIsServer ? " · 真实查询数据" : " · AI 模拟数据"}
+                    </div>
+                </div>
+            )}
+
+            {/* CNAME chain display — shown when resolution complete */}
+            {step === steps.length - 1 && dnsInfo?.cnameChain?.length > 0 && (
+                <div style={{ borderRadius: 10, border: "1.5px solid #BA7517", background: "#FAEEDA", padding: "12px 16px" }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 10 }}>
+                        <Tag color="amber">CNAME 别名链</Tag>
+                        <span style={{ fontSize: 12, color: "#633806" }}>该域名经过以下跳转</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        {[dnsInfo.cnameChain[0].from_name, ...dnsInfo.cnameChain.map(h => h.to_name)].map((name, i, arr) => (
+                            <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span className="dns-mono" style={{
+                                    fontSize: 12, fontWeight: i === 0 ? 600 : 400,
+                                    color: i === 0 ? "#712B13" : i === arr.length - 1 ? "#0C447C" : "#633806",
+                                    background: i === 0 ? "#FAECE7" : i === arr.length - 1 ? "#E6F1FB" : "transparent",
+                                    borderRadius: 4, padding: "1px 6px"
+                                }}>{name}</span>
+                                {i < arr.length - 1 && <span style={{ color: "#BA7517", fontWeight: 600 }}>→</span>}
+                            </span>
+                        ))}
+                        {recordType !== "CNAME" && dnsInfo.records?.length > 0 && (
+                            <>
+                                <span style={{ color: "#BA7517", fontWeight: 600 }}>→</span>
+                                <span className="dns-mono" style={{ fontSize: 12, color: "#085041", background: "#E1F5EE", borderRadius: 4, padding: "1px 6px" }}>
+                                    {recordType} {dnsInfo.records[0]}
+                                </span>
+                            </>
+                        )}
+                    </div>
+                    {dnsInfo.cnameChain.map((h, i) => (
+                        <div key={i} style={{ fontSize: 11, color: "#633806", opacity: .7, marginTop: 4 }}>
+                            {h.from_name} → {h.to_name}（TTL {h.ttl}s）
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Multi-record result display */}
+            {step === steps.length - 1 && dnsInfo?.records?.length > 1 && (
+                <div style={{ borderRadius: 10, border: "0.5px solid var(--color-border-secondary)", background: "var(--color-background-secondary)", padding: "10px 14px" }}>
+                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 8 }}>
+                        所有 {recordType} 记录（共 {dnsInfo.records.length} 条）
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {dnsInfo.records.map((r, i) => (
+                            <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <span style={{ fontSize: 10, color: "var(--color-text-secondary)", width: 16, textAlign: "right" }}>{i + 1}</span>
+                                <code className="dns-mono" style={{ fontSize: 12, color: "var(--color-text-primary)" }}>{r}</code>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Cache hit shortcut */}
+            {cached && step === 7 && dnsInfo && (
+                <div style={{ borderRadius: 10, border: "1px solid #3B6D11", background: "#EAF3DE", padding: "12px 16px" }}>
+                    <Tag color="green">缓存命中</Tag>
+                    <span style={{ marginLeft: 8, fontSize: 13, color: "#27500A" }}>
+                        解析器直接返回缓存结果（{dnsInfo.records?.[0] || dnsInfo.ip}），0 次递归查询，响应时间 &lt;1ms
+                    </span>
+                </div>
+            )}
+
+            {step === -1 && !loading && (
+                <div style={{ textAlign: "center", padding: "20px 0", color: "var(--color-text-secondary)", fontSize: 13 }}>
+                    点击 <strong>▶ 开始解析</strong> 查看完整的 DNS 递归解析过程
+                </div>
+            )}
+
+            {loading && (
+                <div style={{ textAlign: "center", padding: "20px 0", color: "var(--color-text-secondary)", fontSize: 13 }}>
+                    <span className="pulse" style={{ display: "inline-block" }}>
+                        {modeIsServer
+                            ? <>⏳ 正在向根服务器→TLD→权威服务器真实查询 <strong>{domain}</strong>…</>
+                            : <>⏳ AI 正在模拟 <strong>{domain}</strong> 的解析数据…</>}
+                    </span>
+                </div>
+            )}
+
+            {/* Steps timeline */}
+            {step >= 0 && steps.length > 0 && (
+                <div style={{ marginTop: 4 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>完整解析流程</div>
+                        {totalMs && step === steps.length - 1 && (
+                            <div style={{ fontSize: 11, color: "#633806", background: "#FAEEDA", border: "0.5px solid #BA7517", borderRadius: 6, padding: "2px 8px" }}>
+                                真实查询总耗时 {totalMs} ms
+                            </div>
+                        )}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {steps.map((s, i) => (
+                            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", opacity: i <= step ? 1 : .3 }}>
+                                <div style={{
+                                    width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 1,
+                                    background: i < step ? "#639922" : i === step ? "#1D9E75" : "var(--color-border-secondary)",
+                                    display: "flex", alignItems: "center", justifyContent: "center"
+                                }}>
+                                    <span style={{ fontSize: 10, color: i <= step ? "#fff" : "var(--color-text-secondary)" }}>
+                                        {i < step ? "✓" : i + 1}
+                                    </span>
+                                </div>
+                                <div style={{ flex: 1, fontSize: 12, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                                    <span className="dns-mono" style={{ color: i === step ? "#0C447C" : "var(--color-text-primary)" }}>{s.msg}</span>
+                                    <span style={{ color: "var(--color-text-secondary)" }}>({s.from} → {s.to})</span>
+                                    {s.latency != null && i <= step && (
+                                        <span style={{ fontSize: 10, color: "#633806", background: "#FAEEDA", borderRadius: 4, padding: "1px 5px" }}>{s.latency}ms</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Tab 2: Record Types ─────────────────────────────────────────────────────
+function RecordsTab() {
+    const [selected, setSelected] = useState(null);
+    const [filter, setFilter] = useState("全部");
+    const cats = ["全部", "地址", "邮件", "别名", "验证", "授权", "服务", "安全", "反查"];
+    const filtered = filter === "全部" ? RECORD_TYPES : RECORD_TYPES.filter(r => r.cat === filter);
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Category filter */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {cats.map(c => (
+                    <button key={c} onClick={() => setFilter(c)}
+                        style={{
+                            border: `0.5px solid ${filter === c ? "#1D9E75" : "var(--color-border-secondary)"}`,
+                            background: filter === c ? "#E1F5EE" : "var(--color-background-secondary)",
+                            color: filter === c ? "#085041" : "var(--color-text-secondary)",
+                            borderRadius: 20, padding: "4px 12px", fontSize: 12, cursor: "pointer", fontWeight: filter === c ? 500 : 400
+                        }}>
+                        {c}
+                    </button>
+                ))}
+            </div>
+
+            {/* Record grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+                {filtered.map(r => {
+                    const c = colorMap[r.color];
+                    const isSel = selected?.type === r.type;
+                    return (
+                        <div key={r.type} className={`record-card${isSel ? " selected" : ""}`}
+                            onClick={() => setSelected(isSel ? null : r)}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                                <span className="dns-mono" style={{
+                                    fontSize: 16, fontWeight: 600,
+                                    color: isSel ? "#085041" : "var(--color-text-primary)"
+                                }}>{r.type}</span>
+                                <Tag color={r.color}>{r.cat}</Tag>
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{r.desc}</div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Detail panel */}
+            {selected && (
+                <div style={{
+                    borderRadius: 12, border: `1.5px solid ${colorMap[selected.color].border}`,
+                    background: colorMap[selected.color].bg, padding: 16
+                }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                        <span className="dns-mono" style={{ fontSize: 20, fontWeight: 700, color: colorMap[selected.color].text }}>
+                            {selected.type}
+                        </span>
+                        <Tag color={selected.color}>{selected.cat}</Tag>
+                        <span style={{ fontSize: 13, color: colorMap[selected.color].text, opacity: .8 }}>{selected.desc}</span>
+                    </div>
+                    <div style={{ borderRadius: 8, background: "rgba(0,0,0,.06)", padding: "8px 12px", marginBottom: 8 }}>
+                        <div style={{ fontSize: 10, color: colorMap[selected.color].text, opacity: .7, marginBottom: 4 }}>示例记录</div>
+                        <code className="dns-mono" style={{ fontSize: 11, color: colorMap[selected.color].text, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+                            {selected.example}
+                        </code>
+                    </div>
+                    <p style={{ fontSize: 13, color: colorMap[selected.color].text, margin: 0, lineHeight: 1.6 }}>
+                        {selected.detail}
+                    </p>
+                </div>
+            )}
+
+            {!selected && (
+                <div style={{ textAlign: "center", fontSize: 12, color: "var(--color-text-secondary)", padding: "8px 0" }}>
+                    点击任意记录类型查看详情与示例
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Tab 3: Reverse DNS ──────────────────────────────────────────────────────
+function ReverseTab() {
+    const [ip, setIp] = useState("93.184.216.34");
+    const [result, setResult] = useState(null);
+
+    const lookup = () => {
+        const parts = ip.trim().split(".");
+        if (parts.length !== 4 || parts.some(p => isNaN(p) || +p < 0 || +p > 255)) {
+            setResult({ error: "请输入有效的 IPv4 地址" }); return;
+        }
+        const reversed = [...parts].reverse().join(".");
+        setResult({
+            ptr: `${reversed}.in-addr.arpa.`,
+            rdomain: `${reversed}.in-addr.arpa.`,
+            record: `${reversed}.in-addr.arpa.  3600  IN  PTR  example.com.`,
+            steps: [
+                `原始 IP: ${ip}`,
+                `反转各段: ${[...parts].reverse().join(".")}`,
+                `追加后缀: ${reversed}.in-addr.arpa.`,
+                `查询此 PTR 记录获得域名`,
+            ]
+        });
+    };
+
+    const useCases = [
+        { icon: "✉", title: "邮件服务器验证", desc: "接收方邮件服务器通过 PTR 验证发件人 IP 是否与声称的域名匹配，防止垃圾邮件。主流邮件服务商要求 PTR 记录必须存在且与 A 记录对应（前向确认反向 DNS，FCrDNS）。" },
+        { icon: "🔍", title: "网络日志分析", desc: "服务器访问日志通常只记录 IP，配置反向 DNS 后日志中可直接显示域名，便于识别爬虫、合作伙伴、CDN 节点等访问来源。" },
+        { icon: "🛡", title: "入侵检测", desc: "安全工具在分析网络流量时，通过 PTR 查询可快速识别可疑 IP 的归属组织，判断是否为已知恶意 IP 段。" },
+        { icon: "📡", title: "ISP 分配管理", desc: "ISP 为客户分配 IP 时通常批量设置通用 PTR（如 host-1-2-3-4.isp.net）。专业服务器租用时可向 IDC 申请自定义 PTR 以提升可信度。" },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
+                反向 DNS（Reverse DNS）将 IP 地址解析为域名，使用特殊的 <code className="dns-mono" style={{ fontSize: 12 }}>in-addr.arpa</code> 区域存储 PTR 记录。
+            </div>
+
+            {/* IP Input */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>IP 地址：</span>
+                <input className="dns-mono" value={ip} onChange={e => setIp(e.target.value)}
+                    placeholder="例：93.184.216.34"
+                    style={{
+                        width: 180, fontSize: 13, padding: "6px 10px",
+                        border: "0.5px solid var(--color-border-secondary)", borderRadius: 8,
+                        background: "var(--color-background-secondary)", color: "var(--color-text-primary)"
+                    }} />
+                <button className="dns-tab active" onClick={lookup}>反查域名</button>
+                {["93.184.216.34", "8.8.8.8", "1.1.1.1", "114.114.114.114"].map(x => (
+                    <button key={x} onClick={() => setIp(x)}
+                        style={{
+                            border: "0.5px solid var(--color-border-tertiary)", borderRadius: 6, padding: "4px 8px",
+                            fontSize: 11, cursor: "pointer", background: "var(--color-background-secondary)",
+                            color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)"
+                        }}>{x}</button>
+                ))}
+            </div>
+
+            {result?.error && (
+                <div style={{ color: "var(--color-text-danger)", fontSize: 13 }}>{result.error}</div>
+            )}
+
+            {result && !result.error && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ borderRadius: 10, border: "1px solid #185FA5", background: "#E6F1FB", padding: "12px 16px" }}>
+                        <div style={{ fontSize: 11, color: "#0C447C", marginBottom: 8, fontWeight: 500 }}>PTR 查询构造过程</div>
+                        {result.steps.map((s, i) => (
+                            <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                                <span style={{
+                                    width: 18, height: 18, borderRadius: "50%", background: "#185FA5",
+                                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: 10, color: "#fff", flexShrink: 0
+                                }}>{i + 1}</span>
+                                <code className="dns-mono" style={{ fontSize: 12, color: "#0C447C" }}>{s}</code>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{ borderRadius: 10, border: "1px solid #0F6E56", background: "#E1F5EE", padding: "12px 16px" }}>
+                        <div style={{ fontSize: 11, color: "#085041", marginBottom: 4, fontWeight: 500 }}>生成的 DNS 记录</div>
+                        <code className="dns-mono" style={{ fontSize: 12, color: "#085041", display: "block" }}>{result.record}</code>
+                        <div style={{ fontSize: 11, color: "#085041", opacity: .7, marginTop: 4 }}>
+                            此记录由 IP 所有者（通常是 ISP 或数据中心）在 in-addr.arpa 区域中配置
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* IPv6 reverse */}
+            <div style={{
+                borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)",
+                background: "var(--color-background-secondary)", padding: "12px 16px"
+            }}>
+                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>IPv6 反向解析</div>
+                <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 6 }}>
+                    IPv6 使用 <code className="dns-mono" style={{ fontSize: 11 }}>ip6.arpa</code>，每个十六进制字符独立反转：
+                </div>
+                <code className="dns-mono" style={{ fontSize: 11, color: "var(--color-text-primary)", display: "block", lineHeight: 1.8 }}>
+                    {`IPv6: 2606:2800:220:1:248:1893:25c8:1946\n展开: 2606280002200001024818932_5c81946\n反转: 6.4.9.1.8.c.5.2.3.9.8.1.8.4.2.0.1.0.0.0.0.2.2.0.0.0.8.2.6.0.6.2\n域名: ...ip6.arpa.`}
+                </code>
+            </div>
+
+            {/* Use cases */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+                {useCases.map(u => (
+                    <div key={u.title} className="record-card">
+                        <div style={{ fontSize: 16, marginBottom: 6 }}>{u.icon}</div>
+                        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{u.title}</div>
+                        <div style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>{u.desc}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Tab 4: Self-hosted DNS ──────────────────────────────────────────────────
+function SelfHostedTab() {
+    const [software, setSoftware] = useState("bind9");
+
+    const configs = {
+        bind9: {
+            name: "BIND 9", subtitle: "最广泛使用的权威/递归服务器",
+            zone: `; /etc/bind/db.internal.example
+$TTL 3600
+@  IN SOA  ns1.internal.example. admin.internal.example. (
+          2024010101 ; Serial
+          3600       ; Refresh
+          900        ; Retry
+          604800     ; Expire
+          300 )      ; Negative Cache TTL
+
+; 名称服务器
+@        IN NS   ns1.internal.example.
+ns1      IN A    192.168.1.1
+
+; 内部服务
+www      IN A    192.168.1.10
+api      IN A    192.168.1.11
+db       IN A    192.168.1.20
+mail     IN A    192.168.1.30
+mail     IN MX   10  mail.internal.example.
+
+; 开发环境别名
+dev      IN CNAME www.internal.example.`,
+            note: "适合：需要完整 DNS 功能的企业内网，权威服务器"
+        },
+        coredns: {
+            name: "CoreDNS", subtitle: "云原生 DNS，Kubernetes 默认方案",
+            zone: `# Corefile
+.:53 {
+    # 上游服务器（递归查询）
+    forward . 8.8.8.8 8.8.4.4
+
+    # 内网域名本地解析
+    hosts /etc/coredns/hosts.txt internal.example {
+        192.168.1.10  www.internal.example
+        192.168.1.11  api.internal.example
+        192.168.1.20  db.internal.example
+        fallthrough
+    }
+
+    # Kubernetes Service DNS
+    kubernetes cluster.local in-addr.arpa {
+        endpoint http://k8s-api:8080
+        pods insecure
+        fallthrough in-addr.arpa
+    }
+
+    cache 30
+    reload
+    log
+    health
+}`,
+            note: "适合：Kubernetes 集群内部 DNS，容器化环境"
+        },
+        unbound: {
+            name: "Unbound", subtitle: "专注递归解析，注重安全",
+            zone: `# /etc/unbound/unbound.conf
+server:
+    interface: 0.0.0.0
+    access-control: 192.168.0.0/16 allow
+    
+    # DNSSEC 验证
+    auto-trust-anchor-file: "/var/lib/unbound/root.key"
+    
+    # DNS over TLS
+    tls-cert-bundle: /etc/ssl/certs/ca-certificates.crt
+    
+    # 本地数据覆盖
+    local-data: "internal.example. A 192.168.1.1"
+    local-data-ptr: "192.168.1.1 internal.example"
+    
+    # 屏蔽广告（返回空地址）
+    local-zone: "doubleclick.net" refuse
+    local-zone: "googleadservices.com" refuse
+
+forward-zone:
+    name: "."
+    forward-tls-upstream: yes        # DNS over TLS
+    forward-addr: 1.1.1.1@853#cloudflare-dns.com
+    forward-addr: 8.8.8.8@853#dns.google`,
+            note: "适合：注重隐私的递归解析，家庭/小型网络"
+        },
+        dnsmasq: {
+            name: "dnsmasq", subtitle: "轻量级，适合路由器/嵌入式",
+            zone: `# /etc/dnsmasq.conf
+
+# 监听接口
+interface=eth0
+bind-interfaces
+
+# 上游 DNS
+server=8.8.8.8
+server=8.8.4.4
+
+# 内部域名
+address=/dev.local/192.168.1.100
+address=/api.local/192.168.1.101
+address=/redis.local/192.168.1.102
+
+# 阻止域名（返回 NXDOMAIN）
+address=/ads.example.com/#
+
+# DHCP 集成（自动注册主机名）
+dhcp-range=192.168.1.100,192.168.1.200,12h
+dhcp-host=aa:bb:cc:dd:ee:ff,server1,192.168.1.50
+
+# 不转发无 . 的查询（避免泄漏）
+domain-needed
+bogus-priv`,
+            note: "适合：路由器、嵌入式设备、局域网 DHCP+DNS 一体"
+        }
+    };
+
+    const c = configs[software];
+    const useCases = [
+        { color: "blue", title: "内网域名解析", desc: "为内部服务 db.corp、gitlab.corp 分配域名，避免记 IP" },
+        { color: "teal", title: "Split DNS（裂脑）", desc: "内网 example.com 解析到内网 IP，外网解析到公网 IP" },
+        { color: "amber", title: "DNS 广告过滤", desc: "Pi-hole 等工具在 DNS 层面屏蔽广告和追踪域名" },
+        { color: "purple", title: "开发环境", desc: "本地 *.dev.local 映射到开发服务器，无需修改 hosts" },
+        { color: "coral", title: "DNS 缓存加速", desc: "在局域网部署递归缓存，减少上游查询延迟" },
+        { color: "green", title: "DNSSEC 验证", desc: "在本地验证 DNSSEC 签名，防止 DNS 欺骗" },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Software tabs */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {Object.entries(configs).map(([k, v]) => (
+                    <button key={k} onClick={() => setSoftware(k)}
+                        style={{
+                            border: `0.5px solid ${software === k ? "#1D9E75" : "var(--color-border-secondary)"}`,
+                            background: software === k ? "#E1F5EE" : "var(--color-background-secondary)",
+                            color: software === k ? "#085041" : "var(--color-text-secondary)",
+                            borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer",
+                            fontWeight: software === k ? 500 : 400
+                        }}>
+                        {v.name}
+                    </button>
+                ))}
+            </div>
+
+            <div style={{
+                borderRadius: 10, border: "1px solid var(--color-border-secondary)",
+                background: "var(--color-background-secondary)", padding: "10px 14px"
+            }}>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{c.name}</span>
+                <span style={{ fontSize: 12, color: "var(--color-text-secondary)", marginLeft: 8 }}>{c.subtitle}</span>
+                <Tag color="teal" style={{ marginLeft: 8 }}>{c.note}</Tag>
+            </div>
+
+            <div style={{ borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)", overflow: "hidden" }}>
+                <div style={{
+                    padding: "6px 12px", background: "var(--color-background-secondary)",
+                    borderBottom: "0.5px solid var(--color-border-tertiary)", fontSize: 11,
+                    color: "var(--color-text-secondary)", display: "flex", justifyContent: "space-between"
+                }}>
+                    <span>配置示例</span>
+                    <span className="dns-mono">{c.name}</span>
+                </div>
+                <pre className="dns-mono" style={{
+                    fontSize: 11, margin: 0, padding: "12px 16px",
+                    lineHeight: 1.8, color: "var(--color-text-primary)", overflowX: "auto",
+                    background: "var(--color-background-primary)"
+                }}>
+                    {c.zone}
+                </pre>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+                {useCases.map(u => (
+                    <div key={u.title} className="record-card">
+                        <Tag color={u.color}>{u.title}</Tag>
+                        <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginTop: 6, lineHeight: 1.5 }}>{u.desc}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Tab 5: Smart DNS (Geo/ISP) ──────────────────────────────────────────────
+function SmartDNSTab() {
+    const [mode, setMode] = useState("geo");
+    const [activeRegion, setActiveRegion] = useState(null);
+
+    const geoData = [
+        { region: "北京/华北", ip: "116.211.56.1", cdn: "北京联通节点", latency: "12ms", isp: "联通", color: "blue" },
+        { region: "上海/华东", ip: "121.51.34.22", cdn: "上海电信节点", latency: "8ms", isp: "电信", color: "teal" },
+        { region: "广州/华南", ip: "183.60.28.5", cdn: "广州移动节点", latency: "10ms", isp: "移动", color: "green" },
+        { region: "新加坡", ip: "139.99.82.15", cdn: "东南亚节点", latency: "45ms", isp: "国际", color: "coral" },
+        { region: "北美/欧洲", ip: "104.22.9.112", cdn: "Cloudflare 全球", latency: "120ms", isp: "国际", color: "purple" },
+    ];
+
+    const ispData = [
+        { isp: "中国电信", ip: "61.135.169.121", note: "ICP 备案优先路由" },
+        { isp: "中国联通", ip: "220.181.57.216", note: "联通骨干网直连" },
+        { isp: "中国移动", ip: "183.232.231.172", note: "移动 CMNet 路由" },
+        { isp: "海外用户", ip: "104.22.9.112", note: "Anycast 全球节点" },
+    ];
+
+    const ednsDemos = [
+        { title: "EDNS Client Subnet (ECS)", desc: "解析器在查询权威服务器时附带客户端 IP 的前缀（如 /24），权威服务器据此返回最近节点，精度高于仅凭解析器 IP 判断。", tag: "RFC 7871" },
+        { title: "GeoDNS / 智能 DNS", desc: "权威服务器根据请求方 IP 的地理位置返回不同 A 记录。各大 DNS 服务商（阿里云、腾讯云、Cloudflare）均提供此功能。", tag: "商业特性" },
+        { title: "Split-horizon DNS（裂脑）", desc: "同一域名在内网与外网返回不同答案：内网返回内网 IP（直连，低延迟）；外网返回公网 IP（通过防火墙/NAT 访问）。", tag: "内外分离" },
+        { title: "运营商线路分流", desc: "针对电信、联通、移动三大运营商分别配置 IP 池，实现跨运营商流量最优路由，避免绕行。", tag: "国内常见" },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+                {[["geo", "地域解析"], ["isp", "运营商分流"], ["tech", "技术原理"]].map(([k, v]) => (
+                    <button key={k} onClick={() => setMode(k)}
+                        style={{
+                            border: `0.5px solid ${mode === k ? "#1D9E75" : "var(--color-border-secondary)"}`,
+                            background: mode === k ? "#E1F5EE" : "var(--color-background-secondary)",
+                            color: mode === k ? "#085041" : "var(--color-text-secondary)",
+                            borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer"
+                        }}>
+                        {v}
+                    </button>
+                ))}
+            </div>
+
+            {mode === "geo" && (
+                <>
+                    <div style={{
+                        borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)",
+                        background: "var(--color-background-secondary)", padding: "10px 14px", fontSize: 13,
+                        color: "var(--color-text-secondary)", lineHeight: 1.6
+                    }}>
+                        同一域名 <code className="dns-mono" style={{ fontSize: 12 }}>cdn.example.com</code> 对不同地区的用户返回不同 CDN 节点 IP，降低访问延迟
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {geoData.map(g => (
+                            <div key={g.region} onClick={() => setActiveRegion(activeRegion === g.region ? null : g.region)}
+                                style={{
+                                    borderRadius: 10, border: `1px solid ${activeRegion === g.region ? colorMap[g.color].border : "var(--color-border-secondary)"}`,
+                                    background: activeRegion === g.region ? colorMap[g.color].bg : "var(--color-background-primary)",
+                                    padding: "10px 14px", cursor: "pointer", transition: "all .15s",
+                                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12
+                                }}>
+                                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                                    <Tag color={g.color}>{g.region}</Tag>
+                                    <code className="dns-mono" style={{ fontSize: 12, color: "var(--color-text-primary)" }}>{g.ip}</code>
+                                </div>
+                                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                    <span style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>{g.cdn}</span>
+                                    <span style={{ fontSize: 11, fontWeight: 500, color: +g.latency.replace("ms", "") < 30 ? "#3B6D11" : "#BA7517" }}>
+                                        {g.latency}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{
+                        fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.6,
+                        borderRadius: 8, border: "0.5px solid var(--color-border-tertiary)", padding: "10px 14px"
+                    }}>
+                        <strong>工作原理：</strong>DNS 权威服务器内置 IP 归属数据库（如 MaxMind GeoIP），收到查询时根据来源 IP 判断地域，从对应的 IP 池中返回最近节点。
+                    </div>
+                </>
+            )}
+
+            {mode === "isp" && (
+                <>
+                    <div style={{
+                        fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.6,
+                        borderRadius: 8, border: "0.5px solid var(--color-border-tertiary)", padding: "10px 14px"
+                    }}>
+                        中国三大运营商网络互联质量差，同一公网 IP 对不同运营商用户延迟可能相差数倍。智能 DNS 可为每家运营商单独配置 IP，流量走各自骨干网。
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {ispData.map(d => (
+                            <div key={d.isp} style={{
+                                borderRadius: 10, border: "0.5px solid var(--color-border-secondary)",
+                                background: "var(--color-background-primary)", padding: "12px 16px",
+                                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12
+                            }}>
+                                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 500 }}>{d.isp}</span>
+                                    <code className="dns-mono" style={{ fontSize: 12 }}>{d.ip}</code>
+                                </div>
+                                <span style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>{d.note}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{
+                        borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)",
+                        background: "var(--color-background-secondary)", padding: "12px 14px"
+                    }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 8 }}>运营商检测原理</div>
+                        <div style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.7 }}>
+                            DNS 解析器（如 114.114.114.114 属于联通/移动，221.228.255.1 属于电信）发送查询时，
+                            权威服务器根据<strong>解析器 IP 段</strong>判断其归属运营商，返回对应 IP。
+                            若客户端使用第三方 DNS（如 8.8.8.8），可能导致线路判断不准确。
+                            EDNS Client Subnet 可部分解决此问题。
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {mode === "tech" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {ednsDemos.map(e => (
+                        <div key={e.title} className="record-card">
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                                <span style={{ fontSize: 13, fontWeight: 500 }}>{e.title}</span>
+                                <Tag color="teal">{e.tag}</Tag>
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>{e.desc}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Tab 6: Load Balancing ───────────────────────────────────────────────────
+function LoadBalancingTab() {
+    const [mode, setMode] = useState("rr");
+    const [reqCount, setReqCount] = useState(0);
+    const [running, setRunning] = useState(false);
+    const timerRef = useRef(null);
+
+    const rrServers = [
+        { id: 0, name: "Server A", ip: "10.0.0.1", weight: 1, healthy: true },
+        { id: 1, name: "Server B", ip: "10.0.0.2", weight: 2, healthy: true },
+        { id: 2, name: "Server C", ip: "10.0.0.3", weight: 1, healthy: false },
+        { id: 3, name: "Server D", ip: "10.0.0.4", weight: 1, healthy: true },
+    ];
+    const [servers, setServers] = useState(rrServers);
+    const [activeServer, setActiveServer] = useState(-1);
+    const [rrIndex, setRrIndex] = useState(0);
+
+    const toggleHealth = (id) => {
+        setServers(prev => prev.map(s => s.id === id ? { ...s, healthy: !s.healthy } : s));
+    };
+
+    const sendRequest = useCallback(() => {
+        const healthy = servers.filter(s => s.healthy);
+        if (!healthy.length) return;
+        let target;
+        if (mode === "rr") {
+            const idx = rrIndex % healthy.length;
+            target = healthy[idx];
+            setRrIndex(i => i + 1);
+        } else if (mode === "weighted") {
+            const total = healthy.reduce((a, s) => a + s.weight, 0);
+            let r = Math.random() * total, acc = 0;
+            target = healthy.find(s => { acc += s.weight; return r <= acc; }) || healthy[0];
+        } else {
+            target = healthy[Math.floor(Math.random() * healthy.length)];
+        }
+        setActiveServer(target.id);
+        setReqCount(c => c + 1);
+        setTimeout(() => setActiveServer(-1), 500);
+    }, [servers, mode, rrIndex]);
+
+    useEffect(() => {
+        if (running) { timerRef.current = setInterval(sendRequest, 700); }
+        return () => clearInterval(timerRef.current);
+    }, [running, sendRequest]);
+
+    const modes = [
+        { k: "rr", label: "轮询 (Round-Robin)", desc: "依次分配，最简单公平" },
+        { k: "weighted", label: "加权轮询", desc: "按权重比例分配流量" },
+        { k: "healthck", label: "健康检查剔除", desc: "自动跳过故障节点" },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Mode select */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {modes.map(m => (
+                    <button key={m.k} onClick={() => { setMode(m.k); setReqCount(0); setRrIndex(0); }}
+                        style={{
+                            border: `0.5px solid ${mode === m.k ? "#1D9E75" : "var(--color-border-secondary)"}`,
+                            background: mode === m.k ? "#E1F5EE" : "var(--color-background-secondary)",
+                            color: mode === m.k ? "#085041" : "var(--color-text-secondary)",
+                            borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer"
+                        }}>
+                        {m.label}
+                    </button>
+                ))}
+            </div>
+
+            <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>
+                {modes.find(m => m.k === mode)?.desc}
+            </div>
+
+            {/* Controls */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button className="dns-tab active" onClick={sendRequest}>发送一次请求</button>
+                <button className="dns-tab" onClick={() => setRunning(r => !r)}
+                    style={{ border: "0.5px solid var(--color-border-secondary)", borderRadius: 8 }}>
+                    {running ? "⏹ 停止连续发送" : "▶ 连续发送"}
+                </button>
+                <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>已发送 {reqCount} 次请求</span>
+            </div>
+
+            {/* DNS records example */}
+            <div style={{
+                borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)",
+                background: "var(--color-background-secondary)", padding: "10px 14px"
+            }}>
+                <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 6 }}>DNS 区域文件（多 A 记录）</div>
+                <pre className="dns-mono" style={{ fontSize: 11, margin: 0, color: "var(--color-text-primary)", lineHeight: 1.7 }}>
+                    {`api.example.com.  30  IN  A  10.0.0.1  ; Server A  weight=1
+api.example.com.  30  IN  A  10.0.0.2  ; Server B  weight=2
+api.example.com.  30  IN  A  10.0.0.4  ; Server D  weight=1
+; Server C 健康检查失败，已从记录中移除`}
+                </pre>
+            </div>
+
+            {/* Server grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
+                {servers.map(s => (
+                    <div key={s.id} className={`lb-server${activeServer === s.id ? " active" : ""}${!s.healthy ? " down" : ""}`}>
+                        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{s.name}</div>
+                        <code className="dns-mono" style={{ fontSize: 11, color: "var(--color-text-secondary)", display: "block", marginBottom: 6 }}>{s.ip}</code>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 11 }}>权重 {s.weight}</span>
+                            <button onClick={() => toggleHealth(s.id)}
+                                style={{
+                                    fontSize: 10, padding: "2px 8px", borderRadius: 6, border: "none", cursor: "pointer",
+                                    background: s.healthy ? "#EAF3DE" : "#FCEBEB",
+                                    color: s.healthy ? "#3B6D11" : "#A32D2D"
+                                }}>
+                                {s.healthy ? "健康" : "故障"}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Comparison */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                    { color: "blue", title: "DNS 轮询的局限", desc: "DNS 层面的负载均衡无法感知后端真实负载，也不支持会话保持。生产环境通常将 DNS 作为第一层分流，配合 Nginx/HAProxy/LB 硬件做精细控制。" },
+                    { color: "amber", title: "低 TTL 的代价", desc: "为使节点变更快速生效，常将 TTL 设为 30-60秒，但这会导致缓存失效频繁，增加递归查询量。需在敏捷性与 DNS 基础设施压力间权衡。" },
+                    { color: "teal", title: "Anycast DNS", desc: "CloudFlare、Google 等将同一 IP（如 1.1.1.1）通过 BGP 在全球多个数据中心广播，用户自动路由到最近的 PoP 节点——不需要 GeoDNS，网络层自动完成选路。" },
+                    { color: "green", title: "健康检查集成", desc: "PowerDNS、Route53、Cloudflare 等支持基于 HTTP/TCP 健康检查自动添加/移除 A 记录。故障节点在几秒内从 DNS 响应中消失，配合低 TTL 可实现快速故障转移。" },
+                ].map(i => (
+                    <div key={i.title} className="record-card">
+                        <Tag color={i.color}>{i.title}</Tag>
+                        <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginTop: 6, lineHeight: 1.6 }}>{i.desc}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Tab 7: Encrypted DNS ────────────────────────────────────────────────────
+function EncryptedTab() {
+    const [selected, setSelected] = useState("doh");
+
+    const protocols = {
+        classic: {
+            name: "传统 DNS", port: "53", transport: "UDP/TCP", encrypted: false, color: "gray",
+            desc: "明文传输，查询内容对运营商、路由节点全程可见。报文可被篡改（DNS 污染/劫持）。无身份验证机制。",
+            flow: ["应用", "→ UDP 53 → ", "解析器", "→ UDP 53 → ", "权威服务器"],
+            risk: ["查询内容对中间人可见", "可被运营商/防火墙劫持", "无法验证响应真实性"],
+            config: ""
+        },
+        dnssec: {
+            name: "DNSSEC", port: "53", transport: "UDP/TCP", encrypted: false, color: "amber",
+            desc: "用数字签名保证 DNS 数据完整性，防止数据被篡改（但不加密查询内容，中间节点仍可见查询）。需要权威服务器和客户端同时支持。",
+            flow: ["应用", "→ UDP 53 →", "解析器（验签）", "→ UDP 53 →", "已签名权威服务器"],
+            risk: ["✓ 防止响应数据篡改", "✓ 验证数据来源真实性", "✗ 查询内容仍可见", "✗ 部署率低，验签开销大"],
+            config: `# BIND 9 启用 DNSSEC
+dnssec-enable yes;
+dnssec-validation auto;
+dnssec-lookaside auto;`
+        },
+        dot: {
+            name: "DNS over TLS (DoT)", port: "853", transport: "TCP+TLS", encrypted: true, color: "teal",
+            desc: "将 DNS 报文封装在 TLS 连接中，使用专用端口 853。查询内容对运营商不可见，但独特的 853 端口使其容易被识别和封锁。",
+            flow: ["应用", "→ TLS 853 →", "解析器", "→ TLS 853 →", "权威服务器"],
+            risk: ["✓ 查询内容加密", "✓ 防止中间人篡改", "✗ 853端口可被封锁识别", "✗ 比UDP有额外延迟"],
+            config: `# Unbound 启用 DoT
+forward-zone:
+  name: "."
+  forward-tls-upstream: yes
+  forward-addr: 1.1.1.1@853#cloudflare-dns.com
+  forward-addr: 8.8.8.8@853#dns.google`
+        },
+        doh: {
+            name: "DNS over HTTPS (DoH)", port: "443", transport: "HTTPS", encrypted: true, color: "blue",
+            desc: "DNS 查询通过标准 HTTPS（443端口）传输，与普通 Web 流量混合，难以被单独封锁。Firefox/Chrome 已内置支持，是目前最易部署的加密 DNS 方案。",
+            flow: ["浏览器", "→ HTTPS 443 →", "DoH 解析器", "→ DNS →", "权威服务器"],
+            risk: ["✓ 与HTTPS流量混合难以识别", "✓ 浏览器原生支持", "✓ 防火墙难以单独封锁", "✗ 增加HTTPS证书依赖"],
+            config: `# Firefox 启用 DoH
+# about:preferences#general → 网络设置 → 启用 DNS over HTTPS
+
+# Chrome / Edge
+# 设置 → 隐私和安全 → 使用安全DNS → 自定义
+
+# API 示例 (RFC 8484)
+curl "https://cloudflare-dns.com/dns-query?name=example.com&type=A" \\
+     -H "accept: application/dns-json"`
+        },
+        doq: {
+            name: "DNS over QUIC (DoQ)", port: "853", transport: "QUIC/UDP", encrypted: true, color: "purple",
+            desc: "基于 QUIC 协议（HTTP/3 底层）的 DNS 加密，结合了 TLS 加密和 QUIC 的低延迟特性（0-RTT 握手）。RFC 9250 标准，目前支持的解析器较少。",
+            flow: ["应用", "→ QUIC 853 →", "DoQ 解析器", "→ DNS →", "权威服务器"],
+            risk: ["✓ QUIC 0-RTT握手，延迟最低", "✓ 内置加密和多路复用", "✓ 丢包恢复比TCP更优", "✗ 较新标准，支持度有限"],
+            config: `# AdGuard Home 启用 DoQ
+# 上游 DNS 填入：
+quic://dns.adguard.com
+
+# Knot Resolver (kresd) 客户端配置
+net.listen('0.0.0.0', 853, {kind='quic'})`
+        },
+        ech: {
+            name: "Oblivious DoH (ODoH)", port: "443", transport: "HTTPS", encrypted: true, color: "coral",
+            desc: "在 DoH 基础上引入代理层，解析器只看到代理 IP（不知道客户端是谁），代理只知道客户端 IP（不知道查询内容）。实现真正的查询不可关联性。",
+            flow: ["客户端", "→ HTTPS →", "ODoH 代理", "→ 加密请求 →", "ODoH 解析器"],
+            risk: ["✓ 解析器不知道你的IP", "✓ 代理不知道你的查询", "✓ 最强隐私保护", "✗ 需要代理+解析器双方支持"],
+            config: `# Cloudflare ODoH 端点
+https://odoh.cloudflareresearch.com/dns-query
+
+# 配合 odoh-client-rs 工具使用
+odoh-client --proxy odoh.cloudflare-dns.com \\
+            --target odoh.cloudflareresearch.com \\
+            query --domain example.com`
+        },
+    };
+
+    const p = protocols[selected];
+    const c = colorMap[p.color];
+
+    const comparison = [
+        { feat: "查询加密", classic: "✗", dot: "✓", doh: "✓", doq: "✓", dnssec: "✗", ech: "✓" },
+        { feat: "响应完整性", classic: "✗", dot: "✓", doh: "✓", doq: "✓", dnssec: "✓", ech: "✓" },
+        { feat: "IP 隐私", classic: "✗", dot: "✗", doh: "✗", doq: "✗", dnssec: "✗", ech: "✓" },
+        { feat: "防封锁", classic: "—", dot: "✗", doh: "✓", doq: "△", dnssec: "—", ech: "✓" },
+        { feat: "浏览器支持", classic: "✓", dot: "△", doh: "✓", doq: "△", dnssec: "△", ech: "△" },
+        { feat: "性能开销", classic: "最低", dot: "低", doh: "中", doq: "低", dnssec: "中", ech: "中" },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Protocol selector */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {Object.entries(protocols).map(([k, v]) => (
+                    <button key={k} onClick={() => setSelected(k)}
+                        style={{
+                            border: `0.5px solid ${selected === k ? colorMap[v.color].border : "var(--color-border-secondary)"}`,
+                            background: selected === k ? colorMap[v.color].bg : "var(--color-background-secondary)",
+                            color: selected === k ? colorMap[v.color].text : "var(--color-text-secondary)",
+                            borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer",
+                            fontWeight: selected === k ? 500 : 400
+                        }}>
+                        {v.name}
+                    </button>
+                ))}
+            </div>
+
+            {/* Protocol detail */}
+            <div style={{ borderRadius: 12, border: `1.5px solid ${c.border}`, background: c.bg, padding: 16 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>{p.name}</span>
+                    <Tag color={p.color}>端口 {p.port}</Tag>
+                    <Tag color={p.color}>{p.transport}</Tag>
+                    <Tag color={p.encrypted ? "teal" : "gray"}>{p.encrypted ? "✓ 加密" : "✗ 明文"}</Tag>
+                </div>
+
+                {/* Flow */}
+                <div style={{
+                    display: "flex", alignItems: "center", gap: 4, marginBottom: 10,
+                    borderRadius: 8, background: "rgba(0,0,0,.06)", padding: "8px 12px", flexWrap: "wrap"
+                }}>
+                    {p.flow.map((f, i) => (
+                        <span key={i} className="dns-mono"
+                            style={{ fontSize: 11, color: c.text, fontWeight: i % 2 === 0 ? 600 : 400, opacity: i % 2 === 0 ? 1 : .7 }}>{f}</span>
+                    ))}
+                </div>
+
+                <p style={{ fontSize: 13, color: c.text, margin: "0 0 10px", lineHeight: 1.6 }}>{p.desc}</p>
+
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: p.config ? 10 : 0 }}>
+                    {p.risk.map((r, i) => (
+                        <span key={i} style={{
+                            fontSize: 11, color: c.text, background: "rgba(0,0,0,.08)",
+                            borderRadius: 6, padding: "3px 8px"
+                        }}>{r}</span>
+                    ))}
+                </div>
+
+                {p.config && (
+                    <div style={{ borderRadius: 8, background: "rgba(0,0,0,.1)", padding: "8px 12px", marginTop: 8 }}>
+                        <div style={{ fontSize: 10, color: c.text, opacity: .7, marginBottom: 4 }}>配置示例</div>
+                        <pre className="dns-mono" style={{ fontSize: 11, margin: 0, color: c.text, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                            {p.config}
+                        </pre>
+                    </div>
+                )}
+            </div>
+
+            {/* Comparison table */}
+            <div style={{ borderRadius: 10, border: "0.5px solid var(--color-border-tertiary)", overflow: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                        <tr style={{ background: "var(--color-background-secondary)" }}>
+                            <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 500, borderBottom: "0.5px solid var(--color-border-tertiary)" }}>特性</th>
+                            {["classic", "dot", "doh", "doq", "dnssec", "ech"].map(k => (
+                                <th key={k} style={{
+                                    padding: "8px 8px", textAlign: "center", fontWeight: 500,
+                                    borderBottom: "0.5px solid var(--color-border-tertiary)",
+                                    color: k === selected ? colorMap[protocols[k].color].text : "var(--color-text-secondary)",
+                                    background: k === selected ? colorMap[protocols[k].color].bg : "transparent"
+                                }}>
+                                    {protocols[k].name.split(" ")[0]}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {comparison.map((row, i) => (
+                            <tr key={i} style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
+                                <td style={{ padding: "6px 12px", color: "var(--color-text-secondary)" }}>{row.feat}</td>
+                                {["classic", "dot", "doh", "doq", "dnssec", "ech"].map(k => (
+                                    <td key={k} style={{
+                                        padding: "6px 8px", textAlign: "center",
+                                        background: k === selected ? colorMap[protocols[k].color].bg + "80" : "transparent",
+                                        color: row[k] === "✓" ? "#3B6D11" : row[k] === "✗" ? "#A32D2D" : "var(--color-text-primary)"
+                                    }}>
+                                        {row[k]}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+// ─── Main App ────────────────────────────────────────────────────────────────
+export default function DNSDemo() {
+    const [tab, setTab] = useState(0);
+
+    const tabs = [
+        { label: "解析过程", sub: "递归查询" },
+        { label: "记录类型", sub: "A/MX/TXT…" },
+        { label: "反向解析", sub: "PTR/IP反查" },
+        { label: "自建 DNS", sub: "BIND/CoreDNS" },
+        { label: "智能解析", sub: "地域/运营商" },
+        { label: "负载均衡", sub: "轮询/加权" },
+        { label: "加密协议", sub: "DoH/DoT/DNSSEC" },
+    ];
+
+    const panels = [ResolutionTab, RecordsTab, ReverseTab, SelfHostedTab, SmartDNSTab, LoadBalancingTab, EncryptedTab];
+    const Panel = panels[tab];
+
+    return (
+        <div className="dns-root" style={{ padding: "0 0 24px" }}>
+            <style>{css}</style>
+
+            {/* Header */}
+            <div style={{
+                marginBottom: 16, paddingBottom: 14,
+                borderBottom: "0.5px solid var(--color-border-tertiary)"
+            }}>
+                <h2 style={{ margin: "0 0 2px", fontSize: 18, fontWeight: 600 }}>DNS 域名系统 交互演示</h2>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-secondary)" }}>
+                    Domain Name System · 从解析过程到加密协议的完整图解
+                </p>
+            </div>
+
+            {/* Tab bar */}
+            <div style={{
+                display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 16,
+                borderBottom: "0.5px solid var(--color-border-tertiary)", paddingBottom: 10
+            }}>
+                {tabs.map((t, i) => (
+                    <button key={i} className={`dns-tab${tab === i ? " active" : ""}`}
+                        onClick={() => setTab(i)}
+                        style={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "flex-start", padding: "6px 12px" }}>
+                        <span>{t.label}</span>
+                        <span style={{ fontSize: 10, opacity: .7 }}>{t.sub}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Panel */}
+            <Panel />
+        </div>
+    );
+}
