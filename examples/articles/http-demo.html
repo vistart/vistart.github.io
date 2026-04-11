@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP 连接全过程图解</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'IBM Plex Mono', 'Fira Code', monospace;
+            background: #080d1a;
+            color: #c0d8ef;
+            min-height: 100vh;
+        }
+        button { font-family: inherit; cursor: pointer; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #080d1a; }
+        ::-webkit-scrollbar-thumb { background: #192840; border-radius: 3px; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+        .header { background: linear-gradient(135deg,#0c1422,#060b16); border-bottom: 1px solid #192840; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12; }
+        .header h1 { margin: 0; font-size: 20px; font-weight: 700; color: #00d4ff; font-family: 'Space Grotesk',sans-serif; letter-spacing: -.5; }
+        .btn-group { display: flex; border: 1px solid #192840; border-radius: 5px; overflow: hidden; }
+        .btn-group button { padding: 6px 14px; background: transparent; border: none; border-right: 1px solid #192840; color: #4e6e8e; font-family: monospace; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .btn-group button:last-child { border-right: none; }
+        .btn-group button.active { color: #c0d8ef; background: rgba(0,212,255,.2); }
+
+        .sidebar { width: 220px; background: #070c18; border-right: 1px solid #192840; padding: 14px; height: calc(100vh - 77px); overflow-y: auto; }
+        .section-title { font-size: 10px; color: #4e6e8e; letter-spacing: 3; margin-bottom: 10px; }
+        .step-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 9px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; }
+        .step-item.active { background: var(--c)14; border: 1px solid var(--c)44; }
+        .step-item .num { width: 20px; height: 20px; border-radius: 50%; background: #192840; border: 2px solid #192840; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #4e6e8e; }
+        .step-item.active .num { background: var(--c); border-color: var(--c); color: #080d1a; box-shadow: 0 0 8px var(--c)55; }
+        .step-item .title { font-size: 11px; font-weight: 700; color: #4e6e8e; }
+        .step-item.active .title { color: var(--c); }
+        .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+
+        .main { flex: 1; overflow: auto; padding: 22; }
+        .phase-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .phase-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 7px var(--c); animation: pulse 2s infinite; }
+        .phase-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--c); }
+        .tag { display: inline-block; background: rgba(0,212,255,.2); border: 1px solid #00d4ff50; color: #00d4ff; border-radius: 3px; padding: 2px 8px; font-size: 11px; font-weight: 700; font-family: monospace; }
+
+        .tab-bar { display: flex; border: 1px solid #192840; border-radius: 5px; overflow: hidden; width: fit-content; margin-bottom: 16px; }
+        .tab-bar button { padding: 6px 13px; background: transparent; border: none; border-right: 1px solid #192840; color: #4e6e8e; font-family: monospace; font-size: 11px; cursor: pointer; }
+        .tab-bar button.active { background: rgba(0,212,255,.18); color: #00d4ff; font-weight: 700; }
+
+        .flow-viz { background: #060b16; border-radius: 8px; border: 1px solid #192840; padding: 14px 16px; }
+        .flow-header { display: flex; margin-bottom: 10px; }
+        .endpoint { width: 22%; display: flex; justify-content: flex-end; padding-right: 8px; }
+        .endpoint-label { background: #00d4ff18; border: 1px solid #00d4ff44; border-radius: 5px; padding: 4px 12px; font-family: monospace; font-size: 12px; font-weight: 700; color: #00d4ff; }
+        .endpoint.server { justify-content: flex-start; padding-left: 8px; padding-right: 0; }
+        .endpoint.server .endpoint-label { background: #ff6b3518; border-color: #ff6b3544; color: #ff6b35; }
+
+        .flow-body { position: relative; min-height: 240px; border-top: 1px dashed #192840; border-bottom: 1px dashed #192840; padding: 10px 0; }
+        .flow-vert { position: absolute; left: 22%; top: 0; bottom: 0; width: 1px; background: #00d4ff30; }
+        .flow-vert.server { left: 78%; background: #ff6b3530; }
+
+        .packet-row { position: relative; height: 38px; margin-bottom: 2px; }
+        .packet-line { position: absolute; top: 50%; transform: translateY(-50%); left: 22%; width: 56%; height: 1px; background: var(--pkt-color)22; }
+        .packet { position: absolute; left: 22%; top: 50%; transform: translateY(-50%); transition: left .5s cubic-bezier(.4,0,.2,1); background: var(--pkt-color)18; border: 1px solid var(--pkt-color)80; border-radius: 5px; padding: 3px 10px; font-size: 11px; font-family: monospace; color: var(--pkt-color); white-space: nowrap; box-shadow: 0 0 10px var(--pkt-color)30; z-index: 2; }
+        .packet .lbl { font-weight: 700; }
+        .packet .flg { color: #4e6e8e; margin-left: 5px; font-size: 10px; }
+        .packet .sz { color: #39ff14; margin-left: 5px; font-size: 9px; }
+        .packet .seq-info { position: absolute; left: 50%; transform: translateX(-50%); top: 22px; font-size: 9px; font-family: monospace; color: #4e6e8e; white-space: nowrap; }
+
+        .flow-legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+        .flow-legend-item { display: flex; align-items: center; gap: 5px; }
+        .flow-legend-item .dot { width: 8px; height: 8px; border-radius: 2px; }
+        .flow-legend-item .lbl { font-size: 10px; color: #4e6e8e; font-family: monospace; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+        .info-box { background: #0c1422; border: 1px solid var(--bc)30; border-radius: 7px; padding: 13px; }
+        .info-box .ttl { font-size: 11px; font-weight: 700; color: var(--bc); margin-bottom: 8px; }
+        .info-box .line { font-size: 10px; color: #4e6e8e; padding: 3px 0; border-bottom: 1px solid #19284025; font-family: monospace; }
+
+        .window-viz { background: #060b16; border: 1px solid #192840; border-radius: 8px; padding: 16px; }
+        .win-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .win-ctrl { display: flex; gap: 8px; }
+        .win-ctrl button { background: transparent; border: 1px solid #192840; color: #c0d8ef; border-radius: 4px; padding: 4px 12px; font-family: monospace; font-size: 11px; }
+        .win-segs { display: flex; height: 44px; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+        .win-seg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid; border-left: none; }
+        .win-seg:first-child { border-left: 1px solid; }
+        .win-seg .icn { font-size: 9px; font-weight: 700; }
+        .win-seg .idx { font-size: 8px; color: #4e6e8e; font-family: monospace; }
+        .win-bar { height: 16px; position: relative; }
+        .win-box { position: absolute; border: 2px solid #fbbf24; border-radius: 3px; height: 100%; background: rgba(251,191,36,.1); }
+        .win-box span { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #fbbf24; font-family: monospace; white-space: nowrap; }
+
+        .bit-grid { display: grid; grid-template-columns: repeat(32,1fr); gap: 1px; margin-bottom: 2px; }
+        .bit-fld { background: #19284018; border: 1px solid #19284040; border-radius: 3px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 38px; cursor: pointer; }
+        .bit-fld:hover { background: #00d4ff35; border-color: #00d4ffcc; transform: scaleY(1.06); box-shadow: 0 0 8px #00d4ff55; z-index: 2; }
+        .bit-fld .lbl { font-size: 9px; font-family: monospace; color: #c0d8ef; font-weight: 700; text-align: center; }
+        .bit-fld .bit { font-size: 8px; color: #4e6e8e; font-family: monospace; }
+        .bit-fld.hlt { background: #00d4ff35; border-color: #00d4ff; }
+
+        .layer-label { font-size: 10px; font-family: monospace; margin-bottom: 4px; }
+        .layer-label.ipv4 { color: #f472b6; }
+        .layer-label.ipv6 { color: #34d399; }
+        .layer-label.tcp { color: #a78bfa; }
+
+        .detail-panel { background: #060b16; border: 1px solid #00d4ff44; border-radius: 7px; padding: 14px 16px; }
+        .detail-hdr { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .detail-fld { font-size: 14px; font-weight: 700; color: #00d4ff; font-family: monospace; }
+        .detail-full { font-size: 11px; color: #4e6e8e; }
+        .detail-meta { margin-left: auto; display: flex; gap: 6px; }
+        .detail-tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: rgba(0,212,255,.2); border: 1px solid #00d4ff50; color: #00d4ff; font-family: monospace; font-weight: 700; }
+        .detail-desc { font-size: 11px; color: #c0d8ef; line-height: 1.8; margin-bottom: 10px; padding: 8px 12px; background: rgba(0,212,255,.08); border-radius: 5px; border-left: 3px solid #00d4ff; }
+
+        .empty-panel { background: #060b16; border: 1px solid #192840; border-radius: 7px; padding: 14px 16px; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+        .empty-content { text-align: center; color: #4e6e8e; font-size: 11px; font-family: monospace; }
+        .empty-emoji { font-size: 22px; margin-bottom: 6px; }
+
+        .compare-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
+        .compare-table th { padding: 7px 12px; text-align: left; border-bottom: 2px solid #192840; font-weight: 700; }
+        .compare-table .h1 { background: rgba(0,212,255,.15); color: #00d4ff; }
+        .compare-table .h2 { background: rgba(255,107,53,.15); color: #ff6b35; }
+        .compare-table td { padding: 6px 12px; border-bottom: 1px solid #19284040; }
+        .compare-table .hdr { background: #060b16; color: #4e6e8e; }
+
+        .seq-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
+        .seq-table th { padding: 6px 10px; color: #4e6e8e; text-align: left; border-bottom: 1px solid #192840; font-weight: 700; font-size: 10px; letter-spacing: 1; }
+        .seq-table td { padding: 6px 10px; border-bottom: 1px solid #19284030; }
+        .seq-table .seq { color: #00d4ff; }
+        .seq-table .ack { color: #ff6b35; }
+        .seq-table .note { color: #4e6e8e; font-size: 10px; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div style="font-size:10px;color:#4e6e8e;letter-spacing:3;margin-bottom:3">NETWORK PROTOCOL VISUALIZER</div>
+            <h1>HTTP 连接全过程图解</h1>
+        </div>
+        <div style="display:flex;gap:8px">
+            <div class="btn-group">
+                <button id="btnhttp1" class="active" onclick="setHttpVer(1)">HTTP/1.1</button>
+                <button id="btnhttp2" onclick="setHttpVer(2)">HTTP/2.0</button>
+            </div>
+            <div class="btn-group">
+                <button id="btnip4" class="active" onclick="setIpVer(4)">IPv4</button>
+                <button id="btnip6" onclick="setIpVer(6)">IPv6</button>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;">
+        <div class="sidebar" id="sidebar"></div>
+        <div class="main">
+            <div class="phase-header" id="phaseHeader"></div>
+            <div class="tab-bar" id="tabBar"></div>
+
+            <div id="flowPanel" class="panel active"></div>
+            <div id="seqtabPanel" class="panel"></div>
+            <div id="windowPanel" class="panel"></div>
+            <div id="formatPanel" class="panel"></div>
+            <div id="comparePanel" class="panel"></div>
+        </div>
+    </div>
+
+    <script>
+const C = {
+    bg: "#080d1a", panel: "#0c1422", border: "#192840",
+    accent: "#00d4ff", accent2: "#ff6b35", accent3: "#39ff14",
+    muted: "#3d5570", text: "#c0d8ef", dim: "#4e6e8e",
+    client: "#00d4ff", server: "#ff6b35",
+    tcp: "#a78bfa", tls: "#fbbf24", http: "#39ff14",
+    ipv4: "#f472b6", ipv6: "#34d399",
+    syn: "#a78bfa", ack: "#60a5fa", fin: "#fb923c", data: "#39ff14",
+    win: "#fbbf24",
+};
+
+const ISN_C = 1000, ISN_S = 5000;
+const REQ_BYTES = 400, RESP1 = 600, RESP2 = 600;
+const LPAD = 22, RPAD = 78;
+
+const STEPS = [
+    { id: 1, phase: "handshake", label: "建立连接 (TCP + TLS)", color: C.syn, desc: "TCP 三次握手 → TLS 握手。第三次 ACK 即可携带 HTTP 数据。" },
+    { id: 2, phase: "transfer", label: "数据传输（双向）", color: C.http, desc: "客户端/服务端各自维护独立序号空间。TCP 滑动窗口控制在途数据量。" },
+    { id: 3, phase: "close", label: "断开连接（四次挥手）", color: C.fin, desc: "支持半关闭：一方发 FIN 后仍可接收数据，直到另一方也发 FIN。" },
+];
+
+const FIELD_DB = {
+    "Ver=4": { full: "Version（版本号）", bits: 4, layer: "IPv4", desc: "标识 IP 协议版本。值固定为 4，表示 IPv4。" },
+    "IHL": { full: "Internet Header Length", bits: 4, layer: "IPv4", desc: "以 32 位字为单位的 IP 首部长度。最小值 5（20 字节）。" },
+    "DSCP": { full: "Differentiated Services Code Point", bits: 6, layer: "IPv4", desc: "QoS 优先级标记。" },
+    "ECN": { full: "Explicit Congestion Notification", bits: 2, layer: "IPv4", desc: "路由器检测到拥塞时通知端点。" },
+    "Total Length": { full: "Total Length", bits: 16, layer: "IPv4", desc: "整个 IP 数据报的长度。" },
+    "TTL": { full: "Time To Live", bits: 8, layer: "IPv4", desc: "报文最多经过的路由器跳数。" },
+    "Protocol": { full: "Protocol", bits: 8, layer: "IPv4", desc: "标识上层协议。值 6 = TCP。" },
+    "Header Checksum": { full: "Header Checksum", bits: 16, layer: "IPv4", desc: "IP 首部校验和。" },
+    "Source IP": { full: "Source IP Address", bits: 32, layer: "IPv4", desc: "发送方的 IPv4 地址。" },
+    "Destination IP": { full: "Destination IP Address", bits: 32, layer: "IPv4", desc: "接收方的 IPv4 地址。" },
+    "Source Port": { full: "Source Port", bits: 16, layer: "TCP", desc: "客户端随机选择的临时端口。" },
+    "Destination Port": { full: "Destination Port", bits: 16, layer: "TCP", desc: "服务端监听的端口号（80=HTTP）。" },
+    "Sequence Number": { full: "Sequence Number", bits: 32, layer: "TCP", desc: "标识本段数据中第一个字节的位置。" },
+    "Acknowledgment Number": { full: "Acknowledgment Number", bits: 32, layer: "TCP", desc: "期望对方下一个 seq 值。" },
+    "DO": { full: "Data Offset", bits: 4, layer: "TCP", desc: "以 32 位字为单位的 TCP 首部长度。" },
+    "Flags": { full: "TCP Flags", bits: 8, layer: "TCP", desc: "CWR,ECE,URG,ACK,PSH,RST,SYN,FIN。" },
+    "Window Size": { full: "Window Size", bits: 16, layer: "TCP", desc: "接收方当前可接收的字节数。" },
+    "Checksum": { full: "TCP Checksum", bits: 16, layer: "TCP", desc: "覆盖伪首部 + TCP 首部 + 数据的校验和。" },
+};
+
+let httpVer = "1";
+let ipVer = "4";
+let activeStep = 0;
+let activeTab = "flow";
+let windowStep = 0;
+let hoveredField = null;
+
+function setStep(i) {
+    activeStep = i;
+    render();
+}
+
+function setTab(btn) {
+    document.querySelectorAll(".tab-bar button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.getElementById(activeTab + "Panel").classList.add("active");
+}
+
+function setHttpVer(v) {
+    httpVer = v;
+    document.getElementById("btnhttp1").className = v === "1" ? "active" : "";
+    document.getElementById("btnhttp2").className = v === "2" ? "active" : "";
+    render();
+}
+
+function setIpVer(v) {
+    ipVer = v;
+    document.getElementById("btnip4").className = v === "4" ? "active" : "";
+    document.getElementById("btnip6").className = v === "6" ? "active" : "";
+    render();
+}
+
+function setWindowStep(i) {
+    windowStep = i;
+    renderWindow();
+}
+
+function render() {
+    const step = STEPS[activeStep];
+    
+    document.getElementById("phaseHeader").innerHTML = `
+        <div class="phase-dot" style="--c:${step.color}"></div>
+        <h2 class="phase-title" style="--c:${step.color}">Phase ${step.id}：${step.label}</h2>
+        <span class="tag">IPv${ipVer}</span>
+        <span class="tag">HTTP/${httpVer}${httpVer==="1"?".1":".0"}</span>
+    `;
+    
+    document.getElementById("tabBar").innerHTML = `
+        <button class="${activeTab==='flow'?'active':''}" onclick="setTab(this)" data-tab="flow">流程动画</button>
+        <button onclick="setTab(this)" data-tab="seqtab">序号详表</button>
+        <button onclick="setTab(this)" data-tab="window">滑动窗口</button>
+        <button onclick="setTab(this)" data-tab="format">报文格式</button>
+        <button onclick="setTab(this)" data-tab="compare">版本对比</button>
+    `;
+    
+    renderSidebar();
+    
+    if (activeTab === "flow") renderFlow();
+    else if (activeTab === "seqtab") renderSeqtab();
+    else if (activeTab === "window") renderWindow();
+    else if (activeTab === "format") renderFormat();
+    else if (activeTab === "compare") renderCompare();
+}
+
+function renderSidebar() {
+    document.getElementById("sidebar").innerHTML = `
+        <div class="section-title">PHASES</div>
+        ${STEPS.map((s, i) => `
+            <div class="step-item${i===activeStep?' active':''}" style="--c:${s.color}" onclick="setStep(${i})">
+                <div class="num">${s.id}</div>
+                <div>
+                    <div class="title">${s.label}</div>
+                    ${i===activeStep?`<div style="font-size:10px;color:#4e6e8e;margin-top:3">${s.desc}</div>`:""}
+                </div>
+            </div>
+        `).join("")}
+        <div style="margin-top:20px;border-top:1px solid #192840;padding-top:14px">
+            <div class="section-title">LEGEND</div>
+            ${[{color:C.syn,label:"SYN/握手"},{color:C.ack,label:"ACK/确认"},{color:C.http,label:"HTTP数据"},{color:C.fin,label:"FIN/断连"},{color:C.win,label:"窗口控制"}].map(l => `
+                <div class="legend-item">
+                    <div style="width:9px;height:9px;border-radius:2px;background:${l.color}"></div>
+                    <span style="font-size:10px;color:#4e6e8e">${l.label}</span>
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+function renderFlow() {
+    const phase = STEPS[activeStep].phase;
+    let packets = [];
+    
+    if (phase === "handshake") {
+        packets = [
+            {label:"SYN", from:"client", color:C.syn, seq:ISN_C, win:65535, flg:"SYN"},
+            {label:"SYN-ACK", from:"server", color:C.syn, seq:ISN_S, ack:ISN_C+1, flg:"SYN,ACK"},
+            {label:"ACK + HTTP", from:"client", color:C.http, seq:ISN_C+1, ack:ISN_S+1, flg:"ACK,PSH", sz:REQ_BYTES},
+            {label:"ACK", from:"server", color:C.ack, seq:ISN_S+1, ack:ISN_C+1+REQ_BYTES, flg:"ACK"},
+        ];
+    } else if (phase === "transfer") {
+        packets = [
+            {label:"← 200 OK", from:"server", color:C.http, seq:ISN_S+1, ack:ISN_C+1+REQ_BYTES, flg:"ACK,PSH", sz:RESP1},
+            {label:"ACK →", from:"client", color:C.ack, seq:ISN_C+1+REQ_BYTES, ack:ISN_S+1+RESP1, flg:"ACK"},
+            {label:"← 200 OK", from:"server", color:C.http, seq:ISN_S+1+RESP1, ack:ISN_C+1+REQ_BYTES, flg:"ACK,PSH", sz:RESP2},
+            {label:"ACK →", from:"client", color:C.ack, seq:ISN_C+1+REQ_BYTES, ack:ISN_S+1+RESP1+RESP2, flg:"ACK", win:131070},
+        ];
+    } else if (phase === "close") {
+        packets = [
+            {label:"FIN", from:"client", color:C.fin, seq:ISN_C+1+REQ_BYTES, ack:ISN_S+1+RESP1+RESP2, flg:"FIN,ACK"},
+            {label:"ACK", from:"server", color:C.ack, seq:ISN_S+1+RESP1+RESP2, ack:ISN_C+2+REQ_BYTES, flg:"ACK"},
+            {label:"FIN", from:"server", color:C.fin, seq:ISN_S+1+RESP1+RESP2, ack:ISN_C+2+REQ_BYTES, flg:"FIN,ACK"},
+            {label:"ACK", from:"client", color:C.ack, seq:ISN_C+2+REQ_BYTES, ack:ISN_S+2+RESP1+RESP2, flg:"ACK"},
+        ];
+    }
+    
+    const panel = document.getElementById("flowPanel");
+    panel.innerHTML = `
+        <div class="flow-viz">
+            <div class="flow-header">
+                <div class="endpoint"><div class="endpoint-label">CLIENT</div></div>
+                <div style="flex:1"></div>
+                <div class="endpoint server"><div class="endpoint-label">SERVER</div></div>
+            </div>
+            <div class="flow-body">
+                <div class="flow-vert"></div>
+                <div class="flow-vert server"></div>
+                ${packets.map((p, i) => `
+                    <div class="packet-row" id="pkt${i}">
+                        <div class="packet-line" style="--pkt-color:${p.color}"></div>
+                        <div class="packet" style="--pkt-color:${p.color};left:${p.from==="client"?LPAD:RPAD}%;opacity:0" id="pk${i}">
+                            <span class="lbl" style="${p.from==='server'?'transform:translateX(-100%)':''}">${p.from==='client'?p.label:'← '+p.label}</span>
+                            ${p.flg?`<span class="flg">[${p.flg}]</span>`:""}
+                            ${p.sz?`<span class="sz">+${p.sz}B</span>`:""}
+                            ${p.seq!==undefined?`<div class="seq-info">seq=${p.seq}${p.ack!==undefined?' ack='+p.ack:''}${p.win!==undefined?' win='+p.win:''}</div>`:""}
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+            <div class="flow-legend">
+                ${[{color:C.syn,label:"SYN/握手"},{color:C.ack,label:"ACK/确认"},{color:C.http,label:"HTTP数据"},{color:C.fin,label:"FIN/断连"},{color:C.win,label:"窗口控制"}].map(l => `
+                    <div class="flow-legend-item">
+                        <div class="dot" style="background:${l.color}"></div>
+                        <span class="lbl">${l.label}</span>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+    
+    if (phase === "handshake") {
+        panel.innerHTML += `
+            <div class="info-grid">
+                <div class="info-box" style="--bc:${C.syn}">
+                    <div class="ttl">TCP 三次握手（第3次可携带数据）</div>
+                    <div class="line">① SYN → seq=1000, win=65535</div>
+                    <div class="line">② ← SYN-ACK seq=5000, ack=1001</div>
+                    <div class="line">③ ACK+数据 → seq=1001, ack=5001, +400B</div>
+                </div>
+                <div class="info-box" style="--bc:${C.tls}">
+                    <div class="ttl">TLS 1.3 握手（1-RTT）</div>
+                    <div class="line">ClientHello</div>
+                    <div class="line">← ServerHello + Finished</div>
+                    <div class="line">Finished → (加密开始)</div>
+                </div>
+            </div>
+        `;
+    } else if (phase === "close") {
+        panel.innerHTML += `
+            <div class="info-grid">
+                <div class="info-box" style="--bc:${C.fin}">
+                    <div class="ttl">四次挥手：完全关闭双向连接</div>
+                    <div class="line">→ FIN (主动关闭方)</div>
+                    <div class="line">← ACK</div>
+                    <div class="line">← FIN (被动方关闭)</div>
+                    <div class="line">→ ACK [TIME_WAIT 2MSL]</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    packets.forEach((p, i) => {
+        const el = document.getElementById("pk" + i);
+        const endPos = p.from === "client" ? RPAD : LPAD;
+        setTimeout(() => {
+            el.style.left = endPos + "%";
+            el.style.opacity = "1";
+        }, 200 + i * 600);
+    });
+}
+
+function renderSeqtab() {
+    const phase = STEPS[activeStep].phase;
+    const rows = phase === "handshake" ? [
+        ["C→S","SYN","SYN",ISN_C,"-"],
+        ["S→C","SYN-ACK","SYN,ACK",ISN_S,ISN_C+1],
+        ["C→S","ACK+数据","ACK,PSH",ISN_C+1,ISN_S+1],
+        ["S→C","ACK","ACK",ISN_S+1,ISN_C+1+REQ_BYTES],
+    ] : phase === "transfer" ? [
+        ["S→C","数据chunk-1","ACK,PSH",ISN_S+1,ISN_C+1+REQ_BYTES],
+        ["C→S","ACK","ACK",ISN_C+1+REQ_BYTES,ISN_S+1+RESP1],
+        ["S→C","数据chunk-2","ACK,PSH",ISN_S+1+RESP1,ISN_C+1+REQ_BYTES],
+        ["C→S","ACK+窗口","ACK",ISN_C+1+REQ_BYTES,ISN_S+1+RESP1+RESP2],
+    ] : [
+        ["C→S","FIN","FIN,ACK",ISN_C+1+REQ_BYTES,ISN_S+1+RESP1+RESP2],
+        ["S→C","ACK","ACK",ISN_S+1+RESP1+RESP2,ISN_C+2+REQ_BYTES],
+        ["S→C","FIN","FIN,ACK",ISN_S+1+RESP1+RESP2,ISN_C+2+REQ_BYTES],
+        ["C→S","ACK","ACK",ISN_C+2+REQ_BYTES,ISN_S+2+RESP1+RESP2],
+    ];
+    
+    document.getElementById("seqtabPanel").innerHTML = `
+        <div style="margin-bottom:10px;font-size:11px;color:#4e6e8e">
+            客户端序号（<span style="color:#00d4ff">ISN=${ISN_C}</span>）与服务端序号（<span style="color:#ff6b35">ISN=${ISN_S}</span>）完全独立。
+        </div>
+        <div style="background:#0c1422;border:1px solid #192840;border-radius:8px;overflow:hidden">
+            <table class="seq-table">
+                <thead><tr><th>方向</th><th>报文</th><th>Flags</th><th>seq</th><th>ack</th><th>说明</th></tr></thead>
+                <tbody>
+                    ${rows.map(r => `
+                        <tr>
+                            <td style="font-weight:700">${r[0]}</td>
+                            <td>${r[1]}</td>
+                            <td>${r[2].split(",").map(f=>`<span style="margin-right:3px">${f}</span>`).join("")}</td>
+                            <td class="seq">${r[3]}</td>
+                            <td class="ack">${r[4]}</td>
+                            <td class="note">${r[5]||""}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderWindow() {
+    const states = [
+        {segs:[{l:"ACK'd",c:"#1f4a1f"},{l:"Send",c:C.http},{l:"Send",c:C.http},{l:"Send",c:C.http},{l:"Send",c:C.http},{l:"Blocked",c:C.muted},{l:"Blocked",c:C.muted},{l:"Blocked",c:C.muted}],win:[1,2,3,4]},
+        {segs:[{l:"ACK'd",c:"#1f4a1f"},{l:"In-flight",c:C.tls},{l:"In-flight",c:C.tls},{l:"In-flight",c:C.tls},{l:"In-flight",c:C.tls},{l:"Blocked",c:C.muted},{l:"Blocked",c:C.muted},{l:"Blocked",c:C.muted}],win:[1,2,3,4]},
+        {segs:[{l:"ACK'd",c:"#1f4a1f"},{l:"ACK'd",c:"#1f4a1f"},{l:"In-flight",c:C.tls},{l:"In-flight",c:C.tls},{l:"In-flight",c:C.tls},{l:"Send",c:C.http},{l:"Blocked",c:C.muted},{l:"Blocked",c:C.muted}],win:[2,3,4,5]},
+        {segs:[{l:"ACK'd",c:"#1f4a1f"},{l:"ACK'd",c:"#1f4a1f"},{l:"ACK'd",c:"#1f4a1f"},{l:"ACK'd",c:"#1f4a1f"},{l:"In-flight",c:C.tls},{l:"In-flight",c:C.tls},{l:"Send",c:C.http},{l:"Send",c:C.http}],win:[4,5,6,7]},
+    ];
+    const cur = states[windowStep];
+    const segW = 100/8;
+    
+    document.getElementById("windowPanel").innerHTML = `
+        <div style="margin-bottom:10px;font-size:11px;color:#4e6e8e">TCP 滑动窗口：发送方在未收到 ACK 的情况下，最多可以有4个段在途。</div>
+        <div class="window-viz">
+            <div class="win-header">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#00d4ff;font-family:monospace">${cur.segs[windowStep]?"":"初始状态"}</div>
+                    <div style="font-size:11px;color:#4e6e8e;margin-top:3">${windowStep===0?"窗口大小=4":windowStep===1?"已发送4个段，等待ACK":windowStep===2?"收到ACK，窗口滑动":"累计确认，窗口再滑动"}</div>
+                </div>
+                <div class="win-ctrl">
+                    <button onclick="setWindowStep(Math.max(0,windowStep-1))">◀</button>
+                    <span style="color:#4e6e8e;font-family:monospace;font-size:11px;align-self:center">${windowStep+1}/4</span>
+                    <button onclick="setWindowStep(Math.min(3,windowStep+1))">▶</button>
+                </div>
+            </div>
+            <div class="win-segs">
+                ${cur.segs.map(s => `<div style="flex:1;background:${s.c}${(s.l==="Blocked"?"18":"28")};border:1px solid ${s.c}50" class="win-seg"><span class="icn" style="color:${s.l==="Blocked"?C.muted:s.c}">${s.l==="ACK'd"?"✓":s.l==="In-flight"?"✈":s.l==="Send"?"→":"✗"}</span><span class="idx">s1</span></div>`).join("")}
+            </div>
+            <div class="win-bar">
+                <div class="win-box" style="left:${(cur.win[0]-1)*segW}%;width:${cur.win.length*segW}%"><span>← 发送窗口(${cur.win.length}) →</span></div>
+            </div>
+        </div>
+    `;
+}
+
+function renderFormat() {
+    const phase = STEPS[activeStep].phase;
+    
+    const bf = (l,b,c,hl) => `<div class="bit-fld ${hoveredField===l?'hlt':''}" style="background:${c}18;border-color:${c}40" onmouseenter="hoverField('${l}')" onmouseleave="hoverField(null)"><span class="lbl" style="color:${hoveredField===l?c:''}">${l}</span>${b?`<span class="bit">${b}b</span>`:""}</div>`;
+    
+    const ipBits = ipVer==="4"?[
+        ["Ver=4",4,C.ipv4],["IHL",4,C.ipv4],["DSCP",6,C.ipv4],["ECN",2,C.ipv4],["Total Length",16,C.ipv4],
+        ["Identification",16,C.ipv4],["Flags",3,C.ipv4],["Fragment Offset",13,C.ipv4],
+        ["TTL",8,C.ipv4],["Protocol",8,C.tcp],["Header Checksum",16,C.ipv4],
+        ["Source IP",32,C.ipv4],["Destination IP",32,C.ipv4],
+    ]:[
+        ["Ver=6",4,C.ipv6],["Traffic Class",8,C.ipv6],["Flow Label",20,C.ipv6],
+        ["Payload Length",16,C.ipv6],["Next Header",8,C.tcp],["Hop Limit",8,C.ipv6],
+        ["Source Address",32,C.ipv6],["Source Address",32,C.ipv6],["Source Address",32,C.ipv6],["Source Address",32,C.ipv6],
+        ["Destination Address",32,C.ipv6],["Destination Address",32,C.ipv6],["Destination Address",32,C.ipv6],["Destination Address",32,C.ipv6],
+    ];
+    
+    const tcpBits = [
+        ["Source Port",16,C.tcp],["Destination Port",16,C.tcp],
+        ["Sequence Number",32,C.accent],["Acknowledgment Number",32,C.accent2],
+        ["DO",4,C.tcp],["Rsv",3,C.dim],["NS",1,C.dim],
+        ["CWR",1,C.dim],["ECE",1,C.dim],["URG",1,C.dim],["ACK",1,phase==="handshake"||phase==="close"?C.ack:C.dim],["PSH",1,phase==="transfer"?C.http:C.dim],
+        ["RST",1,C.dim],["SYN",1,phase==="handshake"?C.syn:C.dim],["FIN",1,phase==="close"?C.fin:C.dim],["Window Size",16,C.win],
+        ["Checksum",16,C.tcp],["Urgent Pointer",16,C.dim],
+    ];
+    
+    let html = `<div class="layer-label ${ipVer==='4'?'ipv4':'ipv6'}">IPv${ipVer} 首部（${ipVer==='4'?'20':'40'} 字节固定）</div>`;
+    for (let i = 0; i < ipBits.length; i += 6) {
+        html += `<div class="bit-grid">${ipBits.slice(i, i + 6).map(b => bf(b[0], b[1], b[2])).join("")}</div>`;
+    }
+    if (ipVer === "4") {
+        for (let i = 6; i < ipBits.length; i += 4) {
+            html += `<div class="bit-grid">${ipBits.slice(i, i + 4).map(b => bf(b[0], b[1], b[2])).join("")}</div>`;
+        }
+    } else {
+        for (let i = 6; i < ipBits.length; i += 4) {
+            html += `<div class="bit-grid">${ipBits.slice(i, i + 4).map(b => bf(b[0], b[1], b[2])).join("")}</div>`;
+        }
+    }
+    
+    html += `<div class="layer-label tcp" style="margin-top:8px">TCP 首部（20 字节固定）</div>`;
+    for (let i = 0; i < tcpBits.length; i += 8) {
+        html += `<div class="bit-grid">${tcpBits.slice(i, i + 8).map(b => bf(b[0], b[1], b[2])).join("")}</div>`;
+    }
+    
+    let detailHtml = "";
+    if (hoveredField && FIELD_DB[hoveredField]) {
+        const info = FIELD_DB[hoveredField];
+        detailHtml = `
+            <div class="detail-panel" style="margin-top:14px">
+                <div class="detail-hdr">
+                    <span class="detail-fld">${hoveredField}</span>
+                    <span class="detail-full">${info.full}</span>
+                    <div class="detail-meta">
+                        <span class="detail-tag">${info.layer}</span>
+                        ${info.bits?`<span class="detail-tag">${info.bits}bit</span>`:""}
+                    </div>
+                </div>
+                <div class="detail-desc">${info.desc}</div>
+            </div>
+        `;
+    } else {
+        detailHtml = `
+            <div class="empty-panel" style="margin-top:14px">
+                <div class="empty-content">
+                    <div class="empty-emoji">☝</div>
+                    悬浮或点击字段查看详情
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById("formatPanel").innerHTML = `
+        <div style="margin-bottom:10px;font-size:11px;color:#4e6e8e">每格 = 1 bit，悬停查看字段说明。</div>
+        <div style="background:#0c1422;border:1px solid #192840;border-radius:8px;padding:14px">
+            ${html}
+            ${detailHtml}
+        </div>
+    `;
+}
+
+function hoverField(l) {
+    hoveredField = l;
+    renderFormat();
+}
+
+function renderCompare() {
+    const rows = [
+        ["特性","HTTP/1.1","HTTP/2"],
+        ["连接复用","keep-alive顺序","多路复用"],
+        ["头部格式","明文重复","HPACK压缩"],
+        ["HOL阻塞","存在","无"],
+        ["Server Push","❌","✅"],
+        ["TLS","可选","必须"],
+    ];
+    
+    document.getElementById("comparePanel").innerHTML = `
+        <div style="background:#0c1422;border:1px solid #192840;border-radius:8px;overflow:hidden;margin-bottom:14px">
+            <table class="compare-table">
+                <thead><tr>${rows[0].map((h,i)=>`<th class="${i===1?'h1':i===2?'h2':''}">${h}</th>`).join("")}</tr></thead>
+                <tbody>${rows.slice(1).map(r=>`<tr>${r.map((c,i)=>`<td class="${i===0?'hdr':''}">${c}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+render();
+    </script>
+</body>
+</html>
