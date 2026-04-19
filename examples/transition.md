@@ -18,6 +18,13 @@ JSX 源码（不变）
 | 导出声明 | `export default function App()` | 改为普通 `function App()` |
 | 挂载入口 | 无（由框架处理） | 添加 `ReactDOM.createRoot(...).render(<App />)` |
 
+**额外注意事项：**
+
+- 如果 JSX 使用 Tailwind CSS 类（如 `min-h-screen`, `flex`, `grid`, `px-6` 等），必须引入 Tailwind CDN：
+  ```html
+  <script src="https://cdn.tailwindcss.com"></script>
+  ```
+
 ---
 
 ## 通用 JSX → HTML 转换规则

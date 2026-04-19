@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
+
 <body>
   <div id="root"></div>
   <script type="text/babel" data-presets="react">
@@ -173,13 +175,15 @@
                         <circle cx={cx} cy={PLANET_Y} r={cr} fill={b.color} />
                         <text x={cx} y={PLANET_Y + cr + 16} textAnchor="middle" fontSize={12} fill="#aaa">{b.name}{b.type === "dw" ? " ✦" : ""}</text>
                       </g>
-                      {b.moons.map((m, i) => { const mx = cx + (i - (b.moons.length - 1) / 2) * moonSpacing; const mr = Math.max(2, Math.min(5, m.rkm / 500)); const moonInfo = `${b.name}的卫星，半径约 ${m.rkm.toLocaleString()} km，距${b.name}约 ${m.dist.toLocaleString()} km。`; return (
-                        <g key={m.name} style={{ cursor: "pointer" }} onMouseEnter={e => showTip(e, m.name, moonInfo)} onMouseMove={e => setTooltipPos({ x: e.clientX, y: e.clientY })} onMouseLeave={hideTip} onClick={e => showTip(e, m.name, moonInfo)}>
-                          <circle cx={mx} cy={moonY} r={mr + 5} fill="transparent" />
-                          <circle cx={mx} cy={moonY} r={mr} fill={m.color} />
-                          <text x={mx} y={moonY - mr - 4} textAnchor="middle" fontSize={9} fill="#777">{m.name}</text>
-                        </g>
-                      ); })}
+                      {b.moons.map((m, i) => {
+                        const mx = cx + (i - (b.moons.length - 1) / 2) * moonSpacing; const mr = Math.max(2, Math.min(5, m.rkm / 500)); const moonInfo = `${b.name}的卫星，半径约 ${m.rkm.toLocaleString()} km，距${b.name}约 ${m.dist.toLocaleString()} km。`; return (
+                          <g key={m.name} style={{ cursor: "pointer" }} onMouseEnter={e => showTip(e, m.name, moonInfo)} onMouseMove={e => setTooltipPos({ x: e.clientX, y: e.clientY })} onMouseLeave={hideTip} onClick={e => showTip(e, m.name, moonInfo)}>
+                            <circle cx={mx} cy={moonY} r={mr + 5} fill="transparent" />
+                            <circle cx={mx} cy={moonY} r={mr} fill={m.color} />
+                            <text x={mx} y={moonY - mr - 4} textAnchor="middle" fontSize={9} fill="#777">{m.name}</text>
+                          </g>
+                        );
+                      })}
                     </g>
                   );
                 })}
@@ -209,4 +213,5 @@
     ReactDOM.createRoot(document.getElementById("root")).render(<SolarSystem />);
   </script>
 </body>
+
 </html>
