@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>光速考 · 地质田野手记</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Liu+Jian+Mao+Cao&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=IM+Fell+DW+Pica:ital@0;1&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root{
+  --paper:#e4d6b8;
+  --paper-hi:#ede0c4;
+  --paper-lo:#c9b893;
+  --paper-edge:#a89772;
+  --ink:#3b2a18;
+  --ink-soft:#5a4530;
+  --rust:#8a3726;
+  --rust-deep:#5e2317;
+  --pencil:#594f42;
+  --ochre:#b47a24;
+  --ochre-light:#d9a757;
+  --moss:#6a7238;
+  --iron:#412816;
+  --teal:#4a6769;
+  --grid:rgba(80,60,38,.10);
+  --grid-mini:rgba(80,60,38,.05);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);}
+body{
+  font-family:'Noto Serif SC', serif;
+  font-weight:400;
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(138,55,38,.05), transparent 40%),
+    radial-gradient(ellipse at 88% 22%, rgba(106,114,56,.05), transparent 40%),
+    radial-gradient(ellipse at 55% 65%, rgba(180,122,36,.06), transparent 45%),
+    linear-gradient(var(--paper-hi), var(--paper) 40%, var(--paper-lo));
+  background-attachment: fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Paper grain overlay on body */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.26  0 0 0 0 0.18  0 0 0 0 0.10  0 0 0 0.25 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity:.35;
+  mix-blend-mode:multiply;
+  z-index:1;
+}
+/* Vignette */
+body::after{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(55,35,18,.25) 100%);
+  z-index:2;
+}
+
+.hand{font-family:'Ma Shan Zheng', cursive; font-weight:400; letter-spacing:.02em;}
+.brush{font-family:'Liu Jian Mao Cao', cursive; font-weight:400;}
+.display{font-family:'ZCOOL XiaoWei', serif; font-weight:400;}
+.type{font-family:'Special Elite', monospace;}
+.old{font-family:'IM Fell English', serif;}
+.oldd{font-family:'IM Fell DW Pica', serif;}
+
+/* Paper texture: used on individual notebook leaves */
+.leaf{
+  position:relative;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(65,40,22,.04) 0%, transparent 35%),
+    radial-gradient(circle at 82% 78%, rgba(180,122,36,.05) 0%, transparent 40%),
+    linear-gradient(var(--paper-hi), var(--paper) 50%, #dbcba2);
+  box-shadow:
+    0 1px 0 rgba(255,240,210,.5) inset,
+    0 -1px 0 rgba(110,80,45,.15) inset,
+    0 1px 2px rgba(55,35,18,.10),
+    0 8px 16px rgba(55,35,18,.12),
+    0 24px 60px -20px rgba(55,35,18,.25);
+  border-radius:2px;
+}
+.leaf::before{
+  content:"";
+  position:absolute; inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.30  0 0 0 0 0.22  0 0 0 0 0.12  0 0 0 0.30 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  opacity:.45; mix-blend-mode:multiply;
+  pointer-events:none;
+  border-radius:inherit;
+}
+/* Coffee/ink stain overlay placed per-page via inline style */
+.stain{
+  position:absolute;
+  pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(107,55,25,.18) 0%, rgba(107,55,25,.10) 40%, rgba(107,55,25,.04) 70%, transparent 100%);
+  mix-blend-mode:multiply;
+}
+
+/* Grid lines – field notebook graph paper */
+.grid-lines{
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(var(--grid-mini) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-mini) 1px, transparent 1px);
+  background-size: 88px 88px, 88px 88px, 22px 22px, 22px 22px;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+}
+.dot-grid{
+  background-image: radial-gradient(var(--grid) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
+/* Washi tape */
+.tape{
+  position:absolute;
+  width:130px; height:34px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(180,122,36,.42) 0 10px,
+      rgba(215,165,80,.42) 10px 22px),
+    linear-gradient(rgba(255,240,210,.4), rgba(255,240,210,.4));
+  box-shadow: 0 3px 8px rgba(55,35,18,.2), inset 0 0 0 1px rgba(255,245,220,.25);
+  border-left: 1px dashed rgba(0,0,0,.10);
+  border-right: 1px dashed rgba(0,0,0,.10);
+  mix-blend-mode:multiply;
+}
+.tape.teal{
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(74,103,105,.45) 0 10px,
+      rgba(115,150,150,.40) 10px 22px);
+}
+.tape.rust{
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(138,55,38,.42) 0 10px,
+      rgba(180,90,70,.40) 10px 22px);
+}
+
+/* Torn paper corner (for pinned specimens/photos) */
+.specimen{
+  position:relative;
+  background: linear-gradient(#efe0be, #d8c39c);
+  box-shadow:
+    0 1px 0 rgba(255,240,210,.6) inset,
+    0 -1px 0 rgba(110,80,45,.25) inset,
+    0 6px 14px rgba(55,35,18,.2);
+  padding:10px;
+}
+.specimen::after{
+  content:"";
+  position:absolute; inset:0;
+  pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.12 0 0 0 0 0.06 0 0 0 0.25 0'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>");
+  opacity:.4; mix-blend-mode:multiply;
+}
+
+/* Stamp look */
+.stamp{
+  display:inline-block;
+  padding:6px 14px 5px;
+  border:2.5px solid var(--rust);
+  color:var(--rust);
+  font-family:'Special Elite', monospace;
+  letter-spacing:.15em;
+  transform:rotate(-3deg);
+  position:relative;
+  background:rgba(138,55,38,.04);
+  text-transform:uppercase;
+}
+.stamp::before{
+  content:"";
+  position:absolute; inset:-3px;
+  border:2.5px solid var(--rust);
+  opacity:.35;
+  transform:translate(1px,1px) rotate(.5deg);
+  pointer-events:none;
+}
+.stamp.ochre{ color:var(--ochre); border-color:var(--ochre); background:rgba(180,122,36,.06);}
+.stamp.ochre::before{ border-color:var(--ochre);}
+.stamp.moss{ color:var(--moss); border-color:var(--moss); background:rgba(106,114,56,.06);}
+.stamp.moss::before{ border-color:var(--moss);}
+
+/* Circular seal */
+.seal{
+  width:92px; height:92px; border-radius:50%;
+  border:2.5px solid var(--rust);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--rust);
+  position:relative;
+  font-family:'ZCOOL XiaoWei', serif;
+  background:rgba(138,55,38,.04);
+  box-shadow:inset 0 0 0 4px var(--paper-hi), inset 0 0 0 6px var(--rust);
+}
+
+/* Red underline like pen-corrected */
+.underline-rust{
+  background-image: linear-gradient(transparent 88%, rgba(138,55,38,.55) 0);
+  background-repeat:no-repeat;
+  background-size:100% 100%;
+}
+.underline-wavy{
+  text-decoration: underline wavy var(--rust);
+  text-underline-offset: 4px;
+}
+
+/* Margin annotation style */
+.margin{
+  color:var(--rust);
+  font-family:'Ma Shan Zheng', cursive;
+  line-height:1.5;
+}
+
+/* Drop cap for first paragraph of each leaf */
+.dropcap::first-letter{
+  font-family:'ZCOOL XiaoWei', serif;
+  font-size: 3.8em;
+  float:left;
+  line-height:.88;
+  padding:.04em .12em 0 0;
+  color:var(--rust-deep);
+  text-shadow: 1px 1px 0 rgba(0,0,0,.08);
+}
+
+/* Pencil sketch style lines */
+.sketch-line{
+  stroke:var(--ink);
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  fill:none;
+}
+.sketch-rust{ stroke:var(--rust); }
+.sketch-pencil{ stroke:var(--pencil); }
+.sketch-ochre{ stroke:var(--ochre); }
+.sketch-moss{ stroke:var(--moss); }
+
+/* Roughen filter for sketched look */
+.rough{ filter:url(#roughen); }
+.rough-soft{ filter:url(#roughen-soft); }
+
+/* Animations */
+@keyframes driftIn{
+  from{opacity:0; transform:translateY(18px) rotate(var(--r,0deg));}
+  to{opacity:1; transform:translateY(0) rotate(var(--r,0deg));}
+}
+.drift{animation:driftIn .9s ease-out both;}
+
+@keyframes slowSpin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+.spin-slow{animation:slowSpin 14s linear infinite;}
+.spin-fast{animation:slowSpin 3s linear infinite;}
+
+@keyframes lightPulse{
+  0%,100%{opacity:.6;}
+  50%{opacity:1;}
+}
+.pulse{animation:lightPulse 2.4s ease-in-out infinite;}
+
+@keyframes rayTravel{
+  0%{stroke-dashoffset:800; opacity:.2;}
+  30%{opacity:1;}
+  100%{stroke-dashoffset:0; opacity:1;}
+}
+.ray{
+  stroke-dasharray:800;
+  animation:rayTravel 3s ease-in-out infinite;
+}
+
+/* Side stratigraphic column */
+.strat-nav{
+  position:fixed;
+  left: 18px;
+  top: 50%;
+  transform:translateY(-50%);
+  z-index: 40;
+  display:flex;
+  flex-direction:column;
+  gap: 0;
+  width: 62px;
+  background: linear-gradient(#efe0be, #d8c39c);
+  border: 1px solid rgba(80,60,38,.3);
+  box-shadow: 0 6px 14px rgba(55,35,18,.2);
+  padding: 4px 2px;
+}
+.strat-nav .item{
+  height: 38px;
+  border-bottom: 1px dashed rgba(80,60,38,.3);
+  padding: 4px 6px 2px;
+  font-family:'Special Elite', monospace;
+  font-size: 9px;
+  color: var(--ink-soft);
+  cursor:pointer;
+  position:relative;
+  transition: background .2s;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.strat-nav .item:last-child{border-bottom:none;}
+.strat-nav .item:hover{ background: rgba(180,122,36,.15); }
+.strat-nav .item.active{ background: rgba(138,55,38,.12); color: var(--rust-deep);}
+.strat-nav .item .yr{font-size:10px; font-weight:bold;}
+.strat-nav .item .lbl{font-size:8px; opacity:.8; font-family:'Ma Shan Zheng', cursive;}
+
+/* Stratigraphic pattern blocks (left strip) */
+.strat-pat{
+  width: 10px;
+  position:absolute; left:0; top:0; bottom:0;
+}
+.pat-1{background: repeating-linear-gradient(0deg, #8a7354 0 3px, #6b583d 3px 6px);}
+.pat-2{background: repeating-linear-gradient(0deg, #a08866 0 2px, #7d6748 2px 4px);}
+.pat-3{background: repeating-linear-gradient(45deg, #9a8055 0 4px, #7c6741 4px 8px);}
+.pat-4{background: radial-gradient(circle at 50% 30%, #8a5a2e 2px, transparent 3px) 0 0/10px 10px, #6d4823;}
+.pat-5{background: repeating-linear-gradient(90deg, #736142 0 3px, #584a33 3px 6px);}
+.pat-6{background: repeating-linear-gradient(-45deg, #5f5037 0 4px, #443923 4px 8px);}
+.pat-7{background: repeating-linear-gradient(0deg, #4a6769 0 2px, #35494b 2px 5px);}
+.pat-8{background: repeating-linear-gradient(0deg, #2f4a2e 0 2px, #1f3421 2px 4px);}
+.pat-9{background: radial-gradient(circle at 50% 30%, #3a2818 2px, transparent 3px) 0 0/8px 8px, #5a3c1f;}
+.pat-10{background: linear-gradient(0deg, #141414, #2a2a2a);}
+.pat-11{background: repeating-linear-gradient(0deg, #c2b083 0 3px, #a59064 3px 6px);}
+
+/* Horizontal rule like a chapter divider */
+.rule-orn{
+  display:flex; align-items:center; gap:14px; color:var(--ink-soft);
+}
+.rule-orn::before,.rule-orn::after{
+  content:""; flex:1; height:1px;
+  background: linear-gradient(90deg, transparent, var(--ink-soft), transparent);
+}
+
+/* Compass rose */
+.compass-mini{
+  width: 74px; height: 74px;
+  position:relative;
+}
+
+/* Old-style page numbers */
+.folio{
+  font-family:'IM Fell English', serif;
+  font-variant-numeric: oldstyle-nums;
+  letter-spacing:.1em;
+  color:var(--ink-soft);
+}
+
+/* Responsive guard */
+@media (max-width: 900px){
+  .strat-nav{ left: 4px; width: 48px;}
+  .strat-nav .item{ font-size:8px;}
+  .strat-nav .item .lbl{ font-size:7px;}
+}
+
+/* Scroll cue */
+.scroll-cue{
+  position:absolute;
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%);
+  color: var(--ink-soft);
+  font-family:'Ma Shan Zheng', cursive;
+  animation: bob 2.2s ease-in-out infinite;
+}
+@keyframes bob{
+  0%,100%{transform:translate(-50%,0);}
+  50%{transform:translate(-50%,8px);}
+}
+
+/* Content styling helpers */
+.leaf h2{
+  font-family:'ZCOOL XiaoWei', serif;
+  color:var(--ink);
+  font-size: clamp(28px, 3.6vw, 46px);
+  line-height:1.1;
+  margin: 0;
+}
+.leaf h3{
+  font-family:'Ma Shan Zheng', cursive;
+  color:var(--ink-soft);
+  font-size: 20px;
+  margin: 0;
+}
+.leaf p{
+  line-height: 1.95;
+  font-size: 16px;
+  color: var(--ink);
+  text-align: justify;
+  letter-spacing: .015em;
+}
+
+/* Numeric emphasis */
+.num{
+  font-family:'IM Fell English', serif;
+  color: var(--rust-deep);
+  font-weight: 500;
+}
+
+/* Card label for specimens */
+.samp-label{
+  font-family:'Special Elite', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: .08em;
+  line-height: 1.5;
+}
+
+/* Rough pen stroke for decorative signatures */
+.sig{
+  font-family:'Liu Jian Mao Cao', cursive;
+  color: var(--iron);
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* Flicker for the final numeric c */
+@keyframes cTick{
+  0%,94%{opacity:1;}
+  95%{opacity:.55;}
+  100%{opacity:1;}
+}
+.ctick{ animation: cTick 3.8s steps(1) infinite; }
+
+/* Hover lift for interactive sketches */
+.lift{ transition: transform .35s ease, filter .35s ease; }
+.lift:hover{ transform: translateY(-3px) rotate(-.3deg); filter: brightness(1.02); }
+
+/* Rolling hill diagram bg */
+.parch{
+  background:
+    radial-gradient(ellipse at center, rgba(255,240,210,.3), transparent 70%),
+    linear-gradient(#e9d9b4,#d4bf8c);
+  border: 1px solid rgba(80,60,38,.25);
+  box-shadow: inset 0 0 40px rgba(100,70,30,.12);
+}
+
+/* Vertical measuring ruler edge */
+.ruler{
+  position:absolute;
+  right: -2px; top: 30px; bottom: 30px;
+  width: 14px;
+  background:
+    linear-gradient(rgba(80,60,38,.25), rgba(80,60,38,.25)) left/1px 100% no-repeat,
+    repeating-linear-gradient(0deg,
+      transparent 0 18px,
+      rgba(80,60,38,.35) 18px 19px,
+      transparent 19px 36px,
+      rgba(80,60,38,.35) 36px 37px);
+  font-family:'Special Elite', monospace;
+  font-size:7px; color: var(--ink-soft);
+  pointer-events:none;
+}
+
+.hairline{border-top:1px solid rgba(80,60,38,.28);}
+</style>
+</head>
+<body>
+
+<!-- Global SVG filters -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="roughen">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2"/>
+    </filter>
+    <filter id="roughen-soft">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="5" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.3"/>
+    </filter>
+    <filter id="inkbleed">
+      <feGaussianBlur stdDeviation="0.35"/>
+    </filter>
+  </defs>
+</svg>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// --------- STRATA DATA ---------
+const strata = [
+  { id: "cover",    yr: "序",    lbl: "扉",     pat: "pat-11", depth: "—"},
+  { id: "s1-ancient", yr:"-450",  lbl: "臆",     pat: "pat-1",  depth: "I"},
+  { id: "s2-alhazen", yr:"1021",  lbl: "光",     pat: "pat-2",  depth: "II"},
+  { id: "s3-galileo", yr:"1638",  lbl: "灯",     pat: "pat-3",  depth: "III"},
+  { id: "s4-romer",   yr:"1676",  lbl: "木",     pat: "pat-4",  depth: "IV"},
+  { id: "s5-bradley", yr:"1729",  lbl: "星",     pat: "pat-5",  depth: "V"},
+  { id: "s6-fizeau",  yr:"1849",  lbl: "齿",     pat: "pat-6",  depth: "VI"},
+  { id: "s7-foucault",yr:"1862",  lbl: "镜",     pat: "pat-7",  depth: "VII"},
+  { id: "s8-mm",      yr:"1887",  lbl: "涉",     pat: "pat-8",  depth: "VIII"},
+  { id: "s9-einstein",yr:"1905",  lbl: "洛",     pat: "pat-9",  depth: "IX"},
+  { id: "s10-modern", yr:"1983",  lbl: "定",     pat: "pat-10", depth: "X"},
+  { id: "colophon",   yr: "跋",   lbl: "跋",     pat: "pat-11", depth: "—"},
+];
+
+// --------- NAV ---------
+function StratNav({active, onJump}){
+  return (
+    <div className="strat-nav" style={{zIndex:50}}>
+      <div style={{fontFamily:"'IM Fell English',serif", fontSize:9, textAlign:"center", color:"var(--ink-soft)", padding:"4px 0 4px", borderBottom:"1px dashed rgba(80,60,38,.3)", letterSpacing:".1em"}}>
+        STRATA
+      </div>
+      {strata.map((s,i)=>(
+        <div key={s.id}
+             className={"item " + (active===i?"active":"")}
+             onClick={()=>onJump(s.id)}
+             title={s.yr}>
+          <div className={"strat-pat " + s.pat}></div>
+          <div style={{paddingLeft:12}}>
+            <div className="yr">{s.yr}</div>
+            <div className="lbl">{s.lbl}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// --------- DECORATIVE ---------
+function CompassMini({size=74}){
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size}>
+      <circle cx="50" cy="50" r="44" fill="none" stroke="var(--ink-soft)" strokeWidth="1"/>
+      <circle cx="50" cy="50" r="38" fill="none" stroke="var(--ink-soft)" strokeWidth=".6" strokeDasharray="2 3"/>
+      <g stroke="var(--ink-soft)" strokeWidth=".6">
+        {[0,30,60,90,120,150,180,210,240,270,300,330].map(a=>{
+          const x1=50+Math.cos(a*Math.PI/180)*38;
+          const y1=50+Math.sin(a*Math.PI/180)*38;
+          const x2=50+Math.cos(a*Math.PI/180)*44;
+          const y2=50+Math.sin(a*Math.PI/180)*44;
+          return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2}/>;
+        })}
+      </g>
+      <polygon points="50,10 54,50 50,46 46,50" fill="var(--rust)" stroke="var(--rust-deep)" strokeWidth=".5"/>
+      <polygon points="50,90 54,50 50,54 46,50" fill="var(--ink-soft)" stroke="var(--ink)" strokeWidth=".5" opacity=".7"/>
+      <text x="50" y="8" fontFamily="IM Fell English" fontSize="9" textAnchor="middle" fill="var(--rust-deep)">N</text>
+      <text x="50" y="98" fontFamily="IM Fell English" fontSize="9" textAnchor="middle" fill="var(--ink-soft)">S</text>
+      <text x="94" y="53" fontFamily="IM Fell English" fontSize="9" textAnchor="middle" fill="var(--ink-soft)">E</text>
+      <text x="6" y="53" fontFamily="IM Fell English" fontSize="9" textAnchor="middle" fill="var(--ink-soft)">W</text>
+      <circle cx="50" cy="50" r="2" fill="var(--ink)"/>
+    </svg>
+  );
+}
+
+function OrnamentalDivider(){
+  return (
+    <svg viewBox="0 0 300 20" width="220" height="18" style={{display:"block", margin:"0 auto"}}>
+      <g stroke="var(--ink-soft)" strokeWidth="1" fill="none">
+        <path d="M10 10 L130 10"/>
+        <path d="M170 10 L290 10"/>
+        <circle cx="150" cy="10" r="4"/>
+        <circle cx="150" cy="10" r="1.2" fill="var(--rust)"/>
+        <path d="M132 10 q6 -6 12 0 q-6 6 -12 0 z" fill="var(--ink-soft)" opacity=".8"/>
+        <path d="M168 10 q-6 -6 -12 0 q6 6 12 0 z" fill="var(--ink-soft)" opacity=".8"/>
+      </g>
+    </svg>
+  );
+}
+
+// Tape placed relative to a parent
+function Tape({style, cls=""}){
+  return <div className={"tape " + cls} style={style}/>;
+}
+
+// Pinhole pins
+function Pin({x,y,color="var(--rust)"}){
+  return (
+    <svg style={{position:"absolute", left:x, top:y, pointerEvents:"none"}} width="18" height="18" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="5" fill={color} stroke="var(--rust-deep)" strokeWidth=".7"/>
+      <circle cx="8" cy="8" r="1.5" fill="rgba(255,230,200,.6)"/>
+    </svg>
+  );
+}
+
+// Page header (leaf header)
+function LeafHeader({sampleNo, date, location, bearing, stratum}){
+  return (
+    <div className="flex items-start justify-between pb-3 mb-6 hairline" style={{fontFamily:"'Special Elite', monospace", fontSize:12, color:"var(--ink-soft)"}}>
+      <div>
+        <div>SAMPLE № <span style={{color:"var(--rust-deep)", fontWeight:"bold"}}>{sampleNo}</span></div>
+        <div>STRATUM · {stratum}</div>
+      </div>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontFamily:"'IM Fell English', serif", fontStyle:"italic", fontSize:13}}>— notebook of c —</div>
+        <div>{location}</div>
+      </div>
+      <div style={{textAlign:"right"}}>
+        <div>DATE · {date}</div>
+        <div>BEARING · {bearing}</div>
+      </div>
+    </div>
+  );
+}
+
+// Page footer with folio number
+function LeafFooter({n, total, motto}){
+  return (
+    <div className="flex items-end justify-between pt-5 mt-10 hairline">
+      <div className="folio" style={{fontSize:13}}>
+        folio · {n.toString().padStart(2,"0")} / {total.toString().padStart(2,"0")}
+      </div>
+      <div style={{fontFamily:"'Liu Jian Mao Cao',cursive", color:"var(--ink-soft)", fontSize:18, opacity:.7}}>
+        {motto}
+      </div>
+      <div style={{fontFamily:"'IM Fell English',serif", fontStyle:"italic", color:"var(--ink-soft)", fontSize:12}}>
+        velocitas lucis
+      </div>
+    </div>
+  );
+}
+
+// ====== COVER ======
+function Cover(){
+  return (
+    <section id="cover" style={{minHeight:"100vh", position:"relative", display:"flex", alignItems:"center", justifyContent:"center", padding:"80px 40px"}}>
+      <div className="relative" style={{width:"min(760px, 92vw)"}}>
+        <div className="leaf drift" style={{padding:"72px 56px 60px", position:"relative", "--r":"-.6deg", transform:"rotate(-.6deg)"}}>
+          {/* Grid underlay */}
+          <div className="dot-grid" style={{position:"absolute", inset:"18px", opacity:.55, pointerEvents:"none"}}/>
+          {/* Ink stain */}
+          <div className="stain" style={{width:180, height:140, top:-40, right:-20, opacity:.8, transform:"rotate(12deg)"}}/>
+          <div className="stain" style={{width:90, height:70, bottom:60, left:30, opacity:.6}}/>
+          {/* Tape */}
+          <Tape style={{top:-14, left:"8%", transform:"rotate(-4deg)"}}/>
+          <Tape cls="rust" style={{top:-14, right:"10%", transform:"rotate(3deg)", width:150}}/>
+          <Tape cls="teal" style={{bottom:-14, left:"38%", transform:"rotate(2deg)"}}/>
+
+          <div className="relative" style={{textAlign:"center"}}>
+            <div style={{fontFamily:"'Special Elite',monospace", letterSpacing:".4em", color:"var(--ink-soft)", fontSize:12}}>
+              FIELD  NOTEBOOK  ·  VOL. I
+            </div>
+            <div style={{height:18}}/>
+            <div className="oldd" style={{fontStyle:"italic", color:"var(--ink-soft)", letterSpacing:".1em", fontSize:18}}>
+              De Velocitate Lucis
+            </div>
+            <div style={{height:22}}/>
+
+            <h1 className="display" style={{fontSize:"clamp(56px, 10vw, 112px)", margin:0, lineHeight:.95, color:"var(--ink)", letterSpacing:".06em"}}>
+              光&nbsp;速&nbsp;考
+            </h1>
+            <div style={{height:10}}/>
+            <div className="brush" style={{fontSize:28, color:"var(--rust-deep)"}}>
+              人类测量光速之田野手记
+            </div>
+            <div style={{height:28}}/>
+
+            {/* Decorative centerpiece: light ray + crystal */}
+            <div style={{display:"flex", justifyContent:"center"}}>
+              <svg viewBox="0 0 420 180" width="420" height="180" style={{maxWidth:"90%"}}>
+                {/* grid baseline */}
+                <g stroke="var(--grid)" strokeWidth=".6">
+                  <line x1="40" y1="120" x2="380" y2="120"/>
+                  <line x1="210" y1="30" x2="210" y2="150"/>
+                </g>
+                {/* light ray from left */}
+                <g className="rough-soft">
+                  <line x1="40" y1="80" x2="190" y2="80" stroke="var(--ochre)" strokeWidth="1.4" strokeDasharray="4 3"/>
+                  <polygon points="188,77 196,80 188,83" fill="var(--ochre)"/>
+                </g>
+                {/* prism (crystal) */}
+                <g className="rough-soft">
+                  <polygon points="210,36 246,118 174,118" fill="rgba(74,103,105,.08)" stroke="var(--ink)" strokeWidth="1.2"/>
+                  <polygon points="210,36 246,118 174,118" fill="none" stroke="var(--ink-soft)" strokeWidth=".5" strokeDasharray="2 3"/>
+                </g>
+                {/* dispersed rays */}
+                <g className="rough-soft">
+                  <line x1="230" y1="98" x2="380" y2="64" stroke="var(--rust)" strokeWidth="1.4"/>
+                  <line x1="230" y1="98" x2="380" y2="80" stroke="var(--ochre)" strokeWidth="1.4"/>
+                  <line x1="230" y1="98" x2="380" y2="96" stroke="var(--moss)" strokeWidth="1.4"/>
+                  <line x1="230" y1="98" x2="380" y2="112" stroke="var(--teal)" strokeWidth="1.4"/>
+                  <line x1="230" y1="98" x2="380" y2="128" stroke="#3a4a75" strokeWidth="1.4"/>
+                </g>
+                {/* labels */}
+                <text x="44" y="72" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ink-soft)">lux incidens</text>
+                <text x="202" y="28" fontFamily="Ma Shan Zheng" fontSize="12" fill="var(--ink)" textAnchor="middle">棱 · 光解</text>
+                <text x="384" y="62" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--rust)" textAnchor="start">·c ≡ ?</text>
+                {/* compass annotation */}
+                <g transform="translate(58,140)" fontFamily="Special Elite" fontSize="9" fill="var(--ink-soft)">
+                  <text>λ → speed → ?</text>
+                </g>
+                <g transform="translate(290,148)" fontFamily="Ma Shan Zheng" fontSize="13" fill="var(--rust-deep)">
+                  <text>速度由此而问</text>
+                </g>
+              </svg>
+            </div>
+
+            <div style={{height:18}}/>
+            <div className="rule-orn" style={{maxWidth:360, margin:"0 auto"}}>
+              <span style={{fontFamily:"'IM Fell English',serif", fontStyle:"italic", fontSize:13}}>
+                ca. &nbsp;−450 &nbsp;—&nbsp; 1983
+              </span>
+            </div>
+
+            <div style={{height:36}}/>
+            <div className="flex items-center justify-between" style={{flexWrap:"wrap", gap:24}}>
+              <div className="hand" style={{fontSize:17, color:"var(--ink-soft)", textAlign:"left"}}>
+                采集者 ·<br/>
+                <span className="sig" style={{color:"var(--rust-deep)"}}>若虚</span>
+              </div>
+              <CompassMini/>
+              <div className="seal" style={{transform:"rotate(6deg)"}}>
+                <div style={{textAlign:"center", lineHeight:1}}>
+                  <div style={{fontSize:11, letterSpacing:".05em"}}>光行</div>
+                  <div style={{fontSize:11, letterSpacing:".05em"}}>之记</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="scroll-cue">↓ &nbsp;翻至首层</div>
+      </div>
+    </section>
+  );
+}
+
+// ====== INDEX (stratigraphic column) ======
+function StratIndex(){
+  const rows = [
+    { d:"I", yr:"−450", pat:"pat-1", who:"Empedocles · Aristotle", what:"速度派 / 即视派 之辨", c:"—"},
+    { d:"II", yr:"1021", pat:"pat-2", who:"ابن الهيثم · Alhazen", what:"论光以「时间」而行", c:"—"},
+    { d:"III",yr:"1638", pat:"pat-3", who:"Galileo Galilei", what:"两山灯笼 · 测不可得", c:"—"},
+    { d:"IV", yr:"1676", pat:"pat-4", who:"Ole Rømer", what:"木卫一食 · 首次有限测定", c:"≈ 2.2×10⁸ m/s"},
+    { d:"V",  yr:"1729", pat:"pat-5", who:"James Bradley", what:"恒星光行差", c:"≈ 3.01×10⁸ m/s"},
+    { d:"VI", yr:"1849", pat:"pat-6", who:"Hippolyte Fizeau", what:"齿轮测光 · 陆上首测", c:"3.133×10⁸ m/s"},
+    { d:"VII",yr:"1862", pat:"pat-7", who:"Léon Foucault", what:"旋镜 · 水中慢于空中", c:"2.98×10⁸ m/s"},
+    { d:"VIII",yr:"1887", pat:"pat-8", who:"Michelson & Morley", what:"干涉 · 以太之不存", c:"—"},
+    { d:"IX", yr:"1905", pat:"pat-9", who:"Albert Einstein", what:"光速不变 · 时空相对", c:"c ≡ 常数"},
+    { d:"X",  yr:"1983", pat:"pat-10", who:"17ᵉ CGPM", what:"以 c 定义「米」", c:"299 792 458 m/s"},
+  ];
+  return (
+    <section id="index" style={{minHeight:"100vh", padding:"60px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:900}}>
+        <div className="leaf drift" style={{padding:"60px 56px", "--r":".3deg", transform:"rotate(.3deg)"}}>
+          <div className="stain" style={{width:140, height:110, top:40, right:-30, opacity:.5}}/>
+          <Tape style={{top:-14, left:"32%", transform:"rotate(2deg)"}}/>
+
+          <div className="flex items-center justify-between" style={{marginBottom:16}}>
+            <div>
+              <div style={{fontFamily:"'Special Elite',monospace", fontSize:12, letterSpacing:".25em", color:"var(--ink-soft)"}}>
+                COLUMNA STRATIGRAPHICA
+              </div>
+              <h2 className="display" style={{marginTop:6}}>地 · 层 · 柱</h2>
+              <div className="hand" style={{color:"var(--rust)", marginTop:6}}>
+                以地质之法，阅光速之史。每一层，皆一代人对同一问题的答案。
+              </div>
+            </div>
+            <div className="stamp ochre">INDEX</div>
+          </div>
+
+          <OrnamentalDivider/>
+
+          <div className="mt-8 grid" style={{gridTemplateColumns:"80px 1fr", gap:0}}>
+            {/* Strat column visualization */}
+            <div className="relative" style={{borderRight:"1px solid rgba(80,60,38,.4)"}}>
+              {rows.map((r, i)=>(
+                <div key={r.d} className="relative" style={{height:54, borderBottom:"1px dashed rgba(80,60,38,.25)"}}>
+                  <div className={"strat-pat " + r.pat} style={{width:32, left:16}}></div>
+                  <div style={{position:"absolute", right:6, top:4, fontFamily:"'IM Fell English',serif", fontSize:11, color:"var(--ink-soft)"}}>{r.d}</div>
+                  <div style={{position:"absolute", right:6, bottom:4, fontFamily:"'Special Elite',monospace", fontSize:9, color:"var(--ink-soft)"}}>{r.yr}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Rows */}
+            <div>
+              {rows.map((r, i)=>(
+                <div key={r.d} className="relative pl-6"
+                  style={{height:54, borderBottom:"1px dashed rgba(80,60,38,.25)", display:"flex", alignItems:"center"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"'IM Fell English',serif", fontStyle:"italic", fontSize:14, color:"var(--ink)"}}>{r.who}</div>
+                    <div className="hand" style={{fontSize:14, color:"var(--ink-soft)", marginTop:-2}}>{r.what}</div>
+                  </div>
+                  <div className="num" style={{fontSize:14, marginLeft:12}}>
+                    {r.c}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 flex items-center justify-between">
+            <div className="hand" style={{color:"var(--rust-deep)", fontSize:18}}>自深而浅，自暗而明 —</div>
+            <div className="stamp moss">READ DOWNWARD</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 1 — Ancient ======
+function Layer1(){
+  return (
+    <section id="s1-ancient" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:980}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":"-.4deg", transform:"rotate(-.4deg)"}}>
+          <div className="ruler"/>
+          <LeafHeader sampleNo="001" date="c. −450" location="Akragas · Elea · Athenae" bearing="W ·  Aegean" stratum="I · 太古思辨"/>
+          <div className="stain" style={{width:130, height:90, top:90, right:30, opacity:.55}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1.2fr 1fr", gap:40, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14, marginBottom:6}}>—— 最早的争辩 ——</div>
+              <h2>目光是矢，抑或水？</h2>
+              <h3 style={{marginTop:6}}>Empedocles · Aristotle · 古希腊</h3>
+              <p className="mt-5 dropcap">
+                恩培多克勒疑心，光并非瞬至。若有速度，纵极微，亦应有其数。此说在彼时近乎异端——因为亚里士多德以为，光自光源即刻充盈于所见之域，<span className="underline-wavy">不费时日</span>。此二说相争逾千年。
+              </p>
+              <p className="mt-3">
+                希腊人又分两派：或曰目光自眼而出，触物乃见（emanation）；或曰光自物来而入于眼（intromission）。无论何派，皆未及以「速度」问之——此问题，乃后世之地层，尚未沉积。
+              </p>
+              <div className="mt-5" style={{display:"flex", gap:14, alignItems:"center"}}>
+                <div className="stamp">Δ · aporia</div>
+                <div className="hand" style={{color:"var(--rust)", fontSize:16}}>无实验 · 皆凭臆</div>
+              </div>
+            </div>
+
+            {/* Diagram */}
+            <div className="specimen" style={{transform:"rotate(1.4deg)", padding:"12px 12px 10px"}}>
+              <Tape style={{top:-12, left:"40%", transform:"rotate(-3deg)"}}/>
+              <svg viewBox="0 0 300 240" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* Top pane: Emanation */}
+                  <rect x="6" y="6" width="288" height="106" fill="rgba(237,224,196,.4)" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                  <text x="12" y="22" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ink-soft)">i. extramission</text>
+                  {/* eye */}
+                  <ellipse cx="54" cy="68" rx="26" ry="14" fill="none" stroke="var(--ink)" strokeWidth="1.2"/>
+                  <circle cx="54" cy="68" r="7" fill="var(--ink)"/>
+                  <circle cx="52" cy="66" r="2" fill="var(--paper-hi)"/>
+                  {/* rays outward */}
+                  {[0,1,2,3].map(i=>(
+                    <line key={i} x1="80" y1={60+i*4} x2={220} y2={60+i*4} stroke="var(--ochre)" strokeWidth="1" strokeDasharray="3 2"/>
+                  ))}
+                  <polygon points="218,60 226,68 218,76" fill="var(--ochre)"/>
+                  {/* object */}
+                  <path d="M240 50 l14 -8 l8 16 l-6 26 l-14 2 l-6 -18 z" fill="none" stroke="var(--ink)" strokeWidth="1.2"/>
+                  <text x="244" y="100" fontFamily="Ma Shan Zheng" fontSize="10" fill="var(--ink-soft)">物</text>
+
+                  {/* Bottom pane: Intromission */}
+                  <rect x="6" y="122" width="288" height="110" fill="rgba(237,224,196,.4)" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                  <text x="12" y="138" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ink-soft)">ii. intromission</text>
+                  <ellipse cx="246" cy="184" rx="26" ry="14" fill="none" stroke="var(--ink)" strokeWidth="1.2"/>
+                  <circle cx="246" cy="184" r="7" fill="var(--ink)"/>
+                  <circle cx="244" cy="182" r="2" fill="var(--paper-hi)"/>
+                  {/* sun */}
+                  <circle cx="54" cy="170" r="14" fill="none" stroke="var(--rust)" strokeWidth="1.2"/>
+                  {[0,45,90,135,180,225,270,315].map(a=>(
+                    <line key={a}
+                      x1={54+Math.cos(a*Math.PI/180)*18} y1={170+Math.sin(a*Math.PI/180)*18}
+                      x2={54+Math.cos(a*Math.PI/180)*24} y2={170+Math.sin(a*Math.PI/180)*24}
+                      stroke="var(--rust)" strokeWidth="1"/>
+                  ))}
+                  {[0,1,2,3].map(i=>(
+                    <line key={i} x1="76" y1={176+i*4} x2="220" y2={180+i*4} stroke="var(--rust)" strokeWidth="1" strokeDasharray="3 2"/>
+                  ))}
+                  <polygon points="218,184 224,180 224,188" fill="var(--rust)"/>
+                  <text x="52" y="222" fontFamily="Ma Shan Zheng" fontSize="10" fill="var(--ink-soft)">源</text>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">
+                SPEC. 01 · 两种目光方向模型<br/>
+                · 皆未触及「光速」之问
+              </div>
+            </div>
+          </div>
+
+          {/* Margin notes */}
+          <div className="mt-8 grid" style={{gridTemplateColumns:"1fr 1fr", gap:26}}>
+            <div className="parch p-4" style={{fontSize:14}}>
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>NOTA · I</div>
+              <div className="hand" style={{color:"var(--rust-deep)", marginTop:6}}>
+                「若光真有速度，为何遥山之电，其声或迟而其光不迟？」
+              </div>
+              <div style={{fontSize:13, color:"var(--ink-soft)", marginTop:8}}>
+                古人之疑——殆因耳感之迟而目感之速，未尝不暗合科学，惜无尺度可度之。
+              </div>
+            </div>
+            <div className="parch p-4" style={{fontSize:14}}>
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>NOTA · II</div>
+              <div className="hand" style={{color:"var(--rust-deep)", marginTop:6}}>
+                亚里士多德反驳曰：光之传播不借媒介，故无所谓速。
+              </div>
+              <div style={{fontSize:13, color:"var(--ink-soft)", marginTop:8}}>
+                此论主导西方凡近二千年。至海桑起，其权威始见裂痕。
+              </div>
+            </div>
+          </div>
+
+          <LeafFooter n={1} total={10} motto="光，不知其速。"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 2 — Alhazen ======
+function Layer2(){
+  return (
+    <section id="s2-alhazen" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:980}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":".35deg", transform:"rotate(.35deg)"}}>
+          <LeafHeader sampleNo="002" date="c. 1021" location="al-Qāhira · 开罗" bearing="S · 尼罗河东岸" stratum="II · 光学之书"/>
+          <div className="stain" style={{width:100, height:80, top:200, left:300, opacity:.5, transform:"rotate(30deg)"}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1fr 1.2fr", gap:40, alignItems:"start"}}>
+            {/* Specimen left */}
+            <div className="specimen" style={{transform:"rotate(-1.2deg)"}}>
+              <Tape cls="teal" style={{top:-12, left:"30%", transform:"rotate(-2deg)"}}/>
+              <svg viewBox="0 0 320 260" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* Camera obscura */}
+                  <rect x="110" y="50" width="180" height="160" fill="rgba(60,40,20,.08)" stroke="var(--ink)" strokeWidth="1.3"/>
+                  {/* pinhole */}
+                  <circle cx="110" cy="130" r="3" fill="var(--ink)"/>
+                  {/* outside: tree/sun */}
+                  <circle cx="40" cy="80" r="12" fill="none" stroke="var(--rust)" strokeWidth="1.2"/>
+                  {[0,45,90,135,180,225,270,315].map(a=>(
+                    <line key={a}
+                      x1={40+Math.cos(a*Math.PI/180)*14} y1={80+Math.sin(a*Math.PI/180)*14}
+                      x2={40+Math.cos(a*Math.PI/180)*20} y2={80+Math.sin(a*Math.PI/180)*20}
+                      stroke="var(--rust)" strokeWidth="1"/>
+                  ))}
+                  <path d="M70 180 l0 -60 l-6 0 l6 -14 l6 14 l-6 0 l0 60 z" fill="rgba(106,114,56,.2)" stroke="var(--moss)" strokeWidth="1"/>
+                  <path d="M76 140 q12 -8 18 6" fill="none" stroke="var(--moss)" strokeWidth="1"/>
+                  <path d="M64 138 q-10 -10 -14 2" fill="none" stroke="var(--moss)" strokeWidth="1"/>
+                  {/* rays into pinhole */}
+                  <line x1="52" y1="90" x2="110" y2="130" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="2 2"/>
+                  <line x1="70" y1="120" x2="110" y2="130" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="2 2"/>
+                  <line x1="70" y1="170" x2="110" y2="130" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="2 2"/>
+                  {/* inverted image inside */}
+                  <line x1="110" y1="130" x2="280" y2="90" stroke="var(--rust)" strokeWidth=".8" strokeDasharray="2 2"/>
+                  <line x1="110" y1="130" x2="280" y2="180" stroke="var(--moss)" strokeWidth=".8" strokeDasharray="2 2"/>
+                  <circle cx="270" cy="96" r="6" fill="none" stroke="var(--rust)" strokeWidth=".8"/>
+                  <path d="M260 175 l0 30 l-3 0 l3 -6 l3 6 l-3 0 l0 -30 z" fill="none" stroke="var(--moss)" strokeWidth=".8" transform="rotate(180 260 190)"/>
+                  <text x="112" y="46" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)">camera obscura</text>
+                  <text x="284" y="230" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--ink-soft)" textAnchor="end">像 · 倒立</text>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 02 · 针孔成像 · 光以直线而行</div>
+            </div>
+
+            {/* Text right */}
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14, marginBottom:6}}>—— 黑暗之屋的证据 ——</div>
+              <h2>光不即至，乃有时而行</h2>
+              <h3 style={{marginTop:6}}>ابن الهيثم &nbsp;· &nbsp;Ḥasan Ibn al-Haytham</h3>
+              <p className="mt-5 dropcap">
+                海桑（西人谓之 Alhazen）居埃及七载，困而著《光学之书》七卷。其疑亚里士多德「光即刻而至」之说，提出：<span className="underline-rust">光之行必需时间，特其速甚疾耳</span>。
+              </p>
+              <p className="mt-3">
+                其论证依针孔之像：像必倒置，须光自各点直线而射；而光入眼前，必先穿透介质——凡穿透者，皆须历时。由是可推，光之速虽未知，却为有限。
+              </p>
+
+              <div className="mt-5 p-3" style={{background:"rgba(74,103,105,.06)", borderLeft:"3px solid var(--teal)"}}>
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>IBN AL-HAYTHAM · KITĀB AL-MANĀẒIR</div>
+                <div className="oldd" style={{fontStyle:"italic", fontSize:15, color:"var(--ink)", marginTop:4}}>
+                  "Even though it escapes notice, the light takes a fraction of time to pass through transparent bodies."
+                </div>
+              </div>
+
+              <div className="mt-4 hand" style={{color:"var(--rust-deep)", fontSize:16}}>
+                有限速度之说，首次立于「可证」之地，非仅臆测。
+              </div>
+            </div>
+          </div>
+
+          <OrnamentalDivider/>
+
+          <div className="mt-6 flex items-center justify-between">
+            <div className="stamp ochre">BASRA → CAIRO</div>
+            <div className="hand" style={{color:"var(--ink-soft)"}}>速之有无既定，问其几何 ——</div>
+            <div className="stamp">FINITUDO</div>
+          </div>
+
+          <LeafFooter n={2} total={10} motto="光有速 · 速未知"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 3 — Galileo ======
+function Layer3(){
+  const [attempting, setAttempting] = useState(false);
+  return (
+    <section id="s3-galileo" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:980}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":"-.5deg", transform:"rotate(-.5deg)"}}>
+          <LeafHeader sampleNo="003" date="1638" location="Arcetri · Florentia" bearing="NE · Apenninus" stratum="III · 灯笼之试"/>
+          <Tape cls="rust" style={{top:-14, right:"8%", transform:"rotate(4deg)"}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr", gap:40, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14, marginBottom:6}}>—— 两山之间的误差 ——</div>
+              <h2>两盏灯笼，一声掩启</h2>
+              <h3 style={{marginTop:6}}>Galileo Galilei &nbsp;· &nbsp;晚年于阿切特里</h3>
+
+              <p className="mt-5 dropcap">
+                伽利略欲以人手为秒表，量光之迅。其法：两人各立山巅，相距数里。甲掩灯，乙见灯灭则亦掩之。甲见乙之灯灭所需之时，即光往返二山之程。
+              </p>
+              <p className="mt-3">
+                然而人之反应迟钝，远过光之一瞬。实验结果：<span className="underline-wavy">凡光，皆瞬至——或速之极大，非余辈所能度</span>。
+              </p>
+              <p className="mt-3" style={{color:"var(--ink-soft)"}}>
+                此乃一次<span className="underline-rust">壮烈之失败</span>。然伽利略已识其要：须以更远之距，更精之钟。他未及而知——距必得远至地球之外。
+              </p>
+
+              {/* Interactive: try to time it */}
+              <div className="mt-5 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>EXPERIMENTUM MANUALE</div>
+                <div className="hand mt-1" style={{color:"var(--rust-deep)", fontSize:15}}>试按此钮，仿伽利略之法掩灯——</div>
+                <button
+                  onClick={()=>setAttempting(true)}
+                  style={{
+                    marginTop:10,
+                    fontFamily:"'Special Elite',monospace",
+                    background:"rgba(138,55,38,.08)",
+                    border:"1.5px solid var(--rust)",
+                    color:"var(--rust-deep)",
+                    padding:"8px 18px",
+                    cursor:"pointer",
+                    letterSpacing:".1em"
+                  }}>
+                  COVER THE LANTERN
+                </button>
+                {attempting && (
+                  <div className="mt-3 hand" style={{color:"var(--ink)", fontSize:15}}>
+                    · 反应延迟约 <span className="num">250 ms</span><br/>
+                    · 光越过十里仅需 <span className="num">≈ 0.00005 ms</span><br/>
+                    <span className="underline-rust" style={{color:"var(--rust-deep)"}}>
+                      你量到的，是自己的神经，非光也。
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Diagram */}
+            <div className="specimen" style={{transform:"rotate(1.8deg)"}}>
+              <Pin x={-6} y={-6}/>
+              <Pin x={"calc(100% - 12px)"} y={-6} color="var(--ochre)"/>
+              <svg viewBox="0 0 320 280" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* two hills */}
+                  <path d="M0 220 q60 -110 120 0 q60 -100 120 0 q40 -60 80 0 L320 260 L0 260 Z"
+                        fill="rgba(106,114,56,.18)" stroke="var(--moss)" strokeWidth="1.2"/>
+                  {/* figures */}
+                  <g transform="translate(86,130)">
+                    <circle cx="0" cy="0" r="5" fill="none" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="5" x2="0" y2="22" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="10" x2="-8" y2="18" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="10" x2="10" y2="6" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="22" x2="-6" y2="34" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="22" x2="6" y2="34" stroke="var(--ink)" strokeWidth="1"/>
+                    {/* lantern */}
+                    <rect x="10" y="0" width="8" height="10" fill="rgba(180,122,36,.4)" stroke="var(--ochre)" strokeWidth=".8"/>
+                    <line x1="14" y1="-4" x2="14" y2="0" stroke="var(--ink)" strokeWidth=".6"/>
+                  </g>
+                  <text x="86" y="170" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--ink-soft)" textAnchor="middle">甲 · Galileo</text>
+
+                  <g transform="translate(226,128)">
+                    <circle cx="0" cy="0" r="5" fill="none" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="5" x2="0" y2="22" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="10" x2="-10" y2="6" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="10" x2="8" y2="18" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="22" x2="-6" y2="34" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="0" y1="22" x2="6" y2="34" stroke="var(--ink)" strokeWidth="1"/>
+                    <rect x="-18" y="0" width="8" height="10" fill="rgba(180,122,36,.4)" stroke="var(--ochre)" strokeWidth=".8"/>
+                    <line x1="-14" y1="-4" x2="-14" y2="0" stroke="var(--ink)" strokeWidth=".6"/>
+                  </g>
+                  <text x="226" y="168" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--ink-soft)" textAnchor="middle">乙 · assistens</text>
+
+                  {/* signal lines */}
+                  <path d="M106 130 q30 -14 120 -2" fill="none" stroke="var(--ochre)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                  <path d="M218 134 q-30 14 -120 0" fill="none" stroke="var(--rust)" strokeWidth="1.1" strokeDasharray="3 2"/>
+
+                  {/* distance bracket */}
+                  <line x1="60" y1="244" x2="260" y2="244" stroke="var(--ink-soft)" strokeWidth=".8"/>
+                  <line x1="60" y1="240" x2="60" y2="248" stroke="var(--ink-soft)" strokeWidth=".8"/>
+                  <line x1="260" y1="240" x2="260" y2="248" stroke="var(--ink-soft)" strokeWidth=".8"/>
+                  <text x="160" y="258" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">≈ 1 mille passus</text>
+
+                  {/* top labels */}
+                  <text x="160" y="24" fontFamily="Special Elite" fontSize="11" fill="var(--rust)" textAnchor="middle">SIGNAL · LUX → LUX</text>
+                  <text x="160" y="70" fontFamily="Ma Shan Zheng" fontSize="13" fill="var(--rust-deep)" textAnchor="middle">甲掩灯 → 乙见暗 → 乙掩灯 → 甲见暗</text>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 03 · 两山灯笼试验 · 失败于人</div>
+            </div>
+          </div>
+
+          <LeafFooter n={3} total={10} motto="测不得 · 非无也"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 4 — Rømer ======
+function Layer4(){
+  const [off, setOff] = useState(0); // earth orbital phase
+  useEffect(()=>{
+    const t = setInterval(()=>setOff(o=>(o+1)%360), 60);
+    return ()=>clearInterval(t);
+  },[]);
+  // Earth orbits sun at (240,150) with semi-axes matching drawn ellipse
+  const cxSun = 240, cySun = 150;
+  const ex = cxSun + Math.cos(off*Math.PI/180)*90;
+  const ey = cySun + Math.sin(off*Math.PI/180)*54;
+  // Jupiter at (70,150)
+  const jx = 70, jy = 150;
+  const dist = Math.hypot(ex-jx, ey-jy);
+  // dist ranges ≈ 80 (nearest) to 260 (farthest), range 180
+  const delayMin = ((dist - 80)/180)*16;
+
+  return (
+    <section id="s4-romer" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:1020}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":".3deg", transform:"rotate(.3deg)"}}>
+          <LeafHeader sampleNo="004" date="1676-09" location="Observatoire de Paris" bearing="Aarhus · København" stratum="IV · 木卫之食"/>
+          <Tape style={{top:-14, left:"42%", transform:"rotate(-3deg)"}}/>
+          <div className="stain" style={{width:120, height:80, bottom:40, right:60, opacity:.5}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1fr 1fr", gap:36, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 第一份真实的数——</div>
+              <h2>木卫一之食，迟了二十二分</h2>
+              <h3 style={{marginTop:6}}>Ole Christensen Rømer &nbsp;· 于巴黎天文台</h3>
+              <p className="mt-5 dropcap">
+                木星之第一卫（Io），其食期甚规：约每四十二时半一周。然罗默观测多年，察觉异象：当地球远离木星之时，食至之刻迟于预算；当地球趋近，则反提前。
+              </p>
+              <p className="mt-3">
+                此差非木卫之变，乃光之程——多出之距，须以时间补之。罗默据此推算：光跨过地球轨道之直径，约需 <span className="num">22 分钟</span>。
+              </p>
+              <p className="mt-3">
+                以当时地球轨道之估——惠更斯据此算得 <span className="num">c ≈ 2.2 × 10⁸ m/s</span>。误差约百分之二十六——<span className="underline-rust">犹是人类首次，把光速牵入「数」的地界</span>。
+              </p>
+
+              <div className="mt-5 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>ROEMER · DÉMONSTRATION TOUCHANT LE MOUVEMENT DE LA LUMIÈRE</div>
+                <div className="oldd" style={{fontStyle:"italic", fontSize:14, color:"var(--ink)", marginTop:6}}>
+                  "… la lumière emploie environ onze minutes à traverser un espace égal au demi-diamètre de l'orbite terrestre."
+                </div>
+              </div>
+            </div>
+
+            {/* Diagram — live orbit */}
+            <div className="specimen" style={{transform:"rotate(-1.2deg)"}}>
+              <Pin x={-6} y={-6} color="var(--moss)"/>
+              <svg viewBox="0 0 340 300" width="100%" style={{display:"block"}}>
+                {/* stars */}
+                {Array.from({length:14}).map((_,i)=>{
+                  const x = 20 + (i*23)%300; const y = 10 + (i*37)%290;
+                  return <circle key={i} cx={x} cy={y} r=".8" fill="var(--ink-soft)" opacity=".5"/>;
+                })}
+                {/* Sun */}
+                <circle cx="240" cy="150" r="10" fill="var(--ochre)" stroke="var(--rust)" strokeWidth="1"/>
+                <text x="240" y="134" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">☉</text>
+
+                {/* Earth orbit */}
+                <ellipse cx="240" cy="150" rx="90" ry="54" fill="none" stroke="var(--ink-soft)" strokeWidth=".6" strokeDasharray="2 3"/>
+                {/* Jupiter */}
+                <circle cx={jx} cy={jy} r="14" fill="rgba(138,55,38,.18)" stroke="var(--rust)" strokeWidth="1.2"/>
+                <line x1={jx-3} y1={jy-4} x2={jx+3} y2={jy-4} stroke="var(--rust-deep)" strokeWidth=".8"/>
+                <line x1={jx-5} y1={jy-1} x2={jx+5} y2={jy-1} stroke="var(--rust-deep)" strokeWidth=".8"/>
+                <line x1={jx-3} y1={jy+3} x2={jx+3} y2={jy+3} stroke="var(--rust-deep)" strokeWidth=".8"/>
+                <text x={jx} y={jy+26} fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ink-soft)" textAnchor="middle">Iuppiter</text>
+
+                {/* Io */}
+                <circle cx={jx+22} cy={jy} r="3" fill="var(--ochre-light)" stroke="var(--ink)" strokeWidth=".6"/>
+                <circle cx={jx} cy={jy} r="22" fill="none" stroke="var(--ink-soft)" strokeWidth=".4" strokeDasharray="1 2"/>
+                <text x={jx+32} y={jy-4} fontFamily="Ma Shan Zheng" fontSize="10" fill="var(--ink-soft)">Io · 木卫一</text>
+
+                {/* Earth */}
+                <circle cx={ex} cy={ey} r="5" fill="var(--teal)" stroke="var(--ink)" strokeWidth=".8"/>
+                <text x={ex+8} y={ey-6} fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)">Terra</text>
+
+                {/* Light path from jupiter to earth (with offset) */}
+                <line x1={jx+4} y1={jy} x2={ex-4} y2={ey} stroke="var(--ochre)" strokeWidth="1" strokeDasharray="3 2"/>
+
+                {/* delay gauge bar */}
+                <g transform="translate(16, 260)">
+                  <rect x="0" y="0" width="260" height="14" fill="rgba(80,60,38,.1)" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                  <rect x="0" y="0" width={(delayMin/16)*260} height="14" fill="rgba(138,55,38,.35)"/>
+                  <text x="0" y="-4" fontFamily="Special Elite" fontSize="9" fill="var(--ink-soft)">LIGHT DELAY · Δt</text>
+                  <text x="260" y="-4" fontFamily="Special Elite" fontSize="9" fill="var(--rust-deep)" textAnchor="end">
+                    {delayMin.toFixed(1)} min
+                  </text>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 04 · 木卫食期延迟 · 地球轨道相位作图</div>
+            </div>
+          </div>
+
+          <OrnamentalDivider/>
+
+          <div className="mt-6 grid" style={{gridTemplateColumns:"1fr 1fr 1fr", gap:16}}>
+            <div>
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>ORBITAL DIAMETER</div>
+              <div className="num" style={{fontSize:22}}>≈ 2.8 × 10⁸ km</div>
+              <div style={{fontSize:12, color:"var(--ink-soft)"}}>(以惠更斯之估)</div>
+            </div>
+            <div>
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>LIGHT DELAY</div>
+              <div className="num" style={{fontSize:22}}>≈ 22 min</div>
+              <div style={{fontSize:12, color:"var(--ink-soft)"}}>(罗默所测)</div>
+            </div>
+            <div>
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>FIRST VALUE OF c</div>
+              <div className="num" style={{fontSize:22, color:"var(--rust-deep)"}}>≈ 2.2 × 10⁸ m/s</div>
+              <div style={{fontSize:12, color:"var(--ink-soft)"}}>(较真值低约 26%)</div>
+            </div>
+          </div>
+
+          <LeafFooter n={4} total={10} motto="光之数 · 始生"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 5 — Bradley ======
+function Layer5(){
+  return (
+    <section id="s5-bradley" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:980}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":"-.3deg", transform:"rotate(-.3deg)"}}>
+          <LeafHeader sampleNo="005" date="1729" location="Kew · Wanstead" bearing="N ·  γ Draconis" stratum="V · 恒星之差"/>
+          <Tape cls="teal" style={{top:-14, right:"18%", transform:"rotate(-2deg)"}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1fr 1.1fr", gap:36, alignItems:"start"}}>
+            <div className="specimen" style={{transform:"rotate(1deg)"}}>
+              <svg viewBox="0 0 320 300" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* star */}
+                  <circle cx="160" cy="28" r="4" fill="var(--rust)"/>
+                  {[0,60,120,180,240,300].map(a=>(
+                    <line key={a}
+                      x1={160+Math.cos(a*Math.PI/180)*7} y1={28+Math.sin(a*Math.PI/180)*7}
+                      x2={160+Math.cos(a*Math.PI/180)*12} y2={28+Math.sin(a*Math.PI/180)*12}
+                      stroke="var(--rust)" strokeWidth=".8"/>
+                  ))}
+                  <text x="172" y="30" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)">γ Draconis</text>
+
+                  {/* Starlight ray */}
+                  <line x1="160" y1="36" x2="160" y2="210" stroke="var(--ochre)" strokeWidth="1.2" strokeDasharray="4 2"/>
+
+                  {/* Earth motion arrow */}
+                  <line x1="60" y1="222" x2="260" y2="222" stroke="var(--moss)" strokeWidth="1.2"/>
+                  <polygon points="258,218 266,222 258,226" fill="var(--moss)"/>
+                  <text x="260" y="214" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--moss)" textAnchor="end">v⃗ · motus telluris ≈ 30 km/s</text>
+
+                  {/* Telescope tilted */}
+                  <g transform="translate(160,238) rotate(-10)">
+                    <rect x="-6" y="-80" width="12" height="90" fill="rgba(74,103,105,.2)" stroke="var(--teal)" strokeWidth="1.2"/>
+                    <rect x="-10" y="10" width="20" height="6" fill="var(--teal)"/>
+                    <line x1="0" y1="-80" x2="0" y2="10" stroke="var(--ink)" strokeWidth=".6" strokeDasharray="2 2"/>
+                  </g>
+                  {/* vertical reference */}
+                  <line x1="160" y1="150" x2="160" y2="238" stroke="var(--ink-soft)" strokeWidth=".5" strokeDasharray="2 2"/>
+                  {/* aberration angle */}
+                  <path d="M160 180 a 22 22 0 0 0 4 -20" fill="none" stroke="var(--rust)" strokeWidth=".8"/>
+                  <text x="176" y="170" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--rust)">α ≈ 20″.5</text>
+
+                  {/* Analogy: rain */}
+                  <g transform="translate(36, 170)">
+                    <rect x="0" y="0" width="80" height="60" fill="rgba(237,224,196,.5)" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                    <text x="4" y="12" fontFamily="IM Fell English" fontStyle="italic" fontSize="9" fill="var(--ink-soft)">analogia pluvialis</text>
+                    {[0,12,24,36,48,60].map(i=>(
+                      <line key={i} x1={8+i*.7} y1="16" x2={4+i*.7} y2="30" stroke="var(--teal)" strokeWidth=".7"/>
+                    ))}
+                    {/* walking figure */}
+                    <circle cx="40" cy="38" r="2.5" fill="var(--ink)"/>
+                    <line x1="40" y1="40" x2="40" y2="50" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="40" y1="43" x2="44" y2="50" stroke="var(--ink)" strokeWidth="1"/>
+                    <line x1="40" y1="43" x2="36" y2="48" stroke="var(--ink)" strokeWidth="1"/>
+                    {/* tilted umbrella */}
+                    <path d="M34 30 q6 -6 12 0" fill="none" stroke="var(--rust)" strokeWidth="1"/>
+                    <line x1="40" y1="30" x2="40" y2="38" stroke="var(--ink)" strokeWidth=".8"/>
+                    <text x="10" y="58" fontFamily="Ma Shan Zheng" fontSize="9" fill="var(--ink-soft)">如雨中倾伞</text>
+                  </g>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 05 · 恒星光行差 · 望远镜之倾斜</div>
+            </div>
+
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 仰望之时的倾斜 ——</div>
+              <h2>观星者须略倾其镜</h2>
+              <h3 style={{marginTop:6}}>James Bradley &nbsp;· 英国皇家天文学家</h3>
+              <p className="mt-5 dropcap">
+                布拉德利本欲观恒星之视差以测其距，然意外见所有恒星皆随地球之公转轻微画圆——其幅甚小，约二十弧秒。此非恒星之动，乃光之有限速度与地球之有限速度之合。
+              </p>
+              <p className="mt-3">
+                其理如人行于雨中：雨直落而人前行，故伞须前倾方可挡。欲观星光，望远镜须亦倾——其倾角之正切，即地球速度与光速之比。
+              </p>
+              <p className="mt-3">
+                由此得 <span className="num">c ≈ 3.01 × 10⁸ m/s</span>——精度骤升，几近其真。且此为独立验证：非靠木卫，而靠群星。
+              </p>
+
+              <div className="mt-5 flex items-center gap-3">
+                <div className="stamp">ABERRATIO</div>
+                <div className="hand" style={{color:"var(--rust-deep)"}}>
+                  光速与地速之比，由此可算 ——
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <LeafFooter n={5} total={10} motto="星不曾动 · 光有程"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 6 — Fizeau ======
+function Layer6(){
+  const [rpm, setRpm] = useState(12);
+  return (
+    <section id="s6-fizeau" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:1020}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":".4deg", transform:"rotate(.4deg)"}}>
+          <LeafHeader sampleNo="006" date="1849" location="Suresnes → Montmartre · Paris" bearing="NE · 8.633 km" stratum="VI · 齿轮测光"/>
+          <Tape style={{top:-14, left:"14%", transform:"rotate(3deg)"}}/>
+          <div className="stain" style={{width:90, height:70, bottom:80, right:120, opacity:.5, transform:"rotate(-20deg)"}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1.1fr 1fr", gap:36, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 第一次在地上测得 ——</div>
+              <h2>齿隙吞光，齿牙返影</h2>
+              <h3 style={{marginTop:6}}>Hippolyte Fizeau &nbsp;· 巴黎西郊</h3>
+              <p className="mt-5 dropcap">
+                斐索之法甚精巧：光经分束，穿过一具高速旋转之齿轮之齿隙，至八公里外一山巅之镜，反射而回。若齿轮转速合宜，返光恰为下一齿所挡，观者见暗。齿之数与转速既知，光之往返时间即可反算。
+              </p>
+              <p className="mt-3">
+                其齿有七百二十，距达一万七千余米（往返），当转速至每秒约十二转半时，影首黯。据此得 <span className="num">c ≈ 3.133 × 10⁸ m/s</span>——首次，光速在地面被测得，不必仰星望斗。
+              </p>
+
+              <div className="mt-5 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>CALCULATIO</div>
+                <div className="oldd" style={{fontSize:15, color:"var(--ink)", marginTop:4, fontStyle:"italic"}}>
+                  c = 2 L · N · n &nbsp; / &nbsp;(1/f)
+                </div>
+                <div style={{fontSize:13, color:"var(--ink-soft)", marginTop:4}}>
+                  L 距程 · N 齿数 · n 齿轮转数 · f 至暗点对应之频
+                </div>
+              </div>
+
+              {/* RPM slider */}
+              <div className="mt-5">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>
+                  EXPERIMENTUM · rotatio · {rpm} rev/s
+                </div>
+                <input type="range" min="2" max="30" value={rpm}
+                  onChange={e=>setRpm(parseInt(e.target.value))}
+                  style={{width:"100%", accentColor:"var(--rust)", marginTop:6}}/>
+                <div className="hand" style={{color: rpm>=11 && rpm<=14 ? "var(--rust-deep)" : "var(--ink-soft)", fontSize:15, marginTop:2}}>
+                  {rpm<11 && "转速未足 —— 影犹明"}
+                  {rpm>=11 && rpm<=14 && "★ 至暗点·齿牙迎返光"}
+                  {rpm>14 && "转速过之 —— 返光越过下一齿"}
+                </div>
+              </div>
+            </div>
+
+            {/* Cogwheel diagram with animation */}
+            <div className="specimen" style={{transform:"rotate(-1.6deg)"}}>
+              <Pin x={"calc(100% - 10px)"} y={-6}/>
+              <svg viewBox="0 0 340 290" width="100%" style={{display:"block"}}>
+                {/* Source */}
+                <g transform="translate(30,145)">
+                  <rect x="-10" y="-10" width="20" height="20" fill="rgba(180,122,36,.3)" stroke="var(--ochre)" strokeWidth="1"/>
+                  <text x="0" y="32" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--ink-soft)" textAnchor="middle">源</text>
+                </g>
+                {/* Cogwheel */}
+                <g transform="translate(120,145)">
+                  <g style={{transformOrigin:"center", animation:`slowSpin ${Math.max(.6, 6/rpm)}s linear infinite`}}>
+                    {Array.from({length:18}).map((_,i)=>{
+                      const a = i*20;
+                      return (
+                        <rect key={i} x="-3" y="-40" width="6" height="10"
+                          fill="var(--ink)"
+                          transform={`rotate(${a})`}/>
+                      );
+                    })}
+                    <circle r="30" fill="rgba(60,40,20,.1)" stroke="var(--ink)" strokeWidth="1.2"/>
+                    <circle r="4" fill="var(--ink)"/>
+                    <line x1="-28" y1="0" x2="28" y2="0" stroke="var(--rust)" strokeWidth=".6"/>
+                  </g>
+                  <text x="0" y="62" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">rota dentata · 720 teeth</text>
+                </g>
+
+                {/* Light path */}
+                <line x1="40" y1="145" x2="118" y2="145" stroke="var(--ochre)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                <line x1="152" y1="142" x2="290" y2="142" stroke="var(--ochre)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                <line x1="290" y1="148" x2="152" y2="148" stroke="var(--rust)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                <line x1="118" y1="148" x2="40" y2="148" stroke="var(--rust)" strokeWidth="1.1" strokeDasharray="3 2"/>
+
+                {/* Mirror */}
+                <g transform="translate(300,145)">
+                  <line x1="-4" y1="-24" x2="-4" y2="24" stroke="var(--teal)" strokeWidth="3"/>
+                  <line x1="0" y1="-24" x2="0" y2="24" stroke="var(--ink)" strokeWidth="1"/>
+                  <text x="0" y="40" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">speculum</text>
+                  <text x="0" y="54" fontFamily="Ma Shan Zheng" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">8.633 km</text>
+                </g>
+
+                {/* Distance bracket */}
+                <line x1="150" y1="200" x2="294" y2="200" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                <line x1="150" y1="196" x2="150" y2="204" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                <line x1="294" y1="196" x2="294" y2="204" stroke="var(--ink-soft)" strokeWidth=".6"/>
+                <text x="220" y="216" fontFamily="Special Elite" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">L = 8 633 m</text>
+
+                {/* Title */}
+                <text x="170" y="30" fontFamily="IM Fell English" fontStyle="italic" fontSize="13" fill="var(--ink)" textAnchor="middle">apparatus Fizeau</text>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 06 · 旋齿测光 · 苏雷讷 → 蒙马特</div>
+            </div>
+          </div>
+
+          <LeafFooter n={6} total={10} motto="光落吾手 · 无须仰天"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 7 — Foucault ======
+function Layer7(){
+  return (
+    <section id="s7-foucault" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:980}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":"-.35deg", transform:"rotate(-.35deg)"}}>
+          <LeafHeader sampleNo="007" date="1862" location="Observatoire de Paris" bearing="W ·  laboratoire" stratum="VII · 旋镜定理"/>
+
+          <div className="grid" style={{gridTemplateColumns:"1.2fr 1fr", gap:36, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 水中之光，比空气慢 ——</div>
+              <h2>旋镜一侧偏，光速一锤定</h2>
+              <h3 style={{marginTop:6}}>Léon Foucault</h3>
+              <p className="mt-5 dropcap">
+                傅科改斐索之法：不用齿轮，而用一面高速旋转之镜。光自此镜射向远镜，再返归旋镜之时，镜已转过一微角，故返光偏离原路。此偏角乘以几何，即得光速。
+              </p>
+              <p className="mt-3">
+                其测值 <span className="num">c ≈ 2.98 × 10⁸ m/s</span>——与今值误差已降至约百分之一。更重者，傅科以此法测水中光速，发现<span className="underline-rust">光于水中缓于空气</span>——此一结论，彻底击碎牛顿之「光粒说」，扶持惠更斯之「光波说」。
+              </p>
+
+              <div className="mt-5 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>COROLLARIUM</div>
+                <div className="hand" style={{color:"var(--rust-deep)", fontSize:15, marginTop:4}}>
+                  · 于空气：≈ 2.98 × 10⁸ m/s<br/>
+                  · 于水中：≈ 2.25 × 10⁸ m/s<br/>
+                  · 水中较慢，波动说胜。
+                </div>
+              </div>
+            </div>
+
+            <div className="specimen" style={{transform:"rotate(1.2deg)"}}>
+              <svg viewBox="0 0 340 300" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* Rotating mirror */}
+                  <g transform="translate(80,150)">
+                    <g className="spin-fast" style={{transformOrigin:"center"}}>
+                      <rect x="-18" y="-2" width="36" height="4" fill="var(--teal)" stroke="var(--ink)" strokeWidth=".8"/>
+                    </g>
+                    <circle r="3" fill="var(--ink)"/>
+                    <circle r="24" fill="none" stroke="var(--ink-soft)" strokeWidth=".4" strokeDasharray="1 2"/>
+                    <text x="0" y="44" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">rotating mirror</text>
+                  </g>
+                  {/* Source + detector */}
+                  <g transform="translate(32,120)">
+                    <rect x="-8" y="-8" width="16" height="16" fill="rgba(180,122,36,.3)" stroke="var(--ochre)" strokeWidth="1"/>
+                    <text x="0" y="-12" fontFamily="Ma Shan Zheng" fontSize="9" fill="var(--ink-soft)" textAnchor="middle">源</text>
+                  </g>
+                  <g transform="translate(32,180)">
+                    <rect x="-8" y="-8" width="16" height="16" fill="rgba(138,55,38,.2)" stroke="var(--rust)" strokeWidth="1"/>
+                    <text x="0" y="22" fontFamily="Ma Shan Zheng" fontSize="9" fill="var(--ink-soft)" textAnchor="middle">收 · Δα</text>
+                  </g>
+                  {/* Distant concave mirror */}
+                  <g transform="translate(290,150)">
+                    <path d="M0 -36 q-12 36 0 72" fill="none" stroke="var(--teal)" strokeWidth="3"/>
+                    <text x="0" y="-44" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">speculum distans</text>
+                  </g>
+                  {/* beam paths */}
+                  <line x1="48" y1="124" x2="72" y2="148" stroke="var(--ochre)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                  <line x1="86" y1="148" x2="282" y2="148" stroke="var(--ochre)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                  <line x1="282" y1="154" x2="88" y2="154" stroke="var(--rust)" strokeWidth="1.1" strokeDasharray="3 2"/>
+                  <line x1="74" y1="156" x2="48" y2="180" stroke="var(--rust)" strokeWidth="1.1" strokeDasharray="3 2"/>
+
+                  {/* offset angle arc */}
+                  <path d="M80 190 a 20 20 0 0 0 10 -10" fill="none" stroke="var(--rust)" strokeWidth=".8"/>
+                  <text x="94" y="200" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--rust)">Δθ</text>
+
+                  {/* distance */}
+                  <text x="170" y="136" fontFamily="Special Elite" fontSize="9" fill="var(--ink-soft)" textAnchor="middle">L ≈ 20 m</text>
+
+                  {/* water tube below */}
+                  <g transform="translate(120,230)">
+                    <rect x="0" y="0" width="100" height="26" fill="rgba(74,103,105,.2)" stroke="var(--teal)" strokeWidth="1"/>
+                    <text x="50" y="16" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--teal)" textAnchor="middle">水管 · 光慢</text>
+                    <line x1="0" y1="13" x2="100" y2="13" stroke="var(--ochre)" strokeWidth=".8" strokeDasharray="2 2"/>
+                  </g>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 07 · 旋镜装置 · 并水中测速</div>
+            </div>
+          </div>
+
+          <OrnamentalDivider/>
+
+          <div className="mt-5 flex items-center justify-between">
+            <div className="stamp moss">UNDA · VINCIT</div>
+            <div className="hand" style={{color:"var(--rust-deep)", fontSize:16}}>
+              光为波 · 粒之说沉入更古之层。
+            </div>
+            <div className="type" style={{color:"var(--ink-soft)"}}>Δ / Newton ∴ Huygens</div>
+          </div>
+
+          <LeafFooter n={7} total={10} motto="镜转一微 · 理见大"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 8 — Michelson-Morley ======
+function Layer8(){
+  return (
+    <section id="s8-mm" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:1020}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":".3deg", transform:"rotate(.3deg)"}}>
+          <LeafHeader sampleNo="008" date="1887" location="Cleveland · Case School" bearing="— · 漂于石上" stratum="VIII · 无有以太"/>
+          <Tape cls="rust" style={{top:-14, left:"32%", transform:"rotate(-3deg)"}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1fr 1.1fr", gap:36, alignItems:"start"}}>
+            <div className="specimen" style={{transform:"rotate(-1deg)"}}>
+              <svg viewBox="0 0 340 320" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* Source */}
+                  <g transform="translate(30,170)">
+                    <rect x="-10" y="-10" width="20" height="20" fill="rgba(180,122,36,.3)" stroke="var(--ochre)" strokeWidth="1"/>
+                    <text x="0" y="28" fontFamily="Ma Shan Zheng" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">源</text>
+                  </g>
+                  {/* Beam splitter */}
+                  <g transform="translate(140,170) rotate(45)">
+                    <rect x="-20" y="-1.5" width="40" height="3" fill="rgba(74,103,105,.35)" stroke="var(--teal)" strokeWidth=".8"/>
+                  </g>
+                  <text x="140" y="215" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">beam splitter</text>
+                  {/* Mirror top */}
+                  <g transform="translate(140, 60)">
+                    <line x1="-18" y1="0" x2="18" y2="0" stroke="var(--teal)" strokeWidth="3"/>
+                  </g>
+                  <text x="164" y="54" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)">M₁</text>
+                  {/* Mirror right */}
+                  <g transform="translate(260, 170)">
+                    <line x1="0" y1="-18" x2="0" y2="18" stroke="var(--teal)" strokeWidth="3"/>
+                  </g>
+                  <text x="266" y="158" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)">M₂</text>
+
+                  {/* Beams */}
+                  <line x1="40" y1="170" x2="134" y2="170" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="3 2"/>
+                  <line x1="140" y1="165" x2="140" y2="70" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="3 2"/>
+                  <line x1="145" y1="170" x2="258" y2="170" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="3 2"/>
+                  <line x1="140" y1="70" x2="140" y2="165" stroke="var(--rust)" strokeWidth="1" strokeDasharray="3 2" transform="translate(4,0)"/>
+                  <line x1="258" y1="175" x2="145" y2="175" stroke="var(--rust)" strokeWidth="1" strokeDasharray="3 2"/>
+
+                  {/* detector */}
+                  <g transform="translate(140,270)">
+                    <circle r="14" fill="rgba(138,55,38,.12)" stroke="var(--rust)" strokeWidth="1"/>
+                    {/* interference fringes */}
+                    <line x1="-8" y1="-8" x2="8" y2="-8" stroke="var(--rust-deep)" strokeWidth=".5"/>
+                    <line x1="-8" y1="-4" x2="8" y2="-4" stroke="var(--rust-deep)" strokeWidth=".5"/>
+                    <line x1="-8" y1="0" x2="8" y2="0" stroke="var(--rust-deep)" strokeWidth=".5"/>
+                    <line x1="-8" y1="4" x2="8" y2="4" stroke="var(--rust-deep)" strokeWidth=".5"/>
+                    <line x1="-8" y1="8" x2="8" y2="8" stroke="var(--rust-deep)" strokeWidth=".5"/>
+                    <text x="0" y="32" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">detector · fringes</text>
+                  </g>
+                  <line x1="140" y1="176" x2="140" y2="252" stroke="var(--ochre)" strokeWidth="1" strokeDasharray="3 2"/>
+
+                  {/* Earth arrow */}
+                  <line x1="20" y1="30" x2="120" y2="30" stroke="var(--moss)" strokeWidth="1.2"/>
+                  <polygon points="118,26 126,30 118,34" fill="var(--moss)"/>
+                  <text x="20" y="22" fontFamily="IM Fell English" fontStyle="italic" fontSize="10" fill="var(--moss)">v · ether wind?</text>
+
+                  {/* stone slab base */}
+                  <rect x="60" y="290" width="220" height="20" fill="rgba(80,60,38,.2)" stroke="var(--ink)" strokeWidth=".8"/>
+                  <text x="170" y="304" fontFamily="Ma Shan Zheng" fontSize="10" fill="var(--ink-soft)" textAnchor="middle">石板 · 汞池浮之</text>
+
+                  {/* title */}
+                  <text x="170" y="16" fontFamily="IM Fell English" fontStyle="italic" fontSize="12" fill="var(--ink)" textAnchor="middle">interferometrum Michelson</text>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 08 · 十字干涉仪 · 欲测以太之风</div>
+            </div>
+
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 什么都没找到 ——</div>
+              <h2>以太风不在，光速不随流</h2>
+              <h3 style={{marginTop:6}}>Albert A. Michelson &nbsp;&amp;&nbsp; Edward W. Morley</h3>
+              <p className="mt-5 dropcap">
+                欧洲物理诸公皆信：光为波，必有其载体，称之「以太」。地球绕日而行，必于以太中有相对速度，故两道互相垂直之光路之速度，必生差异，见于干涉条纹之移。
+              </p>
+              <p className="mt-3">
+                迈克尔逊与莫雷筑精于极之干涉仪，浮于汞池之上以免震。转动之，再观之。<span className="underline-rust">条纹纹丝不动</span>。无论何时何向，光速如一。
+              </p>
+              <p className="mt-3" style={{color:"var(--ink-soft)"}}>
+                此乃<span className="underline-wavy">科学史上最著名的「零结果」</span>。人未测得以太，却测得：以太未必在。凡坚固之范式，于此裂。
+              </p>
+
+              <div className="mt-5 p-3" style={{background:"rgba(138,55,38,.07)", borderLeft:"3px solid var(--rust)"}}>
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>NULL RESULT · a.d. 1887</div>
+                <div className="hand" style={{color:"var(--rust-deep)", fontSize:16, marginTop:4}}>
+                  Δt ≈ 0 · Δλ ≈ 0 · 以太 ≡ ∅
+                </div>
+              </div>
+
+              <div className="mt-5 hand" style={{color:"var(--ink-soft)", fontSize:15}}>
+                十八年后，一位在伯尔尼专利局的年轻人，将据此而写「光速不变」——
+              </div>
+            </div>
+          </div>
+
+          <LeafFooter n={8} total={10} motto="无 · 即为一大有"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 9 — Einstein ======
+function Layer9(){
+  return (
+    <section id="s9-einstein" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:1020}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":"-.4deg", transform:"rotate(-.4deg)"}}>
+          <LeafHeader sampleNo="009" date="1905-06-30" location="Bern · Patentamt" bearing="Annalen der Physik" stratum="IX · 相对之说"/>
+
+          <div className="grid" style={{gridTemplateColumns:"1.2fr 1fr", gap:36, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 不再是测量，而是公设 ——</div>
+              <h2>c &nbsp;不 &nbsp;依 &nbsp;观 &nbsp;察 &nbsp;者</h2>
+              <h3 style={{marginTop:6}}>Albert Einstein &nbsp;· 《论运动物体的电动力学》</h3>
+              <p className="mt-5 dropcap">
+                既以太不在，何以光速于一切惯性观察者皆同？爱因斯坦不再追问，而立之为公理：<span className="underline-rust">光于真空中之速度 c，独立于光源与观察者之运动</span>。
+              </p>
+              <p className="mt-3">
+                此一看似朴素之公设，颠覆时空：同时不复绝对，长度随速而缩，时间因速而迟。光速不再是众多速度中最疾者，而是时空结构之常数——凡具质者，不可抵达；凡无质者，唯以此行。
+              </p>
+
+              <div className="mt-5 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>POSTULATA</div>
+                <div className="oldd" style={{fontSize:15, color:"var(--ink)", marginTop:4, fontStyle:"italic"}}>
+                  i. &nbsp;Principium relativitatis<br/>
+                  ii. &nbsp;Constantia velocitatis lucis
+                </div>
+                <div className="hand" style={{color:"var(--rust-deep)", marginTop:8, fontSize:15}}>
+                  二十世纪之物理，皆由此二公设而出。
+                </div>
+              </div>
+            </div>
+
+            <div className="specimen" style={{transform:"rotate(1.3deg)"}}>
+              <Pin x={-6} y={-6} color="var(--rust)"/>
+              <svg viewBox="0 0 320 320" width="100%" style={{display:"block"}}>
+                <g className="rough-soft">
+                  {/* Lightcone axes */}
+                  <line x1="160" y1="40" x2="160" y2="280" stroke="var(--ink-soft)" strokeWidth=".8"/>
+                  <line x1="30" y1="240" x2="290" y2="240" stroke="var(--ink-soft)" strokeWidth=".8"/>
+                  <text x="164" y="38" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ink-soft)">ct</text>
+                  <text x="288" y="236" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ink-soft)">x</text>
+
+                  {/* Lightcone */}
+                  <polygon points="160,160 60,60 260,60" fill="rgba(180,122,36,.1)" stroke="var(--ochre)" strokeWidth="1"/>
+                  <polygon points="160,160 60,240 260,240" fill="rgba(74,103,105,.08)" stroke="var(--teal)" strokeWidth="1"/>
+                  <text x="220" y="100" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--ochre)">future cone</text>
+                  <text x="220" y="220" fontFamily="IM Fell English" fontStyle="italic" fontSize="11" fill="var(--teal)">past cone</text>
+
+                  {/* c lines */}
+                  <line x1="60" y1="60" x2="260" y2="260" stroke="var(--rust)" strokeWidth="1.2" strokeDasharray="4 2"/>
+                  <line x1="260" y1="60" x2="60" y2="260" stroke="var(--rust)" strokeWidth="1.2" strokeDasharray="4 2"/>
+
+                  {/* worldline of observer */}
+                  <path d="M160 280 q6 -30 0 -60 q-6 -30 0 -60" fill="none" stroke="var(--ink)" strokeWidth="1.3"/>
+                  <circle cx="160" cy="160" r="4" fill="var(--rust)"/>
+                  <text x="166" y="156" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--rust-deep)">此 · hic</text>
+
+                  {/* labels */}
+                  <text x="56" y="56" fontFamily="Special Elite" fontSize="10" fill="var(--rust)">slope = c</text>
+                  <text x="160" y="310" fontFamily="Ma Shan Zheng" fontSize="11" fill="var(--ink-soft)" textAnchor="middle">光锥之内·可达；锥外·不可达</text>
+                </g>
+              </svg>
+              <div className="samp-label mt-2">SPEC. 09 · 光锥 · 时空之拓扑</div>
+            </div>
+          </div>
+
+          <OrnamentalDivider/>
+
+          <div className="mt-6 grid" style={{gridTemplateColumns:"1fr 1fr", gap:24}}>
+            <div className="parch p-4">
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>CONSEQUENTIA · I</div>
+              <div className="hand" style={{color:"var(--rust-deep)", fontSize:15, marginTop:6}}>
+                E = mc²
+              </div>
+              <div style={{fontSize:13, color:"var(--ink-soft)", marginTop:4}}>
+                能量与质量之等价——c 居其核心。
+              </div>
+            </div>
+            <div className="parch p-4">
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>CONSEQUENTIA · II</div>
+              <div className="hand" style={{color:"var(--rust-deep)", fontSize:15, marginTop:6}}>
+                时空 ≡ 一体
+              </div>
+              <div style={{fontSize:13, color:"var(--ink-soft)", marginTop:4}}>
+                Minkowski 四维时空由此而生。
+              </div>
+            </div>
+          </div>
+
+          <LeafFooter n={9} total={10} motto="非测 · 乃立"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== LAYER 10 — 1983 ======
+function Layer10(){
+  const [tick, setTick] = useState(0);
+  useEffect(()=>{
+    const t = setInterval(()=>setTick(v=>v+1), 40);
+    return ()=>clearInterval(t);
+  },[]);
+  const cValue = "299792458";
+
+  // Light travel distance in real time since mount (m)
+  const [started] = useState(Date.now());
+  const dist = ((Date.now()-started)/1000)*299792458;
+
+  return (
+    <section id="s10-modern" style={{padding:"40px 40px 100px"}}>
+      <div className="mx-auto" style={{maxWidth:1020}}>
+        <div className="leaf drift relative" style={{padding:"52px 56px", "--r":".3deg", transform:"rotate(.3deg)"}}>
+          <LeafHeader sampleNo="010" date="1983-10-21" location="Conférence Générale des Poids et Mesures" bearing="Paris · Sèvres" stratum="X · 最上之层"/>
+          <Tape style={{top:-14, left:"20%", transform:"rotate(2deg)"}}/>
+          <Tape cls="rust" style={{top:-14, right:"12%", transform:"rotate(-3deg)"}}/>
+
+          <div className="grid" style={{gridTemplateColumns:"1fr 1fr", gap:36, alignItems:"start"}}>
+            <div>
+              <div className="hand" style={{color:"var(--ochre)", fontSize:14}}>—— 最终，不再测量 ——</div>
+              <h2>以光 · 定义米</h2>
+              <h3 style={{marginTop:6}}>17ᵉ Conférence Générale des Poids et Mesures</h3>
+              <p className="mt-5 dropcap">
+                自罗默以来三百年，人以愈精之器测光速，其值逐层逼近。至二十世纪中叶，激光与原子钟使测量之精度远超「米」所依之铂铱原器。于是天平颠倒：<span className="underline-rust">不再以米量光速，而以光速定义米</span>。
+              </p>
+              <p className="mt-3">
+                1983 年国际计量大会议定：光于真空中于 1/299 792 458 秒行走之距，即一米。光速遂成常数，不可再修，精度无穷。
+              </p>
+
+              <div className="mt-5 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>DEFINITIO · METRI · 17ᵉ CGPM</div>
+                <div className="oldd" style={{fontSize:14, color:"var(--ink)", marginTop:4, fontStyle:"italic"}}>
+                  "The metre is the length of the path travelled by light in vacuum during a time interval of 1/299 792 458 of a second."
+                </div>
+              </div>
+
+              <div className="mt-5 hand" style={{color:"var(--rust-deep)", fontSize:17}}>
+                地层至此 · 不再沉积。光速成度量之基，不复为被测之物。
+              </div>
+            </div>
+
+            {/* The number display */}
+            <div>
+              <div className="specimen" style={{padding:"22px 18px 18px"}}>
+                <div className="type" style={{fontSize:10, letterSpacing:".2em", color:"var(--ink-soft)", textAlign:"center"}}>
+                  VELOCITAS LUCIS · c ≡
+                </div>
+                <div className="ctick" style={{
+                  fontFamily:"'IM Fell English',serif",
+                  fontSize:"clamp(32px, 5.2vw, 52px)",
+                  color:"var(--rust-deep)",
+                  letterSpacing:".04em",
+                  textAlign:"center",
+                  margin:"8px 0",
+                  lineHeight:1
+                }}>
+                  {cValue.slice(0,3)}&nbsp;{cValue.slice(3,6)}&nbsp;{cValue.slice(6)}
+                </div>
+                <div style={{textAlign:"center", fontFamily:"'Special Elite',monospace", fontSize:12, color:"var(--ink-soft)", letterSpacing:".15em"}}>
+                  METRES &nbsp;· PER ·&nbsp; SECOND
+                </div>
+                <div style={{margin:"14px 0 0", borderTop:"1px dashed rgba(80,60,38,.35)", paddingTop:10}}>
+                  <div className="hand" style={{fontSize:14, color:"var(--ink)", textAlign:"center"}}>
+                    精确值 · 无不确定度 · 无后位小数
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 parch p-4">
+                <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>
+                  AT THIS VERY SECOND · 自本页加载以来
+                </div>
+                <div className="num" style={{fontSize:20, marginTop:6}}>
+                  {dist.toExponential(3)} m
+                </div>
+                <div className="hand" style={{color:"var(--rust)", fontSize:14}}>
+                  光已行此远。窗外月亮的光，生于 1.3 秒之前。
+                </div>
+              </div>
+
+              <div className="mt-4" style={{display:"flex", justifyContent:"space-between", gap:12}}>
+                <div className="stamp" style={{fontSize:11}}>CONSTANT · DEFINITIVA</div>
+                <div className="stamp ochre" style={{fontSize:11}}>NO NEWER STRATUM</div>
+              </div>
+            </div>
+          </div>
+
+          <LeafFooter n={10} total={10} motto="终 · 而非尽"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== Colophon / Ending ======
+function Colophon(){
+  return (
+    <section id="colophon" style={{padding:"40px 40px 120px"}}>
+      <div className="mx-auto" style={{maxWidth:760}}>
+        <div className="leaf drift relative" style={{padding:"60px 56px 52px", "--r":"-.3deg", transform:"rotate(-.3deg)"}}>
+          <Tape cls="teal" style={{top:-14, left:"40%", transform:"rotate(1deg)"}}/>
+          <div className="stain" style={{width:120, height:90, top:40, right:40, opacity:.5}}/>
+
+          <div style={{textAlign:"center"}}>
+            <div className="type" style={{fontSize:11, letterSpacing:".3em", color:"var(--ink-soft)"}}>COLOPHON</div>
+            <OrnamentalDivider/>
+            <h2 className="display" style={{marginTop:16}}>跋 · 地层之上</h2>
+            <div className="hand mt-4" style={{color:"var(--ink)", fontSize:17, lineHeight:1.9, textAlign:"left"}}>
+              每一代人，皆以自己的尺，量同一束光。<br/>
+              从臆测到齿轮，从齿轮到干涉，从干涉到定义——<br/>
+              <span className="underline-rust" style={{color:"var(--rust-deep)"}}>被测之物，终成测量之基</span>。
+            </div>
+
+            <div className="mt-6 p-4 parch" style={{textAlign:"left"}}>
+              <div className="type" style={{fontSize:10, letterSpacing:".15em", color:"var(--ink-soft)"}}>LEGENDA</div>
+              <div className="hand" style={{color:"var(--ink)", fontSize:14, marginTop:6}}>
+                · 红笔 · 批注与补正<br/>
+                · 铅笔 · 速写与度量<br/>
+                · 赭色 · 光之路径<br/>
+                · 苔绿 · 野外标本与植生<br/>
+                · 黛青 · 仪器与镜<br/>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center gap-5" style={{flexWrap:"wrap"}}>
+              <div className="stamp">ARCHIVED</div>
+              <div className="seal" style={{transform:"rotate(-4deg)"}}>
+                <div style={{textAlign:"center", lineHeight:1}}>
+                  <div style={{fontSize:10}}>光 · 行</div>
+                  <div style={{fontSize:10}}>之 · 记</div>
+                </div>
+              </div>
+              <div className="stamp ochre">FINIS</div>
+            </div>
+
+            <div className="mt-6 sig" style={{color:"var(--iron)"}}>若虚 · 记</div>
+
+            <div className="hairline mt-8 pt-4 type" style={{fontSize:10, letterSpacing:".12em", color:"var(--ink-soft)"}}>
+              VOL. I &nbsp; · &nbsp; FOLIOS 01 — 10 &nbsp; · &nbsp; PAPER № 7 &nbsp; · &nbsp; BOUND IN LINEN
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ====== MAIN APP ======
+function App(){
+  const [active, setActive] = useState(0);
+
+  useEffect(()=>{
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          const idx = strata.findIndex(s=>s.id===e.target.id);
+          if(idx>=0) setActive(idx);
+        }
+      });
+    }, {rootMargin:"-40% 0px -40% 0px"});
+    document.querySelectorAll("section[id]").forEach(s=>io.observe(s));
+    return ()=>io.disconnect();
+  },[]);
+
+  const jump = (id)=>{
+    const el = document.getElementById(id);
+    if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+  };
+
+  return (
+    <div style={{position:"relative", zIndex:3}}>
+      <StratNav active={active} onJump={jump}/>
+      <Cover/>
+      <StratIndex/>
+      <Layer1/>
+      <Layer2/>
+      <Layer3/>
+      <Layer4/>
+      <Layer5/>
+      <Layer6/>
+      <Layer7/>
+      <Layer8/>
+      <Layer9/>
+      <Layer10/>
+      <Colophon/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
