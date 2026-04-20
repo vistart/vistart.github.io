@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment, isValidElement, cloneElement } from "react";
 
 // ——————————————————————————————————————————
 // 元素数据库（1–118）
@@ -1224,6 +1224,86 @@ const RADIOACTIVE = new Set([
   104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, // 超重元素
 ]);
 
+// ——————————————————————————————————————————
+// 稀土元素（Rare Earth Elements, REE）
+// 国际纯粹与应用化学联合会（IUPAC）定义：
+//   钪 Sc(21) + 钇 Y(39) + 镧系 15 种（57–71）= 共 17 种
+// 钇、钪常与镧系矿物伴生，化学性质极为相似，故一并归类
+// ——————————————————————————————————————————
+const RARE_EARTH = new Set([
+  21, 39,                                                            // 钪、钇
+  57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,        // 镧系 15 种
+]);
+
+// ——————————————————————————————————————————
+// RichText：将 Unicode 上标/下标字符转为真正的 <sup>/<sub> 元素
+// 原因：字符串中的 ²⁸⁵ 混用了 Latin-1 Supplement（²³）与 Superscripts
+// 独立区块（⁰⁴⁵⁶⁷⁸⁹），在多数中文 serif 字体中会分别回退到不同子字体，
+// 导致基线、字宽不一致 —— 视觉上表现为「⁸ 像 ² 的下标、⁵ 离前两位过远」。
+// 此处统一转为 <sup>，用单一 monospace 字体渲染，保证对齐工整。
+// ——————————————————————————————————————————
+const SUP_MAP = {
+  "⁰":"0","¹":"1","²":"2","³":"3","⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9",
+  "⁺":"+","⁻":"-","⁼":"=","⁽":"(","⁾":")","ⁿ":"n","ⁱ":"i",
+};
+const SUB_MAP = {
+  "₀":"0","₁":"1","₂":"2","₃":"3","₄":"4","₅":"5","₆":"6","₇":"7","₈":"8","₉":"9",
+  "₊":"+","₋":"-","₌":"=","₍":"(","₎":")",
+};
+const HAS_SUPSUB = /[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎]/;
+
+const SUPSUB_STYLE = {
+  fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+  fontSize: "0.72em",
+  fontWeight: 500,
+  letterSpacing: "0.02em",
+  lineHeight: 0,
+};
+
+function processString(str) {
+  if (!str || !HAS_SUPSUB.test(str)) return str;
+  const out = [];
+  let buf = "";
+  let mode = null; // "sup" | "sub" | null
+  let key = 0;
+  const flush = () => {
+    if (!buf) return;
+    const k = key++;
+    if (mode === "sup") out.push(<sup key={`s${k}`} style={SUPSUB_STYLE}>{buf}</sup>);
+    else if (mode === "sub") out.push(<sub key={`b${k}`} style={SUPSUB_STYLE}>{buf}</sub>);
+    else out.push(<Fragment key={`t${k}`}>{buf}</Fragment>);
+    buf = "";
+  };
+  for (const ch of str) {
+    const sup = SUP_MAP[ch];
+    const sub = SUB_MAP[ch];
+    const next = sup !== undefined ? "sup" : sub !== undefined ? "sub" : null;
+    if (next !== mode) { flush(); mode = next; }
+    buf += next === "sup" ? sup : next === "sub" ? sub : ch;
+  }
+  flush();
+  return <>{out}</>;
+}
+
+function transformNode(node) {
+  if (node == null || typeof node === "boolean") return node;
+  if (typeof node === "string") return processString(node);
+  if (typeof node === "number") return node;
+  if (Array.isArray(node)) {
+    return node.map((n, i) => <Fragment key={i}>{transformNode(n)}</Fragment>);
+  }
+  if (isValidElement(node)) {
+    const kids = node.props.children;
+    if (kids == null) return node;
+    return cloneElement(node, {}, transformNode(kids));
+  }
+  return node;
+}
+
+function RichText({ children }) {
+  return transformNode(children);
+}
+
 // 放射性衰变详情：半衰期与衰变过程
 // hl  半衰期（给出最重要/最稳定同位素）
 // decay 衰变路径：粒子类型与衰变终点
@@ -1347,6 +1427,13 @@ export default function PeriodicTable() {
             <span style={{ textShadow: "0 0 6px #d4a84788", fontSize: "0.9rem" }}>☢</span>
             <span>常见同位素具放射性</span>
           </div>
+          <div
+            className="flex items-center gap-2 text-xs pl-3 ml-1 border-l"
+            style={{ color: "#7be8cf", borderColor: "#2a3142" }}
+          >
+            <span style={{ textShadow: "0 0 6px #7be8cf88", fontSize: "0.9rem" }}>✧</span>
+            <span>稀土元素（17 种）</span>
+          </div>
         </div>
       </header>
 
@@ -1399,6 +1486,9 @@ export default function PeriodicTable() {
             />
           ))}
         </div>
+
+        {/* f 区排版说明 */}
+        <FBlockNote />
       </section>
 
       {/* 详情面板 */}
@@ -1477,6 +1567,20 @@ function ElementCell({ el, active, selected, onHover, onSelect }) {
               ☢
             </span>
           )}
+          {RARE_EARTH.has(el.n) && (
+            <span
+              aria-label="稀土元素"
+              title="稀土元素 (Rare Earth Element)"
+              style={{
+                color: "#7be8cf",
+                fontSize: "0.75em",
+                textShadow: "0 0 4px #7be8cf99",
+                lineHeight: 1,
+              }}
+            >
+              ✧
+            </span>
+          )}
         </span>
         <span className="text-[0.5rem] md:text-[0.55rem] opacity-60 text-right leading-tight">
           {el.zh}
@@ -1501,8 +1605,93 @@ function ElementCell({ el, active, selected, onHover, onSelect }) {
 }
 
 // ——————————————————————————————————————————
-// 空状态面板
+// f 区排版说明（为何镧系/锕系独立排在下方）
 // ——————————————————————————————————————————
+function FBlockNote() {
+  return (
+    <aside className="mt-8 max-w-5xl mx-auto px-2 md:px-4">
+      <div
+        className="rounded-md border p-5 md:p-6 relative overflow-hidden"
+        style={{
+          borderColor: "#e08ab844",
+          background:
+            "linear-gradient(135deg, #1a0e1a 0%, #0a0e1a 60%, #0a0e1a 100%)",
+          boxShadow: "inset 0 0 40px #e08ab808",
+        }}
+      >
+        {/* 左侧装饰条 */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-[2px]"
+          style={{
+            background:
+              "linear-gradient(180deg, #e08ab8 0%, #e07080 50%, transparent 100%)",
+          }}
+        />
+        <div
+          className="flex items-center gap-3 text-xs uppercase tracking-[0.3em]"
+          style={{ color: "#e08ab8", fontFamily: "'Geist Mono', monospace" }}
+        >
+          <span style={{ fontSize: "0.95rem" }}>ƒ</span>
+          <span>About the f-block layout</span>
+        </div>
+        <h3
+          className="mt-2 text-xl md:text-2xl"
+          style={{
+            fontFamily: "'Fraunces', 'Noto Serif SC', serif",
+            fontWeight: 500,
+            color: "#f3d2e4",
+          }}
+        >
+          为何镧系、锕系<span className="italic opacity-70"> 抽出下置</span>
+        </h3>
+        <div
+          className="mt-4 space-y-3 text-sm md:text-[0.95rem] leading-relaxed"
+          style={{ color: "#b8c0d0", fontFamily: "'Noto Serif SC', serif" }}
+        >
+          <p>
+            镧系（<span style={{ color: "#f3d2e4" }}>57–71</span>）与锕系
+            （<span style={{ color: "#f3cfd4" }}>89–103</span>）属于
+            <span style={{ color: "#e08ab8" }}> f 区元素 </span>
+            —— 它们最外层的 4f / 5f 亚壳层依次被电子填充。严格按电子构型排列，它们本应插入第 3 族（ⅢB）：即紧接
+            <span style={{ color: "#f3d2e4", fontFamily: "'Geist Mono', monospace" }}> La(57) </span>与
+            <span style={{ color: "#f3cfd4", fontFamily: "'Geist Mono', monospace" }}> Ac(89) </span>之后、
+            <span style={{ color: "#cfe4f5", fontFamily: "'Geist Mono', monospace" }}> Hf(72) </span>与
+            <span style={{ color: "#cfe4f5", fontFamily: "'Geist Mono', monospace" }}> Rf(104) </span>之前，各再塞入 14 列。
+          </p>
+          <p>
+            若照此展开，周期表就会从今天的 18 列扩张为
+            <span style={{ color: "#e8e4d8" }}> 32 列</span>
+            （称为「长式周期表」），在书页或屏幕上极其扁平、难以一览。为此，自 1940 年代西博格（Seaborg）重整周期表起，化学界约定将 30 个 f 区元素「抽出」主表，以两行的形式单独置于下方；第 3 族对应位置仅留占位符标注
+            <span
+              style={{
+                color: "#e08ab8",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              {" "}57–71{" "}
+            </span>
+            与
+            <span
+              style={{
+                color: "#e07080",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              {" "}89–103
+            </span>
+            ，提示读者此处应插入这 30 个 f 区元素。
+          </p>
+          <p style={{ color: "#8892a6" }}>
+            本质上，这是一种<span style={{ color: "#d4a847" }}>视觉上的妥协</span>——化学与物理规律并未改变，只为让表格更易阅读。读者可将主表视为
+            s、p、d 三区，而下方两行则是被「折叠」出来的 f 区。
+          </p>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+
 function EmptyPanel() {
   return (
     <div
@@ -1642,6 +1831,21 @@ function DetailsPanel({ el, pinned, onClear }) {
             <Chip label="相对原子质量" value={el.m} glow={cat.glow} />
             <Chip label="周期" value={el.p} glow={cat.glow} />
             <Chip label="族" value={el.g} glow={cat.glow} />
+            {RARE_EARTH.has(el.n) && (
+              <div
+                className="px-2.5 py-1 rounded border flex items-center gap-1.5"
+                style={{
+                  borderColor: "#7be8cf77",
+                  background: "#7be8cf14",
+                  color: "#7be8cf",
+                  boxShadow: "0 0 8px #7be8cf33",
+                }}
+                title="稀土元素 (Rare Earth Element)"
+              >
+                <span style={{ textShadow: "0 0 6px #7be8cfaa" }}>✧</span>
+                <span>稀土元素</span>
+              </div>
+            )}
             {rad && (
               <div
                 className="px-2.5 py-1 rounded border flex items-center gap-1.5"
@@ -1697,7 +1901,7 @@ function DetailsPanel({ el, pinned, onClear }) {
               className="mt-2 text-sm leading-relaxed"
               style={{ color: "#cfd4e0", fontFamily: "'Noto Serif SC', serif" }}
             >
-              {f.content}
+              <RichText>{f.content}</RichText>
             </p>
           </div>
         ))}
