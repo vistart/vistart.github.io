@@ -1348,6 +1348,128 @@ const DECAY_INFO = {
 };
 
 // ——————————————————————————————————————————
+// 原子电子构型
+// 基于 Aufbau 构造原理自动推导，再用反常例外表覆盖 d / f 区的已知特殊情况。
+// computeAtomConfig(z) → {
+//   full:      "1s² 2s² 2p⁶ 3s¹"          完整形式（Unicode 上标，经 RichText 渲染）
+//   short:     "[Ne] 3s¹"                   贵气体缩写
+//   shells:    [2, 8, 1]                    各主壳层电子数 K, L, M, N, O, P, Q
+//   subshells: [{name:"1s",count:2}, ...]   按主壳层升序的子壳层列表
+// }
+// ——————————————————————————————————————————
+
+// 构造原理填充顺序：1s → 2s → 2p → 3s → 3p → 4s → 3d → 4p …
+const AUFBAU_ORDER = [
+  ["1s", 2], ["2s", 2], ["2p", 6],
+  ["3s", 2], ["3p", 6], ["4s", 2], ["3d", 10], ["4p", 6],
+  ["5s", 2], ["4d", 10], ["5p", 6],
+  ["6s", 2], ["4f", 14], ["5d", 10], ["6p", 6],
+  ["7s", 2], ["5f", 14], ["6d", 10], ["7p", 6],
+];
+
+// 已知的 Aufbau 反常（d 区 / f 区 / 超重区共 20 例）
+// 每项为覆盖用的子壳层实际电子数；未列出的子壳层保持 Aufbau 默认。
+// 数据来源：IUPAC 周期表（2021）与 CRC 化学手册 2023 版
+const CONFIG_EXCEPTIONS = {
+  24:  { "4s": 1, "3d": 5 },     // Cr  铬 ·  半充满稳定
+  29:  { "4s": 1, "3d": 10 },    // Cu  铜 ·  全充满稳定
+  41:  { "5s": 1, "4d": 4 },     // Nb  铌
+  42:  { "5s": 1, "4d": 5 },     // Mo  钼 ·  半充满稳定
+  44:  { "5s": 1, "4d": 7 },     // Ru  钌
+  45:  { "5s": 1, "4d": 8 },     // Rh  铑
+  46:  { "5s": 0, "4d": 10 },    // Pd  钯 ·  唯一最外 s 壳层空
+  47:  { "5s": 1, "4d": 10 },    // Ag  银 ·  全充满稳定
+  57:  { "4f": 0, "5d": 1 },     // La  镧
+  58:  { "4f": 1, "5d": 1 },     // Ce  铈
+  64:  { "4f": 7, "5d": 1 },     // Gd  钆 ·  4f 半充满稳定
+  78:  { "6s": 1, "5d": 9 },     // Pt  铂
+  79:  { "6s": 1, "5d": 10 },    // Au  金 ·  全充满稳定
+  89:  { "5f": 0, "6d": 1 },     // Ac  锕
+  90:  { "5f": 0, "6d": 2 },     // Th  钍
+  91:  { "5f": 2, "6d": 1 },     // Pa  镤
+  92:  { "5f": 3, "6d": 1 },     // U   铀
+  93:  { "5f": 4, "6d": 1 },     // Np  镎
+  96:  { "5f": 7, "6d": 1 },     // Cm  锔 ·  5f 半充满稳定
+  103: { "6d": 0, "7p": 1 },     // Lr  铹 ·  IUPAC 2015 修订版，7p¹ 而非 6d¹
+};
+
+// 贵气体（用于缩写式）
+const NOBLE_GAS_CORES = [
+  { z: 2, s: "He" }, { z: 10, s: "Ne" }, { z: 18, s: "Ar" },
+  { z: 36, s: "Kr" }, { z: 54, s: "Xe" }, { z: 86, s: "Rn" },
+];
+
+// 主壳层名称（光谱学 K / L / M / N / O / P / Q 命名法，巴克拉 1911）
+const SHELL_LETTERS = ["K", "L", "M", "N", "O", "P", "Q"];
+
+// 数字 → Unicode 上标（和全局 RichText 管线保持一致）
+const _SUP_DIGIT = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
+function toSuperscript(n) {
+  return String(n).split("").map(d => _SUP_DIGIT[+d] ?? d).join("");
+}
+
+// 排序：先按主壳层，同壳层内按 s < p < d < f
+const _SPDF_RANK = { s: 0, p: 1, d: 2, f: 3 };
+function sortSubshells(arr) {
+  return arr.slice().sort((a, b) => {
+    const na = +a.name[0], nb = +b.name[0];
+    if (na !== nb) return na - nb;
+    return _SPDF_RANK[a.name[1]] - _SPDF_RANK[b.name[1]];
+  });
+}
+
+function computeAtomConfig(z) {
+  if (!z || z < 1) return { full: "", short: "", shells: [], subshells: [] };
+
+  // (1) Aufbau 顺序填充
+  const filled = {};
+  let remaining = z;
+  for (const [sub, max] of AUFBAU_ORDER) {
+    if (remaining <= 0) break;
+    const fill = Math.min(max, remaining);
+    filled[sub] = fill;
+    remaining -= fill;
+  }
+
+  // (2) 覆盖反常例外
+  const ex = CONFIG_EXCEPTIONS[z];
+  if (ex) for (const [sub, cnt] of Object.entries(ex)) filled[sub] = cnt;
+
+  // (3) 仅保留非空子壳层，按主壳层升序排列
+  const subshells = sortSubshells(
+    Object.entries(filled)
+      .filter(([, c]) => c > 0)
+      .map(([name, count]) => ({ name, count }))
+  );
+
+  // (4) 各主壳层电子总数
+  const shells = [];
+  for (const { name, count } of subshells) {
+    const i = +name[0] - 1;
+    shells[i] = (shells[i] || 0) + count;
+  }
+  for (let i = 0; i < shells.length; i++) if (shells[i] == null) shells[i] = 0;
+
+  // (5) 完整形式
+  const full = subshells.map(s => `${s.name}${toSuperscript(s.count)}`).join(" ");
+
+  // (6) 贵气体缩写：剔除最大不超过 z 的贵气体已含的所有子壳层
+  let core = null;
+  for (let i = NOBLE_GAS_CORES.length - 1; i >= 0; i--) {
+    if (NOBLE_GAS_CORES[i].z < z) { core = NOBLE_GAS_CORES[i]; break; }
+  }
+  let short = full;
+  if (core) {
+    const coreCfg = computeAtomConfig(core.z);
+    const coreNames = new Set(coreCfg.subshells.map(s => s.name));
+    const outer = subshells.filter(s => !coreNames.has(s.name));
+    short = `[${core.s}] ` + outer.map(s => `${s.name}${toSuperscript(s.count)}`).join(" ");
+  }
+
+  return { full, short, shells, subshells };
+}
+
+// ——————————————————————————————————————————
 // 主组件
 // ——————————————————————————————————————————
 export default function PeriodicTable() {
@@ -1715,11 +1837,158 @@ function EmptyPanel() {
 }
 
 // ——————————————————————————————————————————
+// BohrModel · 玻尔原子模型
+// 核居中 + 每个主壳层一个轨道环 + 电子沿环均匀分布并绕核旋转。
+// 相邻壳层旋转方向相反、外层周期更长；价电子壳层高亮显示。
+// SMIL animateTransform 保证跨浏览器稳定（Chrome / Firefox / Safari 均支持）。
+// 尊重 prefers-reduced-motion。
+// ——————————————————————————————————————————
+function BohrModel({ shells, glow, symbol, reducedMotion = false }) {
+  // 视图几何
+  const CX = 220, CY = 220;
+  const VIEW = 440;
+  const NUCLEUS_R = 22;
+
+  // 各主壳层半径（从内到外）
+  const R = [46, 73, 100, 127, 154, 181, 208];
+  // 各主壳层旋转周期(秒)：外层越远、周期越长
+  const DUR = [9, 13, 18, 24, 30, 37, 45];
+
+  // 仅渲染非空壳层
+  const filled = shells.filter(c => c > 0);
+  const outerIdx = filled.length - 1;
+
+  // 电子点半径：壳层越拥挤，电子越小，避免重叠
+  const sizeFor = (count) => {
+    if (count <= 2)  return 5;
+    if (count <= 8)  return 4;
+    if (count <= 18) return 3.3;
+    if (count <= 25) return 2.8;
+    return 2.4;
+  };
+
+  // 把 n 个电子均匀排布在半径 r 的圆周上（起点 12 点方向）
+  const electronPositions = (r, count) => {
+    const pts = [];
+    for (let i = 0; i < count; i++) {
+      const a = (2 * Math.PI * i) / count - Math.PI / 2;
+      pts.push({ x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) });
+    }
+    return pts;
+  };
+
+  return (
+    <svg
+      viewBox={`0 0 ${VIEW} ${VIEW}`}
+      className="block w-full h-auto"
+      style={{ maxWidth: 360, filter: "drop-shadow(0 0 24px rgba(0,0,0,0.6))" }}
+      role="img"
+      aria-label={`${symbol} 玻尔原子模型，核外共 ${filled.length} 层电子`}
+    >
+      <defs>
+        {/* 电子辉光 */}
+        <filter id="bohrElectronGlow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="1.8" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        {/* 原子核外晕 */}
+        <filter id="bohrNucleusHalo" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+        {/* 原子核径向渐变 */}
+        <radialGradient id="bohrNucleusGrad" cx="0.4" cy="0.35">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="35%" stopColor={glow} />
+          <stop offset="100%" stopColor={glow} stopOpacity="0.55" />
+        </radialGradient>
+      </defs>
+
+      {/* 轨道环 —— 价电子层实线，内层虚线更暗 */}
+      {filled.map((_, i) => (
+        <circle
+          key={`ring-${i}`}
+          cx={CX} cy={CY} r={R[i]}
+          fill="none"
+          stroke={glow}
+          strokeOpacity={i === outerIdx ? 0.4 : 0.18}
+          strokeWidth={i === outerIdx ? 1.2 : 0.9}
+          strokeDasharray={i === outerIdx ? "none" : "2 4"}
+        />
+      ))}
+
+      {/* 电子 —— 每层一组，整组绕核自转 */}
+      {filled.map((count, i) => {
+        const pts = electronPositions(R[i], count);
+        const sz = sizeFor(count);
+        const valence = i === outerIdx;
+        const dir = i % 2 === 0 ? 1 : -1; // 相邻壳层方向相反
+        return (
+          <g key={`shell-${i}`}>
+            {pts.map((p, j) => (
+              <circle
+                key={j}
+                cx={p.x} cy={p.y}
+                r={sz}
+                fill={valence ? glow : "#e8e4d8"}
+                opacity={valence ? 1 : 0.55}
+                filter="url(#bohrElectronGlow)"
+              />
+            ))}
+            {!reducedMotion && (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from={`0 ${CX} ${CY}`}
+                to={`${dir * 360} ${CX} ${CY}`}
+                dur={`${DUR[i]}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </g>
+        );
+      })}
+
+      {/* 原子核 —— 外晕 → 本体 → 元素符号 */}
+      <circle cx={CX} cy={CY} r={NUCLEUS_R + 14} fill={glow} opacity={0.18} filter="url(#bohrNucleusHalo)" />
+      <circle cx={CX} cy={CY} r={NUCLEUS_R} fill="url(#bohrNucleusGrad)" />
+      <text
+        x={CX} y={CY}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontFamily="'Fraunces', 'Noto Serif SC', serif"
+        fontWeight={600}
+        fontSize={symbol.length > 2 ? 14 : 18}
+        fill="#0a0e1a"
+      >
+        {symbol}
+      </text>
+    </svg>
+  );
+}
+
+// ——————————————————————————————————————————
 // 详情面板
 // ——————————————————————————————————————————
 function DetailsPanel({ el, pinned, onClear }) {
   const cat = CATEGORIES[el.cat];
   const rad = DECAY_INFO[el.n];
+
+  // 电子构型（按元素记忆，切换元素时重算）
+  const atom = useMemo(() => computeAtomConfig(el.n), [el.n]);
+
+  // 尊重用户系统级「减少动画」偏好
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const onChange = (e) => setReducedMotion(e.matches);
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
 
   const fields = [
     { label: "常见单质", icon: "◈", content: el.common },
@@ -1860,6 +2129,183 @@ function DetailsPanel({ el, pinned, onClear }) {
                 <span>放射性</span>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* 原子结构:玻尔模型 + 电子构型 */}
+      <div
+        className="grid grid-cols-1 md:grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-px border-b"
+        style={{
+          background: `${cat.glow}11`,
+          borderColor: `${cat.glow}22`,
+        }}
+      >
+        {/* 左:玻尔模型动画 */}
+        <div
+          className="p-6 md:p-8 flex flex-col items-center justify-center gap-3"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, #0d1222 0%, #07090f 75%)",
+            minHeight: 320,
+          }}
+        >
+          <BohrModel
+            shells={atom.shells}
+            glow={cat.glow}
+            symbol={el.s}
+            reducedMotion={reducedMotion}
+          />
+          <div
+            className="text-[0.6rem] uppercase tracking-[0.3em] opacity-60"
+            style={{
+              color: cat.glow,
+              fontFamily: "'Geist Mono', monospace",
+            }}
+          >
+            Bohr Atomic Model
+          </div>
+        </div>
+
+        {/* 右:电子构型文本 + 壳层分布 */}
+        <div className="p-6 md:p-8 flex flex-col gap-6" style={{ background: "#0a0e1a" }}>
+          <div>
+            <div
+              className="flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.25em]"
+              style={{ color: cat.glow, fontFamily: "'Geist Mono', monospace" }}
+            >
+              <span className="text-sm">◎</span>
+              <span>电子构型 · Electron Configuration</span>
+            </div>
+
+            <dl className="mt-4 space-y-3">
+              {/* 完整形式 */}
+              <div className="flex flex-col md:flex-row md:items-baseline md:gap-5">
+                <dt
+                  className="shrink-0 text-[0.65rem] uppercase tracking-[0.2em]"
+                  style={{ color: "#8892a6", fontFamily: "'Geist Mono', monospace" }}
+                >
+                  完整
+                </dt>
+                <dd
+                  className="mt-1 md:mt-0 text-base md:text-lg leading-relaxed break-words"
+                  style={{
+                    color: "#e8e4d8",
+                    fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  <RichText>{atom.full}</RichText>
+                </dd>
+              </div>
+
+              {/* 贵气体缩写 */}
+              {atom.short !== atom.full && (
+                <div className="flex flex-col md:flex-row md:items-baseline md:gap-5">
+                  <dt
+                    className="shrink-0 text-[0.65rem] uppercase tracking-[0.2em]"
+                    style={{ color: "#8892a6", fontFamily: "'Geist Mono', monospace" }}
+                  >
+                    缩写
+                  </dt>
+                  <dd
+                    className="mt-1 md:mt-0 text-base md:text-lg leading-relaxed break-words"
+                    style={{
+                      color: cat.glow,
+                      fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+                      letterSpacing: "0.02em",
+                      textShadow: `0 0 12px ${cat.glow}44`,
+                    }}
+                  >
+                    <RichText>{atom.short}</RichText>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+
+          {/* 分隔线 */}
+          <div
+            className="h-[1px]"
+            style={{ background: `linear-gradient(90deg, ${cat.glow}33, transparent)` }}
+          />
+
+          {/* 壳层分布(K/L/M/N/O/P/Q) */}
+          <div>
+            <div
+              className="flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.25em]"
+              style={{ color: cat.glow, fontFamily: "'Geist Mono', monospace" }}
+            >
+              <span className="text-sm">⊚</span>
+              <span>主壳层分布 · Shell Occupancy</span>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {atom.shells.map((count, i) => {
+                const isValence = i === atom.shells.length - 1 && count > 0;
+                return (
+                  <div
+                    key={i}
+                    className="px-3 py-2 rounded border flex flex-col items-center min-w-[3.25rem]"
+                    style={{
+                      borderColor: isValence ? `${cat.glow}aa` : `${cat.glow}33`,
+                      background: isValence ? `${cat.glow}14` : "transparent",
+                      boxShadow: isValence ? `0 0 12px ${cat.glow}33` : "none",
+                    }}
+                  >
+                    <div
+                      className="text-[0.6rem] uppercase tracking-widest"
+                      style={{
+                        color: isValence ? cat.glow : "#8892a6",
+                        fontFamily: "'Geist Mono', monospace",
+                      }}
+                    >
+                      {SHELL_LETTERS[i]}
+                    </div>
+                    <div
+                      className="text-lg leading-none mt-1"
+                      style={{
+                        color: isValence ? cat.glow : "#cfd4e0",
+                        fontFamily: "'Geist Mono', monospace",
+                        fontWeight: isValence ? 600 : 400,
+                        textShadow: isValence ? `0 0 8px ${cat.glow}66` : "none",
+                      }}
+                    >
+                      {count}
+                    </div>
+                    <div
+                      className="text-[0.55rem] mt-0.5 opacity-60"
+                      style={{
+                        color: isValence ? cat.glow : "#56607a",
+                        fontFamily: "'Geist Mono', monospace",
+                      }}
+                    >
+                      n={i + 1}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 最外层(价层)电子数 */}
+            <p
+              className="mt-4 text-xs leading-relaxed"
+              style={{ color: "#8892a6", fontFamily: "'Noto Serif SC', serif" }}
+            >
+              最外层(<span style={{ color: cat.glow }}>价层</span>)电子数:
+              <span
+                className="ml-2"
+                style={{
+                  color: cat.glow,
+                  fontFamily: "'Geist Mono', monospace",
+                  fontWeight: 500,
+                  fontSize: "0.95rem",
+                }}
+              >
+                {atom.shells[atom.shells.length - 1]}
+              </span>
+              <span className="opacity-70"> · 决定该元素的化合价与化学性质</span>
+            </p>
           </div>
         </div>
       </div>
