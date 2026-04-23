@@ -1,0 +1,1526 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+
+/* ────────────────────────────────────────────────────────────────────
+   数据结构实验室 · 线性表
+   Specimen 01 — Sequential List  (顺序表)
+   Specimen 02 — Linked List       (链表)
+   ──────────────────────────────────────────────────────────────────── */
+
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+:root {
+  --cream:        #F1EADA;
+  --cream-light:  #F7F2E6;
+  --cream-dark:   #E4DBC4;
+  --ink:          #1F1B17;
+  --ink-soft:     #3A3530;
+  --ink-muted:    #7A6F5E;
+  --accent:       #C7381A;
+  --accent-soft:  #D66B4D;
+  --accent-faded: rgba(199, 56, 26, 0.10);
+  --line:         #B5A78C;
+  --line-soft:    #CEC3A8;
+  --paper-grain:  rgba(31, 27, 23, 0.018);
+}
+
+* { box-sizing: border-box; }
+
+.lab-root {
+  min-height: 100vh;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
+  position: relative;
+  padding-bottom: 80px;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px);
+}
+
+.lab-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(199, 56, 26, 0.04), transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(31, 27, 23, 0.04), transparent 40%);
+  z-index: 0;
+}
+
+.lab-container { max-width: 1160px; margin: 0 auto; padding: 0 48px; position: relative; z-index: 1; }
+
+/* ─── Typography ─── */
+.serif   { font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif; }
+.mono    { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.italic  { font-style: italic; }
+
+.caps {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* ─── Header ─── */
+.lab-header {
+  padding: 48px 48px 0;
+  max-width: 1160px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.lab-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.lab-volume { display: flex; gap: 28px; align-items: baseline; }
+
+.lab-title-block { margin: 40px 0 12px; }
+
+.lab-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 400;
+  font-size: 88px;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.lab-title .em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144;
+}
+
+.lab-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 20px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  letter-spacing: 0.08em;
+}
+.lab-subtitle .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+.lab-header-bottom {
+  margin-top: 28px;
+  padding: 14px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ─── Tabs ─── */
+.lab-tabs { display: flex; gap: 0; margin: 48px 0 56px; border-bottom: 1px solid var(--line); }
+
+.lab-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 24px 28px;
+  cursor: pointer;
+  text-align: left;
+  border-left: 1px solid var(--line-soft);
+  position: relative;
+  transition: background 0.25s ease;
+  font-family: inherit;
+  color: var(--ink-muted);
+}
+.lab-tab:first-child { border-left: none; }
+.lab-tab:hover { background: var(--cream-light); color: var(--ink-soft); }
+
+.lab-tab-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  display: block;
+  margin-bottom: 8px;
+}
+.lab-tab-name {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.lab-tab-name-en {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--ink-muted);
+  margin-left: 10px;
+}
+
+.lab-tab.active {
+  color: var(--ink);
+  background: var(--cream-light);
+}
+.lab-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+}
+.lab-tab.active .lab-tab-num { color: var(--accent); }
+.lab-tab.active .lab-tab-name-en { color: var(--accent-soft); }
+
+/* ─── Module ─── */
+.module-intro {
+  display: grid;
+  grid-template-columns: 180px 1fr 200px;
+  gap: 48px;
+  padding-bottom: 48px;
+  margin-bottom: 56px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.module-intro-side {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  line-height: 1.9;
+}
+.module-intro-side strong {
+  color: var(--ink);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.module-intro-body p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+.module-intro-body p:first-child::first-letter {
+  font-family: 'Fraunces', serif;
+  font-size: 58px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  float: left;
+  line-height: 0.9;
+  padding: 6px 10px 0 0;
+}
+
+/* ─── Viz Panel ─── */
+.viz-panel {
+  position: relative;
+  padding: 64px 48px 56px;
+  background: var(--cream-light);
+  margin-bottom: 56px;
+}
+
+.viz-panel::before,
+.viz-panel::after,
+.viz-corner {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+.viz-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.viz-panel::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.viz-corner.bl { bottom: -1px; left: -1px; top: auto; border-right: none; border-top: none; }
+.viz-corner.br { bottom: -1px; right: -1px; top: auto; border-left: none; border-top: none; }
+
+.viz-label {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.viz-label-right {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.viz-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 160px;
+  overflow-x: auto;
+  padding: 24px 0;
+}
+
+.viz-caption {
+  text-align: center;
+  margin-top: 24px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.viz-caption .fig {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 8px;
+}
+
+/* ─── Array cells ─── */
+.arr-track {
+  position: relative;
+  height: 110px;
+}
+
+.arr-cell {
+  position: absolute;
+  top: 0;
+  width: 64px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  animation: cellEnter 0.35s ease;
+}
+.arr-cell.empty {
+  color: var(--line);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--line);
+  animation: none;
+}
+.arr-cell.empty::before { content: '—'; }
+.arr-cell.hl {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateY(-8px);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.arr-index {
+  position: absolute;
+  top: 82px;
+  width: 64px;
+  left: 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+}
+
+@keyframes cellEnter {
+  from { opacity: 0; transform: translateY(-18px) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Linked List ─── */
+.ll-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 120px;
+  padding: 0 20px;
+}
+
+.ll-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ll-head-label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.ll-head-arrow {
+  width: 0; height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent);
+  margin-top: 4px;
+}
+
+.ll-node {
+  display: flex;
+  align-items: stretch;
+  animation: nodeEnter 0.4s ease;
+  transition: opacity 0.25s ease;
+}
+.ll-node-data {
+  width: 56px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  transition: all 0.3s ease;
+}
+.ll-node-ptr {
+  width: 30px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream-dark);
+  border: 1.5px solid var(--ink);
+  border-left: none;
+  position: relative;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.ll-node-ptr::after {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--ink);
+  border-radius: 50%;
+}
+.ll-node-ptr.null::after { display: none; }
+.ll-node-ptr.null { color: var(--ink-muted); font-size: 20px; }
+.ll-node.hl .ll-node-data {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateY(-6px);
+}
+.ll-node.hl .ll-node-ptr {
+  border-color: var(--accent);
+  transform: translateY(-6px);
+}
+
+.ll-arrow {
+  display: flex;
+  align-items: center;
+  width: 36px;
+  flex-shrink: 0;
+  position: relative;
+  margin-top: -12px;
+}
+.ll-arrow-line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--ink);
+}
+.ll-arrow-head {
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid var(--ink);
+}
+
+.ll-node-idx {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  margin-top: 8px;
+  letter-spacing: 0.08em;
+}
+.ll-node-wrap { display: flex; flex-direction: column; align-items: center; }
+
+@keyframes nodeEnter {
+  from { opacity: 0; transform: translateY(-20px) scale(0.8); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ll-empty {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--ink-muted);
+  font-size: 18px;
+  padding: 20px;
+}
+
+/* ─── Controls ─── */
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 48px;
+  margin-bottom: 56px;
+}
+
+.control-block {
+  background: var(--cream-light);
+  padding: 32px 28px;
+  position: relative;
+}
+
+.control-block-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+}
+.control-block-title .num { color: var(--accent); }
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.input-row label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  width: 80px;
+}
+
+.lab-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.lab-input:focus {
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent-faded);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.btn-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.lab-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 10px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.lab-btn:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+.lab-btn:active { transform: translate(1px, 1px); }
+.lab-btn .sym {
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1;
+}
+.lab-btn:hover .sym { color: var(--accent-soft); }
+
+.lab-btn.accent {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+.lab-btn.accent:hover { background: var(--ink); border-color: var(--ink); }
+.lab-btn.accent .sym { color: var(--cream); }
+
+.lab-btn.danger {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lab-btn.danger:hover { background: var(--accent); color: var(--cream); border-color: var(--accent); }
+.lab-btn.danger .sym { color: var(--accent); }
+.lab-btn.danger:hover .sym { color: var(--cream); }
+
+/* ─── Log ─── */
+.log-block {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 28px 28px 20px;
+  position: relative;
+}
+.log-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(241, 234, 218, 0.2);
+  display: flex;
+  justify-content: space-between;
+}
+.log-title .num { color: var(--accent-soft); }
+.log-list {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 280px;
+  overflow-y: auto;
+  color: rgba(241, 234, 218, 0.7);
+}
+.log-item {
+  display: grid;
+  grid-template-columns: 62px 1fr 56px;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(241, 234, 218, 0.1);
+  animation: logEnter 0.25s ease;
+}
+.log-item .t { color: rgba(241, 234, 218, 0.4); font-size: 10px; }
+.log-item .msg { color: var(--cream); }
+.log-item.success .msg { color: var(--cream); }
+.log-item.error   .msg { color: var(--accent-soft); }
+.log-item.info    .msg { color: rgba(241, 234, 218, 0.7); }
+.log-item .c {
+  text-align: right;
+  color: var(--accent-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.log-empty {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: rgba(241, 234, 218, 0.4);
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+@keyframes logEnter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.log-list::-webkit-scrollbar { width: 6px; }
+.log-list::-webkit-scrollbar-thumb { background: rgba(241, 234, 218, 0.2); }
+
+/* ─── Complexity Table ─── */
+.complexity-block {
+  margin-bottom: 40px;
+}
+.complexity-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 14px;
+  margin-bottom: 0;
+  border-bottom: 1.5px solid var(--ink);
+}
+.complexity-title h3 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.complexity-title .num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+
+.complexity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+}
+.complexity-table th,
+.complexity-table td {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.complexity-table th {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--ink);
+}
+.complexity-table td:first-child {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.complexity-table .c-good { color: #2B7A4B; }
+.complexity-table .c-bad  { color: var(--accent); }
+.complexity-table .c-mid  { color: #B86F1F; }
+
+/* ─── Traits Grid ─── */
+.traits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line-soft);
+  margin-bottom: 56px;
+  border: 1px solid var(--line-soft);
+}
+.trait {
+  background: var(--cream);
+  padding: 24px 26px;
+}
+.trait-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.trait-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 19px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.trait-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ─── Footer ─── */
+.lab-footer {
+  margin-top: 80px;
+  padding: 28px 0;
+  border-top: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.flourish {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .lab-container, .lab-header { padding: 0 24px; }
+  .lab-title { font-size: 56px; }
+  .module-intro { grid-template-columns: 1fr; gap: 24px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .traits-grid { grid-template-columns: 1fr; }
+  .lab-tab-name { font-size: 22px; }
+}
+`;
+
+/* ═════════════════════════════════════════════════════════════════════
+   Helper · operation log
+   ═════════════════════════════════════════════════════════════════════ */
+function useLog() {
+  const [log, setLog] = useState([]);
+  const idRef = useRef(0);
+  const push = useCallback((msg, complexity = '—', kind = 'success') => {
+    const now = new Date();
+    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    setLog(prev => [{ id: ++idRef.current, t, msg, complexity, kind }, ...prev].slice(0, 30));
+  }, []);
+  const clear = useCallback(() => setLog([]), []);
+  return [log, push, clear];
+}
+
+function LogPanel({ log, onClear, num }) {
+  return (
+    <div className="log-block">
+      <div className="log-title">
+        <span><span className="num">{num}</span> &nbsp;OPERATION · LOG</span>
+        <span style={{ cursor: 'pointer' }} onClick={onClear}>[ CLEAR ]</span>
+      </div>
+      <div className="log-list">
+        {log.length === 0 ? (
+          <div className="log-empty">— no entries yet —</div>
+        ) : log.map(e => (
+          <div key={e.id} className={`log-item ${e.kind}`}>
+            <span className="t">{e.t}</span>
+            <span className="msg">{e.msg}</span>
+            <span className="c">{e.complexity}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 01 · Sequential List
+   ═════════════════════════════════════════════════════════════════════ */
+const CELL_W = 64;
+const CELL_GAP = 6;
+const CAPACITY = 10;
+
+function SequentialListModule() {
+  const idRef = useRef(100);
+  const [items, setItems] = useState(() => [42, 17, 89, 3, 56].map(v => ({ id: ++idRef.current, value: v })));
+  const [hl, setHl] = useState(null);
+  const [log, pushLog, clearLog] = useLog();
+
+  const [valIn, setValIn] = useState('');
+  const [idxIn, setIdxIn] = useState('');
+  const [searchIn, setSearchIn] = useState('');
+
+  const parsedVal = () => {
+    const v = parseInt(valIn, 10);
+    return Number.isNaN(v) ? Math.floor(Math.random() * 99) + 1 : v;
+  };
+  const parsedIdx = (fallback) => {
+    const v = parseInt(idxIn, 10);
+    return Number.isNaN(v) ? fallback : v;
+  };
+
+  const flash = (idx) => {
+    setHl(idx);
+    setTimeout(() => setHl(null), 1500);
+  };
+
+  const insert = (idx) => {
+    if (items.length >= CAPACITY) {
+      pushLog(`insert × 表已满，容量上限 ${CAPACITY}`, '—', 'error');
+      return;
+    }
+    if (idx < 0 || idx > items.length) {
+      pushLog(`insert × 下标越界 [${idx}]`, '—', 'error');
+      return;
+    }
+    const v = parsedVal();
+    const newItem = { id: ++idRef.current, value: v };
+    setItems(prev => [...prev.slice(0, idx), newItem, ...prev.slice(idx)]);
+    const cpx = idx === items.length ? 'O(1)' : 'O(n)';
+    const note = idx === items.length ? '尾部追加' : `需要右移 ${items.length - idx} 个元素`;
+    pushLog(`insert [${idx}] ← ${v} · ${note}`, cpx, 'success');
+    flash(idx);
+  };
+
+  const remove = (idx) => {
+    if (idx < 0 || idx >= items.length) {
+      pushLog(`delete × 下标越界 [${idx}]`, '—', 'error');
+      return;
+    }
+    const v = items[idx].value;
+    setItems(prev => prev.filter((_, i) => i !== idx));
+    const cpx = idx === items.length - 1 ? 'O(1)' : 'O(n)';
+    const note = idx === items.length - 1 ? '尾部删除' : `需要左移 ${items.length - idx - 1} 个元素`;
+    pushLog(`delete [${idx}] → ${v} · ${note}`, cpx, 'success');
+  };
+
+  const access = (idx) => {
+    if (idx < 0 || idx >= items.length) {
+      pushLog(`access × 下标越界 [${idx}]`, '—', 'error');
+      return;
+    }
+    pushLog(`access [${idx}] = ${items[idx].value} · 随机访问`, 'O(1)', 'success');
+    flash(idx);
+  };
+
+  const search = (val) => {
+    const target = parseInt(val, 10);
+    if (Number.isNaN(target)) {
+      pushLog(`search × 请输入数值`, '—', 'error');
+      return;
+    }
+    // Animated search
+    let i = 0;
+    const step = () => {
+      if (i >= items.length) {
+        pushLog(`search ${target} × 未找到`, 'O(n)', 'info');
+        setHl(null);
+        return;
+      }
+      setHl(i);
+      if (items[i].value === target) {
+        pushLog(`search ${target} ✓ 位于 [${i}]，比较 ${i + 1} 次`, 'O(n)', 'success');
+        setTimeout(() => setHl(null), 800);
+        return;
+      }
+      i += 1;
+      setTimeout(step, 220);
+    };
+    step();
+  };
+
+  const reset = () => {
+    setItems([42, 17, 89, 3, 56].map(v => ({ id: ++idRef.current, value: v })));
+    pushLog(`reset · 恢复初始状态`, '—', 'info');
+  };
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 01 / 02</div>
+          <div><strong>TYPE</strong> Contiguous</div>
+          <div><strong>STORAGE</strong> Array</div>
+          <div><strong>CAPACITY</strong> {CAPACITY}</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>顺序表将一组数据元素连续地存放在一片事先分配的存储空间中。每一个元素都拥有一个隐式的下标，使得任意位置的读取都可以在常数时间内完成——这是它最锋利的优点，也是它被代价换来的权衡。</p>
+          <p>当在表的中段进行插入或删除时，为了保持"连续"这一契约，其后所有元素都必须依次挪动，时间成本与其距离成正比。容量一旦填满，要么拒绝，要么扩容——没有第三种选择。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>ACCESS</strong> O(1)</div>
+          <div><strong>INSERT</strong> O(n)</div>
+          <div><strong>DELETE</strong> O(n)</div>
+          <div><strong>SEARCH</strong> O(n)</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 01 · MEMORY LAYOUT</span>
+        <span className="viz-label-right">
+          SIZE {items.length} / {CAPACITY}
+        </span>
+
+        <div className="viz-canvas-wrap">
+          <div
+            className="arr-track"
+            style={{ width: `${CAPACITY * (CELL_W + CELL_GAP) - CELL_GAP}px` }}
+          >
+            {items.map((it, idx) => (
+              <div
+                key={it.id}
+                className={`arr-cell ${hl === idx ? 'hl' : ''}`}
+                style={{ left: `${idx * (CELL_W + CELL_GAP)}px` }}
+              >
+                {it.value}
+              </div>
+            ))}
+            {Array.from({ length: CAPACITY - items.length }).map((_, i) => (
+              <div
+                key={`e-${i}`}
+                className="arr-cell empty"
+                style={{ left: `${(items.length + i) * (CELL_W + CELL_GAP)}px` }}
+              />
+            ))}
+            {Array.from({ length: CAPACITY }).map((_, i) => (
+              <div
+                key={`idx-${i}`}
+                className="arr-index"
+                style={{ left: `${i * (CELL_W + CELL_GAP)}px` }}
+              >
+                [{i}]
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 01</span>
+          <span className="italic">顺序表的线性内存布局——每个单元紧邻相邻。</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+            <span>INPUTS ↓</span>
+          </div>
+
+          <div className="input-row">
+            <label>VALUE</label>
+            <input
+              className="lab-input"
+              value={valIn}
+              onChange={e => setValIn(e.target.value)}
+              placeholder="留空则随机"
+            />
+          </div>
+          <div className="input-row">
+            <label>INDEX</label>
+            <input
+              className="lab-input"
+              value={idxIn}
+              onChange={e => setIdxIn(e.target.value)}
+              placeholder="留空则使用默认"
+            />
+          </div>
+
+          <div style={{ height: 10 }} />
+
+          <div className="btn-grid">
+            <button className="lab-btn accent" onClick={() => insert(items.length)}>
+              <span>尾部插入</span><span className="sym">+→</span>
+            </button>
+            <button className="lab-btn accent" onClick={() => insert(0)}>
+              <span>头部插入</span><span className="sym">+←</span>
+            </button>
+            <button className="lab-btn" onClick={() => insert(parsedIdx(items.length))}>
+              <span>按下标插入</span><span className="sym">+↕</span>
+            </button>
+            <button className="lab-btn" onClick={() => access(parsedIdx(0))}>
+              <span>按下标访问</span><span className="sym">→</span>
+            </button>
+            <button className="lab-btn danger" onClick={() => remove(parsedIdx(items.length - 1))}>
+              <span>按下标删除</span><span className="sym">−</span>
+            </button>
+            <button className="lab-btn danger" onClick={() => remove(items.length - 1)}>
+              <span>尾部删除</span><span className="sym">−←</span>
+            </button>
+          </div>
+
+          <div style={{ height: 16 }} />
+          <div className="input-row">
+            <label>SEARCH</label>
+            <input
+              className="lab-input"
+              value={searchIn}
+              onChange={e => setSearchIn(e.target.value)}
+              placeholder="输入要查找的值"
+            />
+            <button className="lab-btn" onClick={() => search(searchIn)} style={{ flex: '0 0 110px' }}>
+              <span>顺序查找</span><span className="sym">◎</span>
+            </button>
+          </div>
+
+          <div style={{ height: 8 }} />
+          <button className="lab-btn" onClick={reset} style={{ width: '100%' }}>
+            <span>恢复初始 RESET</span><span className="sym">↺</span>
+          </button>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>时间复杂度 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · COMPLEXITY</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>操作 Operation</th>
+              <th>最好 Best</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>按下标访问</td>
+              <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+              <td>基址 + 偏移量</td>
+            </tr>
+            <tr>
+              <td>尾部插入</td>
+              <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-bad">O(n)</td>
+              <td>若触发扩容则为 O(n)</td>
+            </tr>
+            <tr>
+              <td>中段插入</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>需移动后续元素</td>
+            </tr>
+            <tr>
+              <td>按值查找</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>线性扫描</td>
+            </tr>
+            <tr>
+              <td>按下标删除</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>尾部 O(1)，其余需左移</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">连续存储</div>
+          <div className="trait-desc">所有元素被安置在一块连续的内存区域中，便于利用 CPU 的缓存局部性。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">随机访问</div>
+          <div className="trait-desc">下标即偏移量，任意位置的读取与赋值都在常数时间内完成。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">固定容量</div>
+          <div className="trait-desc">预先分配的空间限制了长度上限；扩容意味着一次 O(n) 的搬迁。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">迁移代价</div>
+          <div className="trait-desc">中段增删时，后续元素必须随之整体挪动，以维持"紧邻"的结构。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 02 · Linked List
+   ═════════════════════════════════════════════════════════════════════ */
+function LinkedListModule() {
+  const idRef = useRef(200);
+  const [nodes, setNodes] = useState(() => [42, 17, 89, 3, 56].map(v => ({ id: ++idRef.current, value: v })));
+  const [hl, setHl] = useState(null);
+  const [log, pushLog, clearLog] = useLog();
+
+  const [valIn, setValIn] = useState('');
+  const [idxIn, setIdxIn] = useState('');
+  const [searchIn, setSearchIn] = useState('');
+
+  const parsedVal = () => {
+    const v = parseInt(valIn, 10);
+    return Number.isNaN(v) ? Math.floor(Math.random() * 99) + 1 : v;
+  };
+  const parsedIdx = (fallback) => {
+    const v = parseInt(idxIn, 10);
+    return Number.isNaN(v) ? fallback : v;
+  };
+
+  const flash = (idx) => {
+    setHl(idx);
+    setTimeout(() => setHl(null), 1400);
+  };
+
+  const insertHead = () => {
+    const v = parsedVal();
+    setNodes(prev => [{ id: ++idRef.current, value: v }, ...prev]);
+    pushLog(`insert-head ← ${v} · 仅修改 head 指针`, 'O(1)', 'success');
+    flash(0);
+  };
+
+  const insertTail = () => {
+    const v = parsedVal();
+    setNodes(prev => [...prev, { id: ++idRef.current, value: v }]);
+    pushLog(`insert-tail ← ${v} · 无 tail 指针时需遍历`, 'O(n)', 'success');
+    flash(nodes.length);
+  };
+
+  const insertAt = (idx) => {
+    if (idx < 0 || idx > nodes.length) {
+      pushLog(`insert × 位置越界 [${idx}]`, '—', 'error');
+      return;
+    }
+    const v = parsedVal();
+    setNodes(prev => [...prev.slice(0, idx), { id: ++idRef.current, value: v }, ...prev.slice(idx)]);
+    pushLog(`insert [${idx}] ← ${v} · 遍历 ${idx} 步 + 指针重连`, 'O(n)', 'success');
+    flash(idx);
+  };
+
+  const removeAt = (idx) => {
+    if (idx < 0 || idx >= nodes.length) {
+      pushLog(`delete × 位置越界 [${idx}]`, '—', 'error');
+      return;
+    }
+    const v = nodes[idx].value;
+    setNodes(prev => prev.filter((_, i) => i !== idx));
+    pushLog(`delete [${idx}] → ${v} · 前驱指针跨越节点`, 'O(n)', 'success');
+  };
+
+  const removeHead = () => {
+    if (nodes.length === 0) {
+      pushLog(`delete × 空表`, '—', 'error');
+      return;
+    }
+    const v = nodes[0].value;
+    setNodes(prev => prev.slice(1));
+    pushLog(`delete-head → ${v} · head 指向下一个节点`, 'O(1)', 'success');
+  };
+
+  const search = (val) => {
+    const target = parseInt(val, 10);
+    if (Number.isNaN(target)) {
+      pushLog(`search × 请输入数值`, '—', 'error');
+      return;
+    }
+    let i = 0;
+    const step = () => {
+      if (i >= nodes.length) {
+        pushLog(`search ${target} × 未找到`, 'O(n)', 'info');
+        setHl(null);
+        return;
+      }
+      setHl(i);
+      if (nodes[i].value === target) {
+        pushLog(`search ${target} ✓ 位于 [${i}]，遍历 ${i + 1} 个节点`, 'O(n)', 'success');
+        setTimeout(() => setHl(null), 800);
+        return;
+      }
+      i += 1;
+      setTimeout(step, 260);
+    };
+    step();
+  };
+
+  const reverse = () => {
+    setNodes(prev => [...prev].reverse());
+    pushLog(`reverse · 原地反转整条链表`, 'O(n)', 'success');
+  };
+
+  const reset = () => {
+    setNodes([42, 17, 89, 3, 56].map(v => ({ id: ++idRef.current, value: v })));
+    pushLog(`reset · 恢复初始状态`, '—', 'info');
+  };
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 02 / 02</div>
+          <div><strong>TYPE</strong> Linked</div>
+          <div><strong>STORAGE</strong> Nodes</div>
+          <div><strong>LENGTH</strong> {nodes.length}</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>链表放弃了"连续"这一约束——节点散布于内存的任何角落，靠一枚指针彼此相连。每一次前进都是一次寻址的跳跃，访问的代价因此变得线性。</p>
+          <p>作为补偿，插入与删除在已知位置时只需修改若干指针，无需搬动任何其他节点。它牺牲了随机访问的速度，换来了结构上的柔软与增删的优雅。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>ACCESS</strong> O(n)</div>
+          <div><strong>HEAD-INS</strong> O(1)</div>
+          <div><strong>HEAD-DEL</strong> O(1)</div>
+          <div><strong>SEARCH</strong> O(n)</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 02 · POINTER TOPOLOGY</span>
+        <span className="viz-label-right">NODES · {nodes.length}</span>
+
+        <div className="viz-canvas-wrap">
+          {nodes.length === 0 ? (
+            <div className="ll-empty">— head → ∅ 空链表 —</div>
+          ) : (
+            <div className="ll-track">
+              <div className="ll-head">
+                <div className="ll-head-label">HEAD</div>
+                <div style={{
+                  width: 1.5, height: 20, background: 'var(--accent)'
+                }} />
+                <div className="ll-head-arrow" />
+              </div>
+              {nodes.map((n, idx) => (
+                <React.Fragment key={n.id}>
+                  <div className={`ll-node-wrap`}>
+                    <div className={`ll-node ${hl === idx ? 'hl' : ''}`}>
+                      <div className="ll-node-data">{n.value}</div>
+                      <div className={`ll-node-ptr ${idx === nodes.length - 1 ? 'null' : ''}`}>
+                        {idx === nodes.length - 1 ? '∅' : ''}
+                      </div>
+                    </div>
+                    <div className="ll-node-idx">[{idx}]</div>
+                  </div>
+                  {idx < nodes.length - 1 && (
+                    <div className="ll-arrow">
+                      <div className="ll-arrow-line" />
+                      <div className="ll-arrow-head" />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 02</span>
+          <span className="italic">节点通过单向指针相连，尾节点指向空 (∅)。</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+            <span>INPUTS ↓</span>
+          </div>
+
+          <div className="input-row">
+            <label>VALUE</label>
+            <input
+              className="lab-input"
+              value={valIn}
+              onChange={e => setValIn(e.target.value)}
+              placeholder="留空则随机"
+            />
+          </div>
+          <div className="input-row">
+            <label>POSITION</label>
+            <input
+              className="lab-input"
+              value={idxIn}
+              onChange={e => setIdxIn(e.target.value)}
+              placeholder="留空则使用默认"
+            />
+          </div>
+
+          <div style={{ height: 10 }} />
+
+          <div className="btn-grid">
+            <button className="lab-btn accent" onClick={insertHead}>
+              <span>头插入</span><span className="sym">+←</span>
+            </button>
+            <button className="lab-btn accent" onClick={insertTail}>
+              <span>尾插入</span><span className="sym">+→</span>
+            </button>
+            <button className="lab-btn" onClick={() => insertAt(parsedIdx(nodes.length))}>
+              <span>指定位置插入</span><span className="sym">+↕</span>
+            </button>
+            <button className="lab-btn" onClick={reverse}>
+              <span>原地反转</span><span className="sym">↻</span>
+            </button>
+            <button className="lab-btn danger" onClick={removeHead}>
+              <span>删除头节点</span><span className="sym">−←</span>
+            </button>
+            <button className="lab-btn danger" onClick={() => removeAt(parsedIdx(nodes.length - 1))}>
+              <span>按位置删除</span><span className="sym">−</span>
+            </button>
+          </div>
+
+          <div style={{ height: 16 }} />
+          <div className="input-row">
+            <label>SEARCH</label>
+            <input
+              className="lab-input"
+              value={searchIn}
+              onChange={e => setSearchIn(e.target.value)}
+              placeholder="输入要查找的值"
+            />
+            <button className="lab-btn" onClick={() => search(searchIn)} style={{ flex: '0 0 110px' }}>
+              <span>链式查找</span><span className="sym">◎</span>
+            </button>
+          </div>
+
+          <div style={{ height: 8 }} />
+          <button className="lab-btn" onClick={reset} style={{ width: '100%' }}>
+            <span>恢复初始 RESET</span><span className="sym">↺</span>
+          </button>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>时间复杂度 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · COMPLEXITY</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>操作 Operation</th>
+              <th>最好 Best</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>头部插入</td>
+              <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+              <td>仅修改 head</td>
+            </tr>
+            <tr>
+              <td>尾部插入</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>维护 tail 指针可降为 O(1)</td>
+            </tr>
+            <tr>
+              <td>按位置访问</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>必须从头遍历</td>
+            </tr>
+            <tr>
+              <td>按值查找</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>顺指针线性扫描</td>
+            </tr>
+            <tr>
+              <td>已知节点删除</td>
+              <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+              <td>单链表中需前驱</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">离散存储</div>
+          <div className="trait-desc">节点可散布于内存任何位置，彼此以指针相连，无须连续空间。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">动态长度</div>
+          <div className="trait-desc">大小随运行时变化，只受限于可用内存，无需预先分配容量。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">指针开销</div>
+          <div className="trait-desc">每个节点都携带至少一枚指针，空间开销比顺序表更高。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">柔性增删</div>
+          <div className="trait-desc">已知位置的插入与删除只需局部改写指针，不会波及其他节点。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Root
+   ═════════════════════════════════════════════════════════════════════ */
+export default function LinearStructuresLab() {
+  const [tab, setTab] = useState('array');
+
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div className="lab-root">
+        <header className="lab-header">
+          <div className="lab-header-top">
+            <div className="lab-volume">
+              <span className="caps">VOL. 01</span>
+              <span className="caps">线性结构 · LINEAR</span>
+            </div>
+            <div className="caps">A SPECIMEN STUDY / 2026</div>
+          </div>
+
+          <div className="lab-title-block">
+            <h1 className="lab-title">
+              数据结构 <span className="em">实验室</span>
+            </h1>
+            <div className="lab-subtitle">
+              <span className="dot" />
+              <span>DATA STRUCTURE LABORATORY</span>
+              <span>·</span>
+              <span>INTERACTIVE SPECIMENS</span>
+              <span>·</span>
+              <span className="italic serif" style={{ fontSize: 14, color: 'var(--ink-soft)' }}>
+                in linear forms
+              </span>
+            </div>
+          </div>
+
+          <div className="lab-header-bottom">
+            <span>§ 本卷 · 顺序表与链表</span>
+            <span>两种形态 / 同一使命</span>
+            <span>点击单元 · 观察变化</span>
+          </div>
+        </header>
+
+        <main className="lab-container">
+          <nav className="lab-tabs">
+            <button
+              className={`lab-tab ${tab === 'array' ? 'active' : ''}`}
+              onClick={() => setTab('array')}
+            >
+              <span className="lab-tab-num">SPECIMEN · 01</span>
+              <span className="lab-tab-name">
+                顺序表
+                <span className="lab-tab-name-en">Sequential List</span>
+              </span>
+            </button>
+            <button
+              className={`lab-tab ${tab === 'linked' ? 'active' : ''}`}
+              onClick={() => setTab('linked')}
+            >
+              <span className="lab-tab-num">SPECIMEN · 02</span>
+              <span className="lab-tab-name">
+                链表
+                <span className="lab-tab-name-en">Linked List</span>
+              </span>
+            </button>
+          </nav>
+
+          {tab === 'array' ? <SequentialListModule /> : <LinkedListModule />}
+
+          <footer className="lab-footer">
+            <span>© DATA STRUCTURE LAB</span>
+            <span className="flourish serif italic" style={{ fontSize: 13, letterSpacing: 0, textTransform: 'none' }}>
+              fin · {tab === 'array' ? '顺序表' : '链表'}
+            </span>
+            <span>PLATE 01 / 02</span>
+          </footer>
+        </main>
+      </div>
+    </>
+  );
+}
