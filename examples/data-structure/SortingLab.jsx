@@ -1,0 +1,3336 @@
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+
+/* ────────────────────────────────────────────────────────────────────
+   数据结构实验室 · 卷六 · 排序
+   VOL. 06 — Sorting: A Specimen Study
+   12 Specimens: 概念 · 直接插入 · 折半插入 · 起泡 · 选择 · 希尔
+                 快速 · 堆 · 归并 · 基数 · 外部 · 分析与应用
+   ──────────────────────────────────────────────────────────────────── */
+
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+:root {
+  --cream:        #F1EADA;
+  --cream-light:  #F7F2E6;
+  --cream-dark:   #E4DBC4;
+  --ink:          #1F1B17;
+  --ink-soft:     #3A3530;
+  --ink-muted:    #7A6F5E;
+  --accent:       #C7381A;
+  --accent-soft:  #D66B4D;
+  --accent-faded: rgba(199, 56, 26, 0.10);
+  --amber:        #B86F1F;
+  --amber-soft:   rgba(184, 111, 31, 0.18);
+  --green:        #2B7A4B;
+  --green-soft:   rgba(43, 122, 75, 0.14);
+  --line:         #B5A78C;
+  --line-soft:    #CEC3A8;
+  --paper-grain:  rgba(31, 27, 23, 0.018);
+}
+
+* { box-sizing: border-box; }
+
+.lab-root {
+  min-height: 100vh;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
+  position: relative;
+  padding-bottom: 80px;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px);
+}
+
+.lab-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(199, 56, 26, 0.04), transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(31, 27, 23, 0.04), transparent 40%);
+  z-index: 0;
+}
+
+.lab-container { max-width: 1160px; margin: 0 auto; padding: 0 48px; position: relative; z-index: 1; }
+
+/* ─── Typography ─── */
+.serif   { font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif; }
+.mono    { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.italic  { font-style: italic; }
+
+.caps {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* ─── Header ─── */
+.lab-header {
+  padding: 48px 48px 0;
+  max-width: 1160px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.lab-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.lab-volume { display: flex; gap: 28px; align-items: baseline; }
+
+.lab-title-block { margin: 40px 0 12px; }
+
+.lab-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 400;
+  font-size: 88px;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.lab-title .em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144;
+}
+
+.lab-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 20px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  letter-spacing: 0.08em;
+  flex-wrap: wrap;
+}
+.lab-subtitle .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+.lab-header-bottom {
+  margin-top: 28px;
+  padding: 14px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ─── Tabs ─── 12 specimens: 2-row compact grid */
+.lab-tabs-wrap {
+  margin: 48px 0 56px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.lab-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+.lab-tab {
+  background: transparent;
+  border: none;
+  padding: 16px 14px;
+  cursor: pointer;
+  text-align: left;
+  border-left: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  position: relative;
+  transition: background 0.25s ease;
+  font-family: inherit;
+  color: var(--ink-muted);
+  min-height: 78px;
+}
+.lab-tab:nth-child(6n+1) { border-left: none; }
+.lab-tab:nth-child(n+7) { border-bottom: none; }
+.lab-tab:hover { background: var(--cream-light); color: var(--ink-soft); }
+
+.lab-tab-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  display: block;
+  margin-bottom: 6px;
+}
+.lab-tab-name {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 19px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  display: block;
+}
+.lab-tab-name-en {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--ink-muted);
+  display: block;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+
+.lab-tab.active {
+  color: var(--ink);
+  background: var(--cream-light);
+}
+.lab-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+  z-index: 2;
+}
+.lab-tab.active .lab-tab-num { color: var(--accent); }
+.lab-tab.active .lab-tab-name-en { color: var(--accent-soft); }
+
+/* ─── Module Intro ─── */
+.module-intro {
+  display: grid;
+  grid-template-columns: 180px 1fr 200px;
+  gap: 48px;
+  padding-bottom: 48px;
+  margin-bottom: 56px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.module-intro-side {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  line-height: 1.9;
+}
+.module-intro-side strong {
+  color: var(--ink);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.module-intro-body p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+.module-intro-body p:first-child::first-letter {
+  font-family: 'Fraunces', serif;
+  font-size: 58px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  float: left;
+  line-height: 0.9;
+  padding: 6px 10px 0 0;
+}
+
+/* ─── Viz Panel ─── */
+.viz-panel {
+  position: relative;
+  padding: 64px 48px 56px;
+  background: var(--cream-light);
+  margin-bottom: 56px;
+}
+.viz-panel::before,
+.viz-panel::after,
+.viz-corner {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+.viz-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.viz-panel::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.viz-corner.bl { bottom: -1px; left: -1px; top: auto; border-right: none; border-top: none; }
+.viz-corner.br { bottom: -1px; right: -1px; top: auto; border-left: none; border-top: none; }
+
+.viz-label {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.viz-label-right {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.viz-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 280px;
+  overflow-x: auto;
+  padding: 24px 0 12px;
+}
+
+.viz-caption {
+  text-align: center;
+  margin-top: 20px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--ink-muted);
+  padding: 0 40px;
+}
+.viz-caption .fig {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 8px;
+}
+
+/* ─── Sort Bars ─── */
+.bars-track {
+  position: relative;
+  height: 240px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.bar-col {
+  position: relative;
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.bar {
+  width: 100%;
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink);
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.25s ease,
+              border-color 0.25s ease,
+              color 0.25s ease,
+              transform 0.25s ease,
+              box-shadow 0.25s ease;
+  position: relative;
+}
+
+.bar.sorted {
+  background: var(--green-soft);
+  border-color: var(--green);
+  color: var(--green);
+}
+.bar.compare {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.bar.current {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateY(-10px);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.bar.pivot {
+  background: var(--ink);
+  color: var(--cream);
+  border-color: var(--accent);
+  border-width: 2.5px;
+}
+.bar.moving {
+  background: var(--accent-soft);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+.bar.done {
+  background: var(--cream-dark);
+  border-color: var(--ink-muted);
+  color: var(--ink-soft);
+}
+
+.bar-idx {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+  height: 14px;
+}
+.bar-idx.active { color: var(--accent); }
+
+/* Pointer markers below bars */
+.bar-ptr {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  white-space: nowrap;
+  background: var(--cream-light);
+  padding: 0 4px;
+}
+
+/* Sub-range bracket (for merge / quick partition) */
+.range-bracket {
+  position: absolute;
+  height: 16px;
+  border-left: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+  border-top: 2px solid var(--accent);
+  top: -30px;
+  pointer-events: none;
+}
+.range-bracket-label {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  background: var(--cream-light);
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+/* Aux row (radix buckets / heap tree) */
+.viz-aux {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.aux-bucket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 38px;
+}
+.aux-bucket-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+}
+.aux-bucket-cell {
+  min-height: 22px;
+  min-width: 32px;
+  padding: 2px 6px;
+  border: 1px solid var(--ink);
+  background: var(--cream);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.5;
+}
+.aux-bucket-cell.empty {
+  border-style: dashed;
+  border-color: var(--line);
+  color: var(--line);
+}
+
+/* ─── Controls ─── */
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 48px;
+  margin-bottom: 56px;
+}
+
+.control-block {
+  background: var(--cream-light);
+  padding: 32px 28px;
+  position: relative;
+}
+
+.control-block-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.control-block-title .num { color: var(--accent); }
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.input-row label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  width: 80px;
+}
+
+.lab-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.lab-input:focus {
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent-faded);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.btn-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.btn-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.lab-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 11px 10px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.lab-btn:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+.lab-btn:active { transform: translate(1px, 1px); }
+.lab-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.lab-btn:disabled:hover { background: var(--cream); color: var(--ink); }
+.lab-btn .sym {
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1;
+}
+.lab-btn:hover .sym { color: var(--accent-soft); }
+
+.lab-btn.accent {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+.lab-btn.accent:hover { background: var(--ink); border-color: var(--ink); }
+.lab-btn.accent .sym { color: var(--cream); }
+
+.lab-btn.danger {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lab-btn.danger:hover { background: var(--accent); color: var(--cream); border-color: var(--accent); }
+.lab-btn.danger .sym { color: var(--accent); }
+.lab-btn.danger:hover .sym { color: var(--cream); }
+
+/* Progress meter */
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+}
+.progress-track {
+  flex: 1;
+  height: 4px;
+  background: var(--cream-dark);
+  position: relative;
+  overflow: hidden;
+}
+.progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+/* Speed selector */
+.speed-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.speed-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 6px 10px;
+  border: 1px solid var(--ink);
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1;
+}
+.speed-btn:hover { background: var(--ink); color: var(--cream); }
+.speed-btn.active {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+
+/* ─── Log ─── */
+.log-block {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 28px 28px 20px;
+  position: relative;
+}
+.log-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(241, 234, 218, 0.2);
+  display: flex;
+  justify-content: space-between;
+}
+.log-title .num { color: var(--accent-soft); }
+.log-list {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 380px;
+  overflow-y: auto;
+  color: rgba(241, 234, 218, 0.7);
+}
+.log-item {
+  display: grid;
+  grid-template-columns: 56px 1fr 68px;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(241, 234, 218, 0.1);
+  animation: logEnter 0.25s ease;
+}
+.log-item .t { color: rgba(241, 234, 218, 0.4); font-size: 10px; }
+.log-item .msg { color: var(--cream); }
+.log-item.success .msg { color: var(--cream); }
+.log-item.error   .msg { color: var(--accent-soft); }
+.log-item.info    .msg { color: rgba(241, 234, 218, 0.7); }
+.log-item.compare .msg { color: #F0C38E; }
+.log-item.swap    .msg { color: var(--accent-soft); }
+.log-item.done    .msg { color: #9CCDAF; }
+.log-item .c {
+  text-align: right;
+  color: var(--accent-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.log-empty {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: rgba(241, 234, 218, 0.4);
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+@keyframes logEnter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.log-list::-webkit-scrollbar { width: 6px; }
+.log-list::-webkit-scrollbar-thumb { background: rgba(241, 234, 218, 0.2); }
+
+/* Counters row */
+.counters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+}
+.counter {
+  text-align: center;
+}
+.counter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+.counter-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+/* Current step message */
+.step-msg {
+  padding: 14px 16px;
+  background: var(--cream);
+  border-left: 3px solid var(--accent);
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  line-height: 1.5;
+}
+.step-msg .pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin-right: 10px;
+  text-transform: uppercase;
+}
+
+/* ─── Complexity Table ─── */
+.complexity-block {
+  margin-bottom: 40px;
+}
+.complexity-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 14px;
+  margin-bottom: 0;
+  border-bottom: 1.5px solid var(--ink);
+}
+.complexity-title h3 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.complexity-title .num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+
+.complexity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+}
+.complexity-table th,
+.complexity-table td {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.complexity-table th {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--ink);
+}
+.complexity-table td:first-child {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.complexity-table .c-good { color: #2B7A4B; }
+.complexity-table .c-bad  { color: var(--accent); }
+.complexity-table .c-mid  { color: #B86F1F; }
+
+/* ─── Traits Grid ─── */
+.traits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line-soft);
+  margin-bottom: 56px;
+  border: 1px solid var(--line-soft);
+}
+.trait {
+  background: var(--cream);
+  padding: 24px 26px;
+}
+.trait-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.trait-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 19px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.trait-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ─── Editorial / Concept-only modules ─── */
+.editorial-block {
+  background: var(--cream-light);
+  padding: 56px 64px;
+  margin-bottom: 56px;
+  position: relative;
+}
+.editorial-block::before,
+.editorial-block::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+.editorial-block::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.editorial-block::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+
+.editorial-h {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 26px;
+  margin: 0 0 18px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.editorial-h .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  font-weight: 500;
+}
+.editorial-h .it {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+  font-size: 18px;
+}
+
+.editorial-p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+.editorial-p strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.definition-list {
+  margin: 18px 0 8px;
+}
+.definition-list dt {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--ink);
+  margin-top: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.definition-list dt .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.definition-list dd {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 4px 0 0 0;
+  padding-left: 0;
+}
+
+/* Concept diagram SVG panels */
+.concept-diagram {
+  padding: 28px 24px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  margin: 18px 0 8px;
+  position: relative;
+}
+.concept-diagram-label {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
+}
+.concept-diagram-cap {
+  text-align: center;
+  margin-top: 10px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.concept-diagram-cap .fig {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 8px;
+}
+
+/* Comparison/analysis table */
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 10px;
+}
+.analysis-table th,
+.analysis-table td {
+  padding: 12px 14px;
+  text-align: center;
+  font-size: 12px;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+}
+.analysis-table th {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--ink);
+  padding: 10px 14px;
+}
+.analysis-table td:first-child,
+.analysis-table th:first-child {
+  text-align: left;
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.analysis-table .c-good { color: #2B7A4B; }
+.analysis-table .c-bad  { color: var(--accent); }
+.analysis-table .c-mid  { color: #B86F1F; }
+.analysis-table tr:hover td { background: var(--cream); }
+
+/* External sort multi-way merge diagram */
+.mway-diagram {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 30px;
+  align-items: center;
+  padding: 20px 0;
+}
+.mway-col { display: flex; flex-direction: column; gap: 8px; }
+.mway-run {
+  border: 1.5px solid var(--ink);
+  padding: 8px 12px;
+  background: var(--cream);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mway-run .lbl { color: var(--accent); font-size: 10px; letter-spacing: 0.16em; }
+.mway-arrow {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  font-size: 24px;
+  text-align: center;
+}
+
+/* ─── Footer ─── */
+.lab-footer {
+  margin-top: 80px;
+  padding: 28px 0;
+  border-top: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.flourish {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Heap tree SVG */
+.heap-tree-wrap {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 18px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .lab-container, .lab-header { padding: 0 24px; }
+  .lab-title { font-size: 56px; }
+  .module-intro { grid-template-columns: 1fr; gap: 24px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .traits-grid { grid-template-columns: 1fr; }
+  .lab-tabs { grid-template-columns: repeat(3, 1fr); }
+  .lab-tab:nth-child(6n+1) { border-left: 1px solid var(--line-soft); }
+  .lab-tab:nth-child(3n+1) { border-left: none; }
+  .lab-tab:nth-child(n+7) { border-bottom: 1px solid var(--line-soft); }
+  .lab-tab:nth-child(n+10) { border-bottom: none; }
+  .editorial-block { padding: 36px 24px; }
+  .mway-diagram { grid-template-columns: 1fr; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Aliases · 根组件 JSX 实际用到的 class 名补齐
+   (这一卷的根组件采用新的命名体系,这里把它们映射到已有的样式规则)
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Header 顶栏:VOL / PLATE / PRESS 三段 */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  color: var(--ink-muted);
+}
+.header-vol { display: flex; gap: 14px; align-items: baseline; }
+.vol-num { color: var(--ink); font-weight: 500; }
+.vol-sep { color: var(--accent); }
+.vol-date { color: var(--ink-muted); }
+.header-plate {
+  color: var(--ink-soft);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+.header-press {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.press-dot {
+  color: var(--accent);
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* Title 强调词 · SortingLab 用的是 .title-it,对应参考版的 .em */
+.lab-title .title-it {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144;
+}
+
+/* 副标题 · SortingLab 叫 lab-sub(参考版叫 lab-subtitle) */
+.lab-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 20px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  letter-spacing: 0.08em;
+  padding-bottom: 14px;
+  border-bottom: 3px double var(--ink);
+}
+.sub-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+.sub-label {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+.sub-mid { color: var(--line); }
+.sub-it {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-soft);
+  letter-spacing: 0;
+}
+
+/* Tabs · SortingLab 简写为 .tab/.tab-num/.tab-cn/.tab-en
+   (参考版是 .lab-tab / .lab-tab-num / .lab-tab-name / .lab-tab-name-en)
+   直接借用已有的 .lab-tab* 规则外观 */
+.lab-tabs .tab {
+  background: transparent;
+  border: none;
+  padding: 16px 14px;
+  cursor: pointer;
+  text-align: left;
+  border-left: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  position: relative;
+  transition: background 0.25s ease;
+  font-family: inherit;
+  color: var(--ink-muted);
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lab-tabs .tab:nth-child(6n+1) { border-left: none; }
+.lab-tabs .tab:nth-child(n+7) { border-bottom: none; }
+.lab-tabs .tab:hover { background: var(--cream-light); color: var(--ink-soft); }
+.lab-tabs .tab.active {
+  color: var(--ink);
+  background: var(--cream-light);
+}
+.lab-tabs .tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+  z-index: 2;
+}
+.tab-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink-muted);
+}
+.tab-cn {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 18px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  display: block;
+}
+.tab-en {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--ink-muted);
+  display: block;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+.lab-tabs .tab.active .tab-num { color: var(--accent); }
+.lab-tabs .tab.active .tab-en { color: var(--accent-soft); }
+
+/* Main · SortingLab 使用 .lab-main,需要和参考版 .lab-container 同样的约束 */
+.lab-main {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 48px;
+  position: relative;
+  z-index: 1;
+}
+.lab-main .lab-tabs {
+  margin: 48px 0 56px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Footer */
+.lab-footer {
+  max-width: 1160px;
+  margin: 64px auto 0;
+  padding: 32px 48px 0;
+  border-top: 3px double var(--ink);
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.footer-line {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+.footer-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+}
+.f-sep { color: var(--line); }
+.f-it {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+}
+
+/* 窄屏:header-top 堆叠 */
+@media (max-width: 760px) {
+  .header-top {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .lab-sub { flex-wrap: wrap; }
+  .footer-meta { gap: 10px; }
+}
+`;
+
+/* ═════════════════════════════════════════════════════════════════════
+   Utility · Log panel
+   ═════════════════════════════════════════════════════════════════════ */
+function useLog() {
+  const [log, setLog] = useState([]);
+  const idRef = useRef(0);
+  const push = useCallback((msg, complexity = '—', kind = 'success') => {
+    const now = new Date();
+    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    setLog(prev => [{ id: ++idRef.current, t, msg, complexity, kind }, ...prev].slice(0, 60));
+  }, []);
+  const clear = useCallback(() => setLog([]), []);
+  return [log, push, clear];
+}
+
+function LogPanel({ log, onClear, num = '§2' }) {
+  return (
+    <div className="log-block">
+      <div className="log-title">
+        <span><span className="num">{num}</span> &nbsp;OPERATION · LOG</span>
+        <span style={{ cursor: 'pointer' }} onClick={onClear}>[ CLEAR ]</span>
+      </div>
+      <div className="log-list">
+        {log.length === 0 ? (
+          <div className="log-empty">— no entries yet —</div>
+        ) : log.map(e => (
+          <div key={e.id} className={`log-item ${e.kind}`}>
+            <span className="t">{e.t}</span>
+            <span className="msg">{e.msg}</span>
+            <span className="c">{e.complexity}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Algorithm · Step Generators
+   Each generator returns an array of "frames":
+   { arr, msg, sorted, compare, current, pivot, moving, range, aux,
+     counters, action }
+   ═════════════════════════════════════════════════════════════════════ */
+
+const DEFAULT_DATA = [42, 17, 89, 3, 56, 71, 25, 94, 38, 61];
+
+function randomData(n = 10, max = 99) {
+  return Array.from({ length: n }, () => Math.floor(Math.random() * max) + 1);
+}
+
+/* ─── 02 · 直接插入排序 Straight Insertion ─── */
+function gen_insertion(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let C = 0, M = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C, M, S: 0 }, ...o });
+
+  push({ msg: '初始状态 · 有序区 {a[0]}，无序区 {a[1..n-1]}', sorted: [0] });
+  for (let i = 1; i < n; i++) {
+    const key = a[i];
+    const sorted = Array.from({ length: i }, (_, k) => k);
+    push({ msg: `§ 取哨兵 a[${i}] = ${key}，寻找其在有序区的位置`, sorted, current: [i] });
+    let j = i - 1;
+    while (j >= 0) {
+      C++;
+      push({ msg: `比较 a[${j}] = ${a[j]} 与 ${key}`, sorted, current: [i], compare: [j] });
+      if (a[j] > key) {
+        a[j + 1] = a[j]; M++;
+        push({ msg: `a[${j}] = ${a[j]} > ${key} · 右移 a[${j + 1}] ← a[${j}]`, sorted, compare: [j, j + 1], action: 'move' });
+        j--;
+      } else {
+        push({ msg: `a[${j}] = ${a[j]} ≤ ${key} · 停止扫描`, sorted, compare: [j] });
+        break;
+      }
+    }
+    a[j + 1] = key;
+    const newSorted = Array.from({ length: i + 1 }, (_, k) => k);
+    push({ msg: `插入 ${key} → a[${j + 1}] ✓ 有序区扩大到 [0..${i}]`, sorted: newSorted, action: 'insert' });
+  }
+  push({ msg: '排序完成 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 03 · 折半插入排序 Binary Insertion ─── */
+function gen_binaryInsertion(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let C = 0, M = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C, M, S: 0 }, ...o });
+
+  push({ msg: '初始状态 · 将首元素视为有序区', sorted: [0] });
+  for (let i = 1; i < n; i++) {
+    const key = a[i];
+    const sorted = Array.from({ length: i }, (_, k) => k);
+    push({ msg: `§ 取 a[${i}] = ${key}，在 [0..${i - 1}] 折半查找插入位置`, sorted, current: [i] });
+    let lo = 0, hi = i - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1; C++;
+      push({ msg: `折半: lo=${lo} hi=${hi} mid=${mid}，a[${mid}]=${a[mid]} vs ${key}`, sorted, current: [i], compare: [mid] });
+      if (a[mid] > key) hi = mid - 1; else lo = mid + 1;
+    }
+    push({ msg: `确定插入位置 p = ${lo}，将 a[${lo}..${i - 1}] 整体右移`, sorted, current: [i] });
+    for (let k = i - 1; k >= lo; k--) {
+      a[k + 1] = a[k]; M++;
+    }
+    a[lo] = key; M++;
+    const newSorted = Array.from({ length: i + 1 }, (_, k) => k);
+    push({ msg: `插入 ${key} → a[${lo}] ✓`, sorted: newSorted, action: 'insert' });
+  }
+  push({ msg: '排序完成 · 折半插入减少了比较次数，移动次数未变 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 04 · 起泡排序 Bubble Sort ─── */
+function gen_bubble(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let C = 0, S = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C, M: 0, S }, ...o });
+
+  push({ msg: '初始状态 · 每一趟将最大的元素"冒泡"到尾部', sorted: [] });
+  for (let i = 0; i < n - 1; i++) {
+    const sortedTail = Array.from({ length: i }, (_, k) => n - 1 - k);
+    push({ msg: `§ 第 ${i + 1} 趟 · 扫描 [0..${n - 1 - i}]`, sorted: sortedTail });
+    let swapped = false;
+    for (let j = 0; j < n - 1 - i; j++) {
+      C++;
+      push({ msg: `比较 a[${j}]=${a[j]} 与 a[${j + 1}]=${a[j + 1]}`, sorted: sortedTail, compare: [j, j + 1] });
+      if (a[j] > a[j + 1]) {
+        [a[j], a[j + 1]] = [a[j + 1], a[j]]; S++; swapped = true;
+        push({ msg: `逆序 · 交换 a[${j}] ↔ a[${j + 1}]`, sorted: sortedTail, compare: [j, j + 1], action: 'swap' });
+      }
+    }
+    const newSorted = Array.from({ length: i + 1 }, (_, k) => n - 1 - k);
+    push({ msg: `第 ${i + 1} 趟结束 · a[${n - 1 - i}] 已就位`, sorted: newSorted });
+    if (!swapped) {
+      push({ msg: '本趟无交换 · 提前终止 (优化)', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+      return steps;
+    }
+  }
+  push({ msg: '排序完成 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 05 · 简单选择排序 Selection Sort ─── */
+function gen_selection(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let C = 0, S = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C, M: 0, S }, ...o });
+
+  push({ msg: '初始状态 · 每趟在无序区中选最小值，与区首交换', sorted: [] });
+  for (let i = 0; i < n - 1; i++) {
+    const sorted = Array.from({ length: i }, (_, k) => k);
+    let min = i;
+    push({ msg: `§ 第 ${i + 1} 趟 · 在 [${i}..${n - 1}] 中寻找最小值，暂以 a[${i}] 为准`, sorted, current: [min] });
+    for (let j = i + 1; j < n; j++) {
+      C++;
+      push({ msg: `比较 a[${j}]=${a[j]} 与当前最小 a[${min}]=${a[min]}`, sorted, current: [min], compare: [j] });
+      if (a[j] < a[min]) {
+        min = j;
+        push({ msg: `更新最小值为 a[${min}]=${a[min]}`, sorted, current: [min] });
+      }
+    }
+    if (min !== i) {
+      [a[i], a[min]] = [a[min], a[i]]; S++;
+      push({ msg: `交换 a[${i}] ↔ a[${min}] · 最小值就位`, sorted, compare: [i, min], action: 'swap' });
+    } else {
+      push({ msg: `a[${i}] 已经是最小值，无需交换`, sorted, current: [i] });
+    }
+    const newSorted = Array.from({ length: i + 1 }, (_, k) => k);
+    push({ msg: `第 ${i + 1} 趟结束`, sorted: newSorted });
+  }
+  push({ msg: '排序完成 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 06 · 希尔排序 Shell Sort ─── */
+function gen_shell(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let C = 0, M = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C, M, S: 0 }, ...o });
+
+  // Classic gap sequence: n/2, n/4, ..., 1
+  const gaps = [];
+  for (let g = Math.floor(n / 2); g >= 1; g = Math.floor(g / 2)) gaps.push(g);
+
+  push({ msg: `初始状态 · 增量序列 {${gaps.join(', ')}}` });
+  for (const gap of gaps) {
+    push({ msg: `§ 当前增量 gap = ${gap}，每 ${gap} 个元素构成一个子序列` });
+    for (let i = gap; i < n; i++) {
+      const key = a[i];
+      push({ msg: `取 a[${i}] = ${key}，在同组(步长 ${gap})内插入排序`, current: [i] });
+      let j = i - gap;
+      while (j >= 0) {
+        C++;
+        push({ msg: `组内比较 a[${j}]=${a[j]} 与 ${key}`, current: [i], compare: [j] });
+        if (a[j] > key) {
+          a[j + gap] = a[j]; M++;
+          push({ msg: `右移 a[${j + gap}] ← a[${j}]`, compare: [j, j + gap], action: 'move' });
+          j -= gap;
+        } else break;
+      }
+      a[j + gap] = key;
+      push({ msg: `插入 ${key} → a[${j + gap}]`, current: [j + gap], action: 'insert' });
+    }
+    if (gap > 1) push({ msg: `gap = ${gap} 完成 · 序列已"基本有序"` });
+  }
+  push({ msg: '排序完成 · gap=1 时退化为直接插入，但此时序列已基本有序 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 07 · 快速排序 Quick Sort ─── */
+function gen_quick(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  const sortedSet = new Set();
+  let C = 0, S = 0;
+  const push = (o) => steps.push({
+    arr: [...a], counters: { C, M: 0, S },
+    sorted: Array.from(sortedSet).sort((x, y) => x - y),
+    ...o,
+  });
+
+  push({ msg: '初始状态 · 以首元素为枢轴，一次划分将序列分为两部分' });
+
+  const partition = (lo, hi) => {
+    const pivot = a[lo];
+    push({ msg: `§ 划分 [${lo}..${hi}] · 枢轴 = a[${lo}] = ${pivot}`, pivot: [lo], range: [lo, hi] });
+    let i = lo, j = hi;
+    while (i < j) {
+      while (i < j && a[j] >= pivot) {
+        C++;
+        push({ msg: `右指针: a[${j}]=${a[j]} ≥ ${pivot}，继续左移`, pivot: [lo], compare: [j], range: [lo, hi] });
+        j--;
+      }
+      if (i < j) {
+        a[i] = a[j]; S++;
+        push({ msg: `a[${i}] ← a[${j}] = ${a[j]} · 小值移到左侧`, compare: [i, j], range: [lo, hi], action: 'swap' });
+      }
+      while (i < j && a[i] <= pivot) {
+        C++;
+        push({ msg: `左指针: a[${i}]=${a[i]} ≤ ${pivot}，继续右移`, pivot: [j], compare: [i], range: [lo, hi] });
+        i++;
+      }
+      if (i < j) {
+        a[j] = a[i]; S++;
+        push({ msg: `a[${j}] ← a[${i}] = ${a[i]} · 大值移到右侧`, compare: [i, j], range: [lo, hi], action: 'swap' });
+      }
+    }
+    a[i] = pivot;
+    sortedSet.add(i);
+    push({ msg: `枢轴就位 · a[${i}] = ${pivot} · 左侧均 ≤ 右侧均 ≥`, pivot: [i], range: [lo, hi], action: 'insert' });
+    return i;
+  };
+
+  const sort = (lo, hi) => {
+    if (lo >= hi) {
+      if (lo === hi) sortedSet.add(lo);
+      return;
+    }
+    const p = partition(lo, hi);
+    sort(lo, p - 1);
+    sort(p + 1, hi);
+  };
+  sort(0, n - 1);
+  push({ msg: '排序完成 · 平均 O(n log n)，最坏 O(n²) · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 08 · 堆排序 Heap Sort ─── */
+function gen_heap(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  const sortedSet = new Set();
+  let C = 0, S = 0;
+  const push = (o) => steps.push({
+    arr: [...a], counters: { C, M: 0, S },
+    sorted: Array.from(sortedSet).sort((x, y) => x - y),
+    aux: { heapSize: o.heapSize ?? 0 },
+    ...o,
+  });
+
+  push({ msg: '初始状态 · 将数组视为完全二叉树，先建大顶堆', heapSize: n });
+
+  const siftDown = (i, size) => {
+    while (true) {
+      const l = 2 * i + 1, r = 2 * i + 2;
+      let largest = i;
+      if (l < size) {
+        C++;
+        if (a[l] > a[largest]) largest = l;
+      }
+      if (r < size) {
+        C++;
+        if (a[r] > a[largest]) largest = r;
+      }
+      if (largest === i) {
+        push({ msg: `节点 [${i}]=${a[i]} 已大于子节点，下沉结束`, current: [i], heapSize: size });
+        break;
+      }
+      push({ msg: `下沉: a[${i}]=${a[i]} 与最大子节点 a[${largest}]=${a[largest]} 交换`, compare: [i, largest], heapSize: size });
+      [a[i], a[largest]] = [a[largest], a[i]]; S++;
+      push({ msg: `a[${i}] ↔ a[${largest}]`, compare: [i, largest], action: 'swap', heapSize: size });
+      i = largest;
+    }
+  };
+
+  // Build max heap
+  push({ msg: '§ 阶段一 · 从最后一个非叶节点开始，逐层下沉建堆', heapSize: n });
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    push({ msg: `处理内部节点 a[${i}] = ${a[i]}`, current: [i], heapSize: n });
+    siftDown(i, n);
+  }
+  push({ msg: '大顶堆建立完成 · 堆顶 a[0] 为全局最大', current: [0], heapSize: n });
+
+  // Extract
+  push({ msg: '§ 阶段二 · 堆顶与末位交换，堆规模减一，再调整' });
+  for (let end = n - 1; end > 0; end--) {
+    push({ msg: `交换堆顶 a[0]=${a[0]} 与末尾 a[${end}]=${a[end]}`, compare: [0, end], heapSize: end + 1 });
+    [a[0], a[end]] = [a[end], a[0]]; S++;
+    sortedSet.add(end);
+    push({ msg: `a[${end}] = ${a[end]} 已就位 · 堆规模缩为 ${end}`, action: 'insert', heapSize: end });
+    if (end > 1) siftDown(0, end);
+  }
+  sortedSet.add(0);
+  push({ msg: '排序完成 · O(n log n) · 不稳定 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done', heapSize: 0 });
+  return steps;
+}
+
+/* ─── 09 · 二路归并排序 Merge Sort ─── */
+function gen_merge(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let C = 0, M = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C, M, S: 0 }, ...o });
+
+  push({ msg: '初始状态 · 分治：递归地将序列一分为二，归并两段有序子序列' });
+
+  const merge = (lo, mid, hi) => {
+    push({ msg: `§ 归并 [${lo}..${mid}] 与 [${mid + 1}..${hi}]`, range: [lo, hi] });
+    const tmp = [];
+    let i = lo, j = mid + 1;
+    while (i <= mid && j <= hi) {
+      C++;
+      push({ msg: `比较 a[${i}]=${a[i]} 与 a[${j}]=${a[j]}`, compare: [i, j], range: [lo, hi] });
+      if (a[i] <= a[j]) tmp.push(a[i++]);
+      else tmp.push(a[j++]);
+    }
+    while (i <= mid) tmp.push(a[i++]);
+    while (j <= hi) tmp.push(a[j++]);
+    for (let k = 0; k < tmp.length; k++) { a[lo + k] = tmp[k]; M++; }
+    push({ msg: `归并完成 · [${lo}..${hi}] 区间已有序`, range: [lo, hi], action: 'insert' });
+  };
+
+  const sort = (lo, hi) => {
+    if (lo >= hi) return;
+    const mid = (lo + hi) >> 1;
+    push({ msg: `划分 [${lo}..${hi}] → [${lo}..${mid}] + [${mid + 1}..${hi}]`, range: [lo, hi] });
+    sort(lo, mid);
+    sort(mid + 1, hi);
+    merge(lo, mid, hi);
+  };
+  sort(0, n - 1);
+  push({ msg: '排序完成 · O(n log n) 稳定 · 空间 O(n) · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+/* ─── 10 · 基数排序 Radix Sort (LSD) ─── */
+function gen_radix(input) {
+  const a = [...input];
+  const n = a.length;
+  const steps = [];
+  let M = 0;
+  const push = (o) => steps.push({ arr: [...a], counters: { C: 0, M, S: 0 }, ...o });
+
+  const maxV = Math.max(...a);
+  const digits = String(maxV).length;
+  push({ msg: `初始状态 · 最大值 ${maxV} 共 ${digits} 位，从低位到高位分配-收集` });
+
+  for (let d = 0; d < digits; d++) {
+    const place = Math.pow(10, d);
+    const buckets = Array.from({ length: 10 }, () => []);
+    push({ msg: `§ 第 ${d + 1} 趟 · 按 10^${d} 位分配到 0..9 桶`, aux: { buckets: buckets.map(b => [...b]), place: d } });
+    for (let i = 0; i < n; i++) {
+      const digit = Math.floor(a[i] / place) % 10;
+      buckets[digit].push(a[i]);
+      push({ msg: `a[${i}] = ${a[i]} · 第 ${d + 1} 位 = ${digit} → 入桶 [${digit}]`, current: [i], aux: { buckets: buckets.map(b => [...b]), place: d } });
+    }
+    let idx = 0;
+    for (let b = 0; b < 10; b++) {
+      for (const v of buckets[b]) {
+        a[idx++] = v; M++;
+      }
+    }
+    push({ msg: `收集 · 从桶 0..9 顺序取出，序列按低 ${d + 1} 位有序`, aux: { buckets: buckets.map(b => [...b]), place: d } });
+  }
+  push({ msg: '排序完成 · O(d·n) · 稳定 · 适合整数或等长串 · fin.', sorted: Array.from({ length: n }, (_, k) => k), action: 'done' });
+  return steps;
+}
+
+const GENERATORS = {
+  insertion: gen_insertion,
+  binaryInsertion: gen_binaryInsertion,
+  bubble: gen_bubble,
+  selection: gen_selection,
+  shell: gen_shell,
+  quick: gen_quick,
+  heap: gen_heap,
+  merge: gen_merge,
+  radix: gen_radix,
+};
+
+/* ═════════════════════════════════════════════════════════════════════
+   SortViz · shared bar visualization
+   ═════════════════════════════════════════════════════════════════════ */
+function SortViz({ frame, maxVal, showHeapTree = false, showRadixBuckets = false }) {
+  if (!frame) return null;
+  const { arr, compare = [], current = [], pivot = [], sorted = [], range, action, aux } = frame;
+  const n = arr.length;
+
+  const stateOf = (idx) => {
+    if (action === 'done') return 'sorted done';
+    if (pivot.includes(idx)) return 'pivot';
+    if (current.includes(idx)) return 'current';
+    if (compare.includes(idx)) return 'compare';
+    if (sorted.includes(idx)) return 'sorted';
+    return '';
+  };
+
+  const pxPerUnit = 180 / Math.max(maxVal, 1);
+  const minH = 18;
+  const BAR_W = 44, GAP = 6;
+  const trackW = n * BAR_W + (n - 1) * GAP + 24;
+
+  return (
+    <>
+      <div className="bars-track" style={{ width: trackW, position: 'relative' }}>
+        {range && (
+          <div
+            className="range-bracket"
+            style={{
+              left: 12 + range[0] * (BAR_W + GAP),
+              width: (range[1] - range[0] + 1) * BAR_W + (range[1] - range[0]) * GAP,
+            }}
+          >
+            <span className="range-bracket-label">[{range[0]}..{range[1]}]</span>
+          </div>
+        )}
+        {arr.map((v, i) => {
+          const cls = stateOf(i);
+          const h = Math.max(minH, v * pxPerUnit);
+          const dim = showHeapTree && aux && i >= aux.heapSize ? { opacity: 0.35 } : {};
+          return (
+            <div key={i} className="bar-col" style={dim}>
+              <div className={`bar ${cls}`} style={{ height: h }}>{v}</div>
+              <div className={`bar-idx ${cls.includes('current') || cls.includes('compare') || cls.includes('pivot') ? 'active' : ''}`}>[{i}]</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {showHeapTree && aux && aux.heapSize > 0 && (
+        <HeapTreeViz arr={arr} size={aux.heapSize} compare={compare} current={current} />
+      )}
+
+      {showRadixBuckets && aux && aux.buckets && (
+        <div className="viz-aux">
+          {aux.buckets.map((bucket, i) => (
+            <div key={i} className="aux-bucket">
+              <div className="aux-bucket-label">[{i}]</div>
+              <div className={`aux-bucket-cell ${bucket.length === 0 ? 'empty' : ''}`}>
+                {bucket.length === 0 ? '∅' : bucket.join(' · ')}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ─── Heap tree inline SVG ─── */
+function HeapTreeViz({ arr, size, compare, current }) {
+  // Compute levels
+  const levels = [];
+  let idx = 0, lv = 0;
+  while (idx < size) {
+    const count = Math.min(1 << lv, size - idx);
+    levels.push(arr.slice(idx, idx + count).map((v, k) => ({ v, i: idx + k })));
+    idx += count;
+    lv++;
+  }
+  const levelH = 50;
+  const nodeR = 16;
+  const widthPerLeaf = 46;
+  const maxLeafCount = 1 << (levels.length - 1);
+  const totalW = maxLeafCount * widthPerLeaf;
+  const H = levels.length * levelH + 20;
+
+  const posOf = (lvl, k) => {
+    const countAtLvl = 1 << lvl;
+    const step = totalW / countAtLvl;
+    return { x: step * k + step / 2, y: lvl * levelH + nodeR + 6 };
+  };
+
+  const nodes = [];
+  const edges = [];
+  levels.forEach((row, lvl) => {
+    row.forEach((node, k) => {
+      const p = posOf(lvl, k);
+      nodes.push({ ...node, ...p, lvl });
+      if (lvl > 0) {
+        const parent = levels[lvl - 1][Math.floor(k / 2)];
+        if (parent) {
+          const pp = posOf(lvl - 1, Math.floor(k / 2));
+          edges.push({ x1: pp.x, y1: pp.y, x2: p.x, y2: p.y });
+        }
+      }
+    });
+  });
+
+  const colorOf = (i) => {
+    if (current.includes(i)) return 'var(--accent)';
+    if (compare.includes(i)) return 'var(--amber)';
+    return 'var(--ink)';
+  };
+  const fillOf = (i) => {
+    if (current.includes(i)) return 'var(--accent)';
+    if (compare.includes(i)) return 'var(--amber-soft)';
+    return 'var(--cream)';
+  };
+  const textColorOf = (i) =>
+    current.includes(i) ? 'var(--cream)' : (compare.includes(i) ? 'var(--amber)' : 'var(--ink)');
+
+  return (
+    <div className="heap-tree-wrap">
+      <svg width={totalW} height={H} style={{ overflow: 'visible' }}>
+        {edges.map((e, i) => (
+          <line key={'e' + i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+                stroke="var(--line)" strokeWidth="1" />
+        ))}
+        {nodes.map((n) => (
+          <g key={'n' + n.i}>
+            <circle cx={n.x} cy={n.y} r={nodeR} fill={fillOf(n.i)} stroke={colorOf(n.i)} strokeWidth={compare.includes(n.i) || current.includes(n.i) ? 2 : 1.5} />
+            <text x={n.x} y={n.y + 4} textAnchor="middle" fontFamily="JetBrains Mono" fontSize={12} fontWeight={500} fill={textColorOf(n.i)}>{n.v}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SortingModule · generic interactive module
+   ═════════════════════════════════════════════════════════════════════ */
+const SPEEDS = [
+  { label: '0.5×', ms: 900 },
+  { label: '1×',   ms: 500 },
+  { label: '2×',   ms: 220 },
+  { label: '4×',   ms: 90 },
+];
+
+function SortingModule({ config }) {
+  const generator = GENERATORS[config.key];
+  const [initial, setInitial] = useState(DEFAULT_DATA);
+  const [arrInput, setArrInput] = useState(DEFAULT_DATA.join(', '));
+
+  const frames = useMemo(() => generator(initial), [initial, generator]);
+  const [step, setStep] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speedIdx, setSpeedIdx] = useState(1);
+  const [log, pushLog, clearLog] = useLog();
+  const timerRef = useRef(null);
+  const lastLoggedRef = useRef(-1);
+
+  // reset when data changes
+  useEffect(() => {
+    setStep(0);
+    setPlaying(false);
+    lastLoggedRef.current = -1;
+    clearLog();
+    pushLog(`载入数据 · n = ${initial.length}`, '—', 'info');
+  }, [initial]); // eslint-disable-line
+
+  // playback timer
+  useEffect(() => {
+    if (!playing) return;
+    if (step >= frames.length - 1) { setPlaying(false); return; }
+    timerRef.current = setTimeout(() => setStep(s => s + 1), SPEEDS[speedIdx].ms);
+    return () => clearTimeout(timerRef.current);
+  }, [playing, step, speedIdx, frames.length]);
+
+  // log on step change
+  useEffect(() => {
+    if (step === lastLoggedRef.current) return;
+    const f = frames[step];
+    if (!f) return;
+    let kind = 'info';
+    if (f.action === 'swap') kind = 'swap';
+    else if (f.action === 'insert') kind = 'success';
+    else if (f.action === 'move') kind = 'compare';
+    else if (f.action === 'done') kind = 'done';
+    else if (f.compare && f.compare.length) kind = 'compare';
+    const cpxTag =
+      f.action === 'swap'   ? 'swap' :
+      f.action === 'move'   ? 'move' :
+      f.action === 'insert' ? 'ins.' :
+      f.action === 'done'   ? 'done' :
+      f.compare && f.compare.length ? 'cmp' : '—';
+    pushLog(f.msg, cpxTag, kind);
+    lastLoggedRef.current = step;
+  }, [step, frames, pushLog]);
+
+  const play = () => {
+    if (step >= frames.length - 1) { setStep(0); }
+    setPlaying(true);
+  };
+  const pause = () => setPlaying(false);
+  const next = () => { setPlaying(false); setStep(s => Math.min(s + 1, frames.length - 1)); };
+  const prev = () => { setPlaying(false); setStep(s => Math.max(s - 1, 0)); };
+  const reset = () => { setPlaying(false); setStep(0); };
+  const jumpEnd = () => { setPlaying(false); setStep(frames.length - 1); };
+
+  const applyInput = () => {
+    const parsed = arrInput
+      .split(/[\s,，、;]+/)
+      .map(s => parseInt(s, 10))
+      .filter(v => !Number.isNaN(v) && v >= 0);
+    if (parsed.length < 2) {
+      pushLog(`× 请输入至少 2 个非负整数 (用逗号分隔)`, '—', 'error');
+      return;
+    }
+    if (parsed.length > 14) {
+      pushLog(`× 最多支持 14 个元素，当前 ${parsed.length} 过多`, '—', 'error');
+      return;
+    }
+    setInitial(parsed);
+    setArrInput(parsed.join(', '));
+  };
+  const shuffle = () => {
+    const rnd = randomData(10);
+    setInitial(rnd);
+    setArrInput(rnd.join(', '));
+  };
+  const nearlySorted = () => {
+    const s = [5, 12, 18, 25, 33, 40, 47, 55, 60, 68].map(v => v);
+    // swap two to make nearly-sorted
+    [s[2], s[5]] = [s[5], s[2]];
+    setInitial(s);
+    setArrInput(s.join(', '));
+  };
+  const reverseData = () => {
+    const r = [90, 82, 74, 65, 58, 47, 33, 24, 15, 7];
+    setInitial(r);
+    setArrInput(r.join(', '));
+  };
+
+  const frame = frames[step] || {};
+  const maxVal = Math.max(...initial, 10);
+  const progress = frames.length > 1 ? step / (frames.length - 1) : 0;
+  const counters = frame.counters || { C: 0, M: 0, S: 0 };
+
+  const isHeap = config.key === 'heap';
+  const isRadix = config.key === 'radix';
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> {config.num} / 12</div>
+          <div><strong>FAMILY</strong> {config.family}</div>
+          <div><strong>STABLE</strong> {config.stable}</div>
+          <div><strong>IN-PLACE</strong> {config.inplace}</div>
+        </aside>
+        <div className="module-intro-body">
+          {config.intro.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>BEST</strong> {config.meta.best}</div>
+          <div><strong>AVG.</strong> {config.meta.avg}</div>
+          <div><strong>WORST</strong> {config.meta.worst}</div>
+          <div><strong>SPACE</strong> {config.meta.space}</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. {config.num} · {config.figLabel}</span>
+        <span className="viz-label-right">
+          STEP {step + 1} / {frames.length}
+        </span>
+
+        <div className="viz-canvas-wrap" style={{ flexDirection: 'column', alignItems: 'center' }}>
+          <SortViz frame={frame} maxVal={maxVal} showHeapTree={isHeap} showRadixBuckets={isRadix} />
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. {config.num}</span>
+          <span className="italic">{config.figCaption}</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;PLAYBACK · CONTROLS</span>
+            <span>STEP ↓</span>
+          </div>
+
+          <div className="step-msg">
+            <span className="pre">NOTE</span>
+            <span>{frame.msg || '—'}</span>
+          </div>
+
+          <div className="counters">
+            <div className="counter">
+              <div className="counter-num">{counters.C}</div>
+              <div className="counter-label">比较 · cmp</div>
+            </div>
+            <div className="counter">
+              <div className="counter-num">{counters.S}</div>
+              <div className="counter-label">交换 · swap</div>
+            </div>
+            <div className="counter">
+              <div className="counter-num">{counters.M}</div>
+              <div className="counter-label">移动 · move</div>
+            </div>
+          </div>
+
+          <div className="progress-row">
+            <span>PROG.</span>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${progress * 100}%` }} />
+            </div>
+            <span>{Math.round(progress * 100)}%</span>
+          </div>
+
+          <div className="speed-row">
+            {SPEEDS.map((s, i) => (
+              <button
+                key={i}
+                className={`speed-btn ${speedIdx === i ? 'active' : ''}`}
+                onClick={() => setSpeedIdx(i)}
+              >{s.label}</button>
+            ))}
+          </div>
+
+          <div className="btn-grid cols-4">
+            <button className="lab-btn" onClick={prev} disabled={step === 0}>
+              <span>上一步</span><span className="sym">←</span>
+            </button>
+            {playing ? (
+              <button className="lab-btn accent" onClick={pause}>
+                <span>暂停</span><span className="sym">‖</span>
+              </button>
+            ) : (
+              <button className="lab-btn accent" onClick={play}>
+                <span>播放</span><span className="sym">▶</span>
+              </button>
+            )}
+            <button className="lab-btn" onClick={next} disabled={step >= frames.length - 1}>
+              <span>下一步</span><span className="sym">→</span>
+            </button>
+            <button className="lab-btn" onClick={jumpEnd}>
+              <span>跳到末尾</span><span className="sym">»</span>
+            </button>
+          </div>
+
+          <div style={{ height: 16 }} />
+
+          <div className="input-row">
+            <label>INPUT</label>
+            <input
+              className="lab-input"
+              value={arrInput}
+              onChange={e => setArrInput(e.target.value)}
+              placeholder="逗号分隔的整数"
+            />
+          </div>
+
+          <div className="btn-grid cols-4">
+            <button className="lab-btn accent" onClick={applyInput}>
+              <span>载入</span><span className="sym">＋</span>
+            </button>
+            <button className="lab-btn" onClick={shuffle}>
+              <span>随机</span><span className="sym">↻</span>
+            </button>
+            <button className="lab-btn" onClick={nearlySorted}>
+              <span>基本有序</span><span className="sym">≈</span>
+            </button>
+            <button className="lab-btn" onClick={reverseData}>
+              <span>逆序</span><span className="sym">↺</span>
+            </button>
+          </div>
+
+          <div style={{ height: 10 }} />
+          <button className="lab-btn" onClick={reset} style={{ width: '100%' }}>
+            <span>回到开头 RESET</span><span className="sym">↺</span>
+          </button>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>{config.cn}复杂度 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · COMPLEXITY</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>指标 Metric</th>
+              <th>最好 Best</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {config.complexity.map((row, i) => (
+              <tr key={i}>
+                <td>{row.op}</td>
+                <td className={row.bestCls || 'c-good'}>{row.best}</td>
+                <td className={row.avgCls || 'c-mid'}>{row.avg}</td>
+                <td className={row.worstCls || 'c-bad'}>{row.worst}</td>
+                <td>{row.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        {config.traits.map((t, i) => (
+          <div key={i} className="trait">
+            <div className="trait-num">TRAIT · {String(i + 1).padStart(2, '0')}</div>
+            <div className="trait-title">{t.title}</div>
+            <div className="trait-desc">{t.desc}</div>
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen configurations (9 interactive sorting algorithms)
+   ═════════════════════════════════════════════════════════════════════ */
+const SPECIMENS = {
+  insertion: {
+    key: 'insertion',
+    num: '02',
+    cn: '直接插入排序',
+    en: 'Straight Insertion Sort',
+    family: 'Insertion',
+    stable: 'Yes',
+    inplace: 'Yes',
+    figLabel: 'INSERTION TRACE',
+    figCaption: '将无序区首元素视为"哨兵"，自右向左扫描有序区，遇大则右移，遇小即入座。',
+    intro: [
+      '直接插入排序效仿手握一副扑克牌的整理方式：左手的牌始终有序，右手每抽一张就将其插入左手的正确位置。序列被视为分作两段——前段有序区、后段无序区——而每一趟循环只做一件事：将无序区的首张牌嵌入有序区。',
+      '它对"基本有序"的输入格外友好：若序列已大致就序，则每次扫描的位移极短，整体趋近于 O(n)；反之，若完全逆序，需要移动的次数与比较次数都会飙升至 O(n²)。它是稳定的、就地的，且代码极简——常作为小规模序列或混合排序算法的最后阶段。',
+    ],
+    meta: { best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    complexity: [
+      { op: '比较次数', best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', note: '基本有序时逼近最好' },
+      { op: '移动次数', best: 'O(1)', avg: 'O(n²)', worst: 'O(n²)', note: '逆序输入移动最多' },
+      { op: '空间开销', best: 'O(1)', avg: 'O(1)', worst: 'O(1)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '原地排序' },
+      { op: '稳定性', best: '稳定', avg: '稳定', worst: '稳定', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '相等元素相对顺序不变' },
+    ],
+    traits: [
+      { title: '分而治之 · 有序/无序', desc: '把序列切作两段，每趟从无序区取一个元素安置到有序区内的正确位置。' },
+      { title: '局部性良好', desc: '扫描与移动都发生在小范围的相邻位置，缓存命中率高，常数因子小。' },
+      { title: '稳定排序', desc: '采用 a[j] > key（严格大于）作为右移条件，等值元素保持输入的相对次序。' },
+      { title: '适合小规模 / 基本有序', desc: '当 n 较小或序列接近有序时表现优异，常被用作混合算法的收尾步骤。' },
+    ],
+  },
+
+  binaryInsertion: {
+    key: 'binaryInsertion',
+    num: '03',
+    cn: '折半插入排序',
+    en: 'Binary Insertion Sort',
+    family: 'Insertion',
+    stable: 'Yes',
+    inplace: 'Yes',
+    figLabel: 'BINARY SEARCH + SHIFT',
+    figCaption: '在已排好序的前段中用折半查找定位插入点，随后把其后所有元素整体右移一格。',
+    intro: [
+      '直接插入排序的比较是逐个进行的——这对一个已经排好序的有序区而言是一种浪费。折半插入排序把线性扫描替换为折半查找：先用 O(log i) 的比较确定插入位置，再用一次集体右移把元素挪开。',
+      '比较次数由此降为 Θ(n log n)，但元素的移动次数并未减少，仍需 O(n²)。它是对直接插入排序的"比较优化"，在比较开销远大于移动开销的场景（如比较需要回调函数）中有意义。稳定性和空间复杂度与直接插入一致。',
+    ],
+    meta: { best: 'O(n log n)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    complexity: [
+      { op: '比较次数', best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '折半查找的优势所在' },
+      { op: '移动次数', best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', note: '移动次数与直接插入相同' },
+      { op: '空间开销', best: 'O(1)', avg: 'O(1)', worst: 'O(1)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '原地排序' },
+      { op: '稳定性', best: '稳定', avg: '稳定', worst: '稳定', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '取 hi 而非 lo 为插入点保持稳定' },
+    ],
+    traits: [
+      { title: '减少比较 · 不减移动', desc: '折半查找把比较压到 log 级，但为了腾位置仍需移动大量元素。' },
+      { title: '要求有序段随机可达', desc: '只能用于数组等随机访问结构，对链表无效——链表无法折半定位。' },
+      { title: '对比较成本敏感的场景', desc: '当比较代价昂贵（字符串、复杂对象）时，折半可显著缩短总时间。' },
+      { title: '同为 O(n²) 整体复杂度', desc: '由于移动未被优化，最坏整体复杂度仍是平方级。' },
+    ],
+  },
+
+  bubble: {
+    key: 'bubble',
+    num: '04',
+    cn: '起泡排序',
+    en: 'Bubble Sort',
+    family: 'Exchange',
+    stable: 'Yes',
+    inplace: 'Yes',
+    figLabel: 'BUBBLE TRACE',
+    figCaption: '相邻元素两两比较，逆序则交换——每一趟将当前最大值"冒"到尾端，故名起泡。',
+    intro: [
+      '起泡排序是最直白的交换排序：从首到尾相邻两两比较，凡是逆序便交换。每走完一趟，序列中的最大值必然被推到无序区的末尾——像气泡一样浮到顶端。',
+      '它的代码短小而无辜，但在真实数据上表现糟糕：平均比较与交换次数都是 O(n²)。一个常见的优化是"若某趟无交换则提前终止"——在基本有序的输入上可将最好情况降为 O(n)。起泡是稳定的，原地的，常用于教学而非生产。',
+    ],
+    meta: { best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    complexity: [
+      { op: '比较次数', best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', note: '最好仅一趟无交换即终止' },
+      { op: '交换次数', best: 'O(1)', avg: 'O(n²)', worst: 'O(n²)', note: '每次逆序都要交换' },
+      { op: '空间开销', best: 'O(1)', avg: 'O(1)', worst: 'O(1)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '原地' },
+      { op: '稳定性', best: '稳定', avg: '稳定', worst: '稳定', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '严格 > 才交换，等值保持原序' },
+    ],
+    traits: [
+      { title: '相邻交换', desc: '只在相邻位置做交换，是一种"极短距离"的排序，信息传播缓慢。' },
+      { title: '早停优化', desc: '设置 swapped 标志，若一趟中未发生交换，则序列已有序，可立即终止。' },
+      { title: '稳定但低效', desc: '是稳定的，但比较与交换均远多于插入排序，实践中极少采用。' },
+      { title: '教学价值', desc: '最易理解的排序算法之一，常作为入门的"参照物"。' },
+    ],
+  },
+
+  selection: {
+    key: 'selection',
+    num: '05',
+    cn: '简单选择排序',
+    en: 'Simple Selection Sort',
+    family: 'Selection',
+    stable: 'No',
+    inplace: 'Yes',
+    figLabel: 'SELECTION TRACE',
+    figCaption: '每一趟在无序区中挑选最小元素，与区首交换——一次只动一个元素，交换次数最少。',
+    intro: [
+      '简单选择排序每一趟只做一件事：在剩余的无序区中找出最小元素，把它放到无序区的最前面。经过 n-1 趟后整个序列便排好序。',
+      '它的"交换次数"是所有 O(n²) 排序中最少的——每趟至多一次——但"比较次数"是固定的 n(n-1)/2，与输入无关。因此即便输入已经有序，它也依旧走完全部比较。由于长距离交换会跨越等值元素，它是不稳定的。',
+    ],
+    meta: { best: 'O(n²)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    complexity: [
+      { op: '比较次数', best: 'O(n²)', avg: 'O(n²)', worst: 'O(n²)', bestCls: 'c-bad', note: '与输入无关，始终 n(n-1)/2' },
+      { op: '交换次数', best: 'O(1)', avg: 'O(n)', worst: 'O(n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '每趟至多一次，共 n-1 次' },
+      { op: '空间开销', best: 'O(1)', avg: 'O(1)', worst: 'O(1)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '原地' },
+      { op: '稳定性', best: '不稳定', avg: '不稳定', worst: '不稳定', bestCls: 'c-bad', avgCls: 'c-bad', worstCls: 'c-bad', note: '长距离交换会越过等值元素' },
+    ],
+    traits: [
+      { title: '交换代价最小', desc: '每趟仅一次交换，适合"交换开销昂贵、比较开销廉价"的场景。' },
+      { title: '比较与输入无关', desc: '无论初始顺序如何，比较次数始终是 n(n-1)/2，没有"早停"空间。' },
+      { title: '不稳定', desc: '最小值与区首的一次远距离交换可能越过等值元素，改变其相对次序。' },
+      { title: '对小规模或嵌入式场景友好', desc: '实现简单、内存开销小，在交换代价高昂时仍有利用价值。' },
+    ],
+  },
+
+  shell: {
+    key: 'shell',
+    num: '06',
+    cn: '希尔排序',
+    en: 'Shell Sort (Diminishing Increment)',
+    family: 'Insertion',
+    stable: 'No',
+    inplace: 'Yes',
+    figLabel: 'GAP-BASED PASSES',
+    figCaption: '以不断缩小的增量 gap 对子序列做插入排序；gap=1 时即为直接插入，但此时序列已接近有序。',
+    intro: [
+      '希尔排序（1959，D. L. Shell）是对直接插入排序的第一次大跃迁。它引入"增量序列"：先按较大步长 gap 把序列拆成若干子序列各自做插入排序，然后缩小 gap 再排，直到 gap=1。每一趟排序都让序列更接近有序，最后一趟退化为直接插入，但此时的 n² 已被前几趟大幅削弱。',
+      '它通过"远距离比较"打破了直接插入"只能相邻移动"的桎梏。复杂度依赖于增量序列的选择——经典 n/2, n/4, ... 序列的最坏复杂度为 O(n²)，而 Hibbard 增量、Sedgewick 增量等可降至 O(n^{4/3}) 乃至更低。它是不稳定的，因为子序列间的交换会跨越等值元素。',
+    ],
+    meta: { best: 'O(n log n)', avg: 'O(n^{1.3})', worst: 'O(n²)', space: 'O(1)' },
+    complexity: [
+      { op: '时间复杂度', best: 'O(n log n)', avg: 'O(n^{1.3})', worst: 'O(n²)', note: '与增量序列强相关' },
+      { op: '比较次数', best: '—', avg: '子序列内部线性', worst: '—', bestCls: 'c-mid', avgCls: 'c-mid', worstCls: 'c-mid', note: '难以精确分析' },
+      { op: '空间开销', best: 'O(1)', avg: 'O(1)', worst: 'O(1)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '原地' },
+      { op: '稳定性', best: '不稳定', avg: '不稳定', worst: '不稳定', bestCls: 'c-bad', avgCls: 'c-bad', worstCls: 'c-bad', note: '跨子序列交换破坏稳定性' },
+    ],
+    traits: [
+      { title: '增量递减策略', desc: 'gap 从大到小逐步缩小到 1，每一轮都让序列的"混乱度"降低一档。' },
+      { title: '打破相邻限制', desc: '通过大步长子序列排序，让远端元素也能在 O(1) 内互换位置。' },
+      { title: '增量选择至关重要', desc: 'Hibbard、Sedgewick、Sedgewick-Pratt 等序列性能差异显著。' },
+      { title: '不稳定 · 原地 · 难分析', desc: '是唯一复杂度仍有开放问题的初等排序算法之一。' },
+    ],
+  },
+
+  quick: {
+    key: 'quick',
+    num: '07',
+    cn: '快速排序',
+    en: 'Quick Sort (Hoare 1962)',
+    family: 'Exchange',
+    stable: 'No',
+    inplace: 'Yes',
+    figLabel: 'PARTITION · RECURSE',
+    figCaption: '以枢轴将序列一分为二：左 ≤ 枢轴 ≤ 右，然后递归排序两侧，枢轴原地就位。',
+    intro: [
+      '快速排序由 Tony Hoare 于 1962 年提出，是分治思想在排序中的经典体现。每次选取一个"枢轴"（pivot），用一次线性扫描将序列划分为两部分：左段全 ≤ 枢轴，右段全 ≥ 枢轴。枢轴自然就位，然后对两段分别递归。',
+      '平均 O(n log n) 且常数因子极小，是实践中最快的通用内排序。它的最坏情况是 O(n²)，当枢轴总取到极端值（如已排序数组+固定首元素枢轴），但可通过随机枢轴、三数取中、尾递归优化等手段规避。它是不稳定的（长距离交换跨越等值），原地排序，递归栈占 O(log n) 空间。',
+    ],
+    meta: { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n²)', space: 'O(log n)' },
+    complexity: [
+      { op: '时间复杂度', best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n²)', bestCls: 'c-good', avgCls: 'c-good', note: '划分平衡时达到 log 级' },
+      { op: '比较次数', best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n²)', bestCls: 'c-good', avgCls: 'c-good', note: '最坏出现在极端不平衡划分' },
+      { op: '空间开销', best: 'O(log n)', avg: 'O(log n)', worst: 'O(n)', bestCls: 'c-mid', avgCls: 'c-mid', worstCls: 'c-bad', note: '递归栈；最坏退化为线性' },
+      { op: '稳定性', best: '不稳定', avg: '不稳定', worst: '不稳定', bestCls: 'c-bad', avgCls: 'c-bad', worstCls: 'c-bad', note: '长距离交换破坏稳定性' },
+    ],
+    traits: [
+      { title: '分治递归', desc: '划分 + 两侧递归，是分治范式最"干净"的实例，常数因子极小。' },
+      { title: '枢轴选择决定性能', desc: '首/尾元素、随机、三数取中、中位数中位数……策略决定最坏情况。' },
+      { title: '原地 · 但非稳定', desc: '只需 O(log n) 辅助栈空间；等值元素相对顺序无法保证。' },
+      { title: '实际最快的通用内排序', desc: '缓存友好、常数小，C/C++ 标准库 qsort、Java dual-pivot 均基于此。' },
+    ],
+  },
+
+  heap: {
+    key: 'heap',
+    num: '08',
+    cn: '堆排序',
+    en: 'Heap Sort',
+    family: 'Selection',
+    stable: 'No',
+    inplace: 'Yes',
+    figLabel: 'HEAPIFY + EXTRACT',
+    figCaption: '将数组视为完全二叉树，先建大顶堆，再反复取堆顶与末位交换、调整，直至全部就位。',
+    intro: [
+      '堆排序（J. W. J. Williams，1964）利用"完全二叉树 + 堆性质"这一数据结构上的巧思。数组在物理上连续，逻辑上被当作完全二叉树：a[i] 的左右孩子为 a[2i+1] 与 a[2i+2]。第一步"建堆"从最后一个非叶节点开始逐层下沉，使根节点成为最大值；第二步反复"提取"：堆顶与末位交换，堆规模减一，对新堆顶下沉调整——末位已是全局最大并被冻结。',
+      '它是 O(n log n) 的最坏情况保证型排序（不像快排会退化），且是原地的。但常数因子大于快排，且跳跃式访问对缓存不友好。堆排序不稳定，因堆调整中的父子交换会越过等值元素。',
+    ],
+    meta: { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', space: 'O(1)' },
+    complexity: [
+      { op: '时间复杂度', best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '无最坏情况退化' },
+      { op: '建堆', best: 'O(n)', avg: 'O(n)', worst: 'O(n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '紧密分析下为线性' },
+      { op: '空间开销', best: 'O(1)', avg: 'O(1)', worst: 'O(1)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '原地，无递归栈' },
+      { op: '稳定性', best: '不稳定', avg: '不稳定', worst: '不稳定', bestCls: 'c-bad', avgCls: 'c-bad', worstCls: 'c-bad', note: '堆调整破坏稳定性' },
+    ],
+    traits: [
+      { title: '数组实现的二叉堆', desc: '通过下标算术在一维数组上模拟二叉树，无需额外指针。' },
+      { title: 'O(n log n) 最坏保证', desc: '相比快排，堆排序无论输入如何都是 O(n log n)，适合实时性要求严格的场合。' },
+      { title: '原地且无递归', desc: '只使用固定额外空间，不依赖递归栈；对嵌入式/栈受限环境友好。' },
+      { title: '缓存不友好 · 不稳定', desc: '父子跳跃访问破坏局部性；长距离交换使它不稳定。' },
+    ],
+  },
+
+  merge: {
+    key: 'merge',
+    num: '09',
+    cn: '二路归并排序',
+    en: 'Two-Way Merge Sort',
+    family: 'Merge',
+    stable: 'Yes',
+    inplace: 'No',
+    figLabel: 'DIVIDE · CONQUER',
+    figCaption: '递归地将序列一分为二，直到单元素有序，再自底向上将两段有序子序列归并成一段。',
+    intro: [
+      '归并排序源自冯·诺依曼（1945）时代——最古老的分治算法之一。思想极朴素：将序列从中点一分为二，分别排好序，然后"归并"两段有序子序列。归并本身是一次线性扫描：两个指针各自指向两段首位，反复取较小者写入结果。',
+      '它在最坏情况下仍是 O(n log n)，且是稳定的——相等元素以输入顺序保留。但代价是 O(n) 的辅助空间。由于它的归并过程不需要随机访问，它是链表排序的首选，也是外部排序（磁盘归并）的理论基础。',
+    ],
+    meta: { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', space: 'O(n)' },
+    complexity: [
+      { op: '时间复杂度', best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '最坏保证' },
+      { op: '比较次数', best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '与输入几乎无关' },
+      { op: '空间开销', best: 'O(n)', avg: 'O(n)', worst: 'O(n)', bestCls: 'c-bad', avgCls: 'c-bad', worstCls: 'c-bad', note: '归并需辅助数组' },
+      { op: '稳定性', best: '稳定', avg: '稳定', worst: '稳定', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '归并时取 ≤ 即保持稳定' },
+    ],
+    traits: [
+      { title: '经典分治', desc: '递归划分 + 线性归并，是"分治三步法"的教科书式示范。' },
+      { title: '稳定 · 可预测', desc: '所有输入均 O(n log n)，相等元素相对顺序不变，适合多关键字排序。' },
+      { title: '链表友好', desc: '归并过程仅需顺序访问，链表上可就地完成，无需额外 O(n) 空间。' },
+      { title: '外部排序的基石', desc: '磁盘归并、大数据排序（MapReduce shuffle）本质都是多路归并的变体。' },
+    ],
+  },
+
+  radix: {
+    key: 'radix',
+    num: '10',
+    cn: '基数排序',
+    en: 'Radix Sort (LSD)',
+    family: 'Distribution',
+    stable: 'Yes',
+    inplace: 'No',
+    figLabel: 'DISTRIBUTE · COLLECT',
+    figCaption: '按最低位起的每一个数位将元素分配到 10 个桶，再按桶序收集——d 趟后完成。',
+    intro: [
+      '基数排序跳出了"比较"的范畴。它不比较元素，而是根据每一位上的数字，把元素分配到 0..9 十个桶里，然后按桶序收集——从最低位一直做到最高位（LSD, Least Significant Digit first）。由于每一位的桶内顺序保持输入次序，低位有序性会被高位分配所"继承"，d 趟之后整个序列有序。',
+      '时间复杂度为 O(d·(n+r))，其中 d 是位数、r 是基数（此处为 10）。当 d 远小于 log n 时（如固定位数的整数、定长字符串、IP 地址），基数排序可以胜过所有比较排序。它是稳定的，但需要 O(n+r) 辅助空间，且仅适用于能逐位分解的键。',
+    ],
+    meta: { best: 'O(d(n+r))', avg: 'O(d(n+r))', worst: 'O(d(n+r))', space: 'O(n+r)' },
+    complexity: [
+      { op: '时间复杂度', best: 'O(d·n)', avg: 'O(d·n)', worst: 'O(d·n)', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: 'd 为位数，r 为基数' },
+      { op: '空间开销', best: 'O(n+r)', avg: 'O(n+r)', worst: 'O(n+r)', bestCls: 'c-bad', avgCls: 'c-bad', worstCls: 'c-bad', note: '需要桶数组' },
+      { op: '稳定性', best: '稳定', avg: '稳定', worst: '稳定', bestCls: 'c-good', avgCls: 'c-good', worstCls: 'c-good', note: '桶内保持输入次序' },
+      { op: '适用范围', best: '—', avg: '—', worst: '—', note: '整数、定长串、IP、日期' },
+    ],
+    traits: [
+      { title: '非比较排序', desc: '突破比较排序的 Ω(n log n) 下界，对特定键类型线性可解。' },
+      { title: 'LSD · 从低位到高位', desc: '利用"稳定分配"的性质让低位排序结果被高位继承。' },
+      { title: '稳定 · 但非原地', desc: '需要 O(n+r) 辅助桶数组，空间开销明显。' },
+      { title: '键必须可分解', desc: '只能处理能按位/字符分段的键；浮点、负数需特殊编码。' },
+    ],
+  },
+};
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 01 · 排序的基本概念 Basic Concepts
+   ═════════════════════════════════════════════════════════════════════ */
+function ConceptsModule() {
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 01 / 12</div>
+          <div><strong>TYPE</strong> Concept</div>
+          <div><strong>SCOPE</strong> Foundation</div>
+          <div><strong>PREREQ</strong> Arrays</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>排序是将一组无序的数据元素按某个关键字（key）重新排列为有序序列的过程，是数据结构中最古老也最核心的主题之一。从最朴素的人工整理扑克，到现代数据库索引的构建，排序无处不在——它是查找、合并、去重、统计等几乎所有数据处理步骤的前提。</p>
+          <p>本卷将十种经典排序算法——从 O(n²) 的初等算法到 O(n log n) 的分治算法，再到突破比较下界的分配式排序与面向外存的多路归并——一一分门别类、逐一剖析。本节先确立评价排序算法所需的全部术语。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>内排序</strong> Internal</div>
+          <div><strong>外排序</strong> External</div>
+          <div><strong>稳定性</strong> Stability</div>
+          <div><strong>关键字</strong> Key</div>
+        </aside>
+      </section>
+
+      <section className="editorial-block">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <h3 className="editorial-h">
+          <span className="num">§1</span>
+          基本术语 <span className="it">terms</span>
+        </h3>
+        <dl className="definition-list">
+          <dt><span className="tag">DEF · 01</span> 关键字 (Key)</dt>
+          <dd>用于决定排序次序的那一个（或一组）数据项。关键字可以是数值、字符串，甚至复合结构；当多关键字时，排序需定义主次关系。</dd>
+          <dt><span className="tag">DEF · 02</span> 内排序 / 外排序 (Internal / External)</dt>
+          <dd>若待排数据全部驻留在内存中完成排序，称为内排序；若数据量巨大，无法一次装入内存，需要借助外存（磁盘/磁带）分块读写，则称为外排序。外排序的瓶颈是 I/O，而非比较。</dd>
+          <dt><span className="tag">DEF · 03</span> 稳定性 (Stability)</dt>
+          <dd>若排序后，原序列中两个关键字相等的元素的相对次序保持不变，则称排序算法是稳定的；否则是不稳定的。稳定性在多关键字排序和数据库二次排序中至关重要。</dd>
+          <dt><span className="tag">DEF · 04</span> 就地排序 (In-place)</dt>
+          <dd>若排序过程仅使用 O(1) 或 O(log n) 的辅助空间（不计输入本身），则称为就地排序。就地排序对内存敏感的系统尤为重要。</dd>
+          <dt><span className="tag">DEF · 05</span> 基本操作</dt>
+          <dd>排序算法的核心开销由 <strong>比较</strong>（compare）与 <strong>移动</strong>（move/swap）两类操作贡献，二者数量级共同决定算法的实际性能。</dd>
+        </dl>
+      </section>
+
+      <section className="editorial-block">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <h3 className="editorial-h">
+          <span className="num">§2</span>
+          稳定性示意 <span className="it">stability, fig.</span>
+        </h3>
+
+        <div className="concept-diagram">
+          <span className="concept-diagram-label">FIG. 01 · STABILITY</span>
+          <div style={{ padding: '28px 0 10px' }}>
+            <StabilityDiagram />
+          </div>
+          <div className="concept-diagram-cap">
+            <span className="fig">FIG. 01</span>
+            <span className="italic">两个 3₁ 与 3₂ 的相对次序：稳定排序保持「3₁ 先于 3₂」；不稳定排序可能颠倒。</span>
+          </div>
+        </div>
+
+        <p className="editorial-p" style={{ marginTop: 18 }}>
+          以关键字均为 <strong>3</strong> 的两个元素为例，用下标区分它们的初始次序（3₁、3₂）。在<strong>稳定</strong>排序结束后，两者的相对次序与输入相同；在<strong>不稳定</strong>排序后，两者可能被调换。这个区别在"先按姓名排，再按年龄排"这类多关键字排序中决定了结果是否符合预期。
+        </p>
+      </section>
+
+      <section className="editorial-block">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <h3 className="editorial-h">
+          <span className="num">§3</span>
+          排序算法家族 <span className="it">taxonomy</span>
+        </h3>
+
+        <div className="concept-diagram">
+          <span className="concept-diagram-label">FIG. 02 · TAXONOMY</span>
+          <div style={{ padding: '28px 12px 14px' }}>
+            <TaxonomyDiagram />
+          </div>
+          <div className="concept-diagram-cap">
+            <span className="fig">FIG. 02</span>
+            <span className="italic">以主要策略划分：插入、交换、选择、归并、分配，每一支各有所长。</span>
+          </div>
+        </div>
+
+        <p className="editorial-p" style={{ marginTop: 18 }}>
+          所有基于"比较"的排序算法都受到 <strong>Ω(n log n)</strong> 的下界约束——一次比较只能得到 1 bit 信息，而 n! 种排列需要 log₂(n!) ≈ n log n 比特来区分。因此任何对此下界的突破（如基数排序）必须以"不比较"的方式（按位分配）换取。
+        </p>
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>主要算法一览 <span className="flourish">overview</span></h3>
+          <span className="num">§4 · OVERVIEW</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>算法</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>空间</th>
+              <th>稳定性</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>直接插入</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td><td className="c-good">O(1)</td><td className="c-good">稳定</td></tr>
+            <tr><td>折半插入</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td><td className="c-good">O(1)</td><td className="c-good">稳定</td></tr>
+            <tr><td>起泡排序</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td><td className="c-good">O(1)</td><td className="c-good">稳定</td></tr>
+            <tr><td>简单选择</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td><td className="c-good">O(1)</td><td className="c-bad">不稳定</td></tr>
+            <tr><td>希尔排序</td><td className="c-mid">O(n^1.3)</td><td className="c-bad">O(n²)</td><td className="c-good">O(1)</td><td className="c-bad">不稳定</td></tr>
+            <tr><td>快速排序</td><td className="c-good">O(n log n)</td><td className="c-bad">O(n²)</td><td className="c-mid">O(log n)</td><td className="c-bad">不稳定</td></tr>
+            <tr><td>堆排序</td><td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td><td className="c-good">O(1)</td><td className="c-bad">不稳定</td></tr>
+            <tr><td>二路归并</td><td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td><td className="c-bad">O(n)</td><td className="c-good">稳定</td></tr>
+            <tr><td>基数排序</td><td className="c-good">O(d·n)</td><td className="c-good">O(d·n)</td><td className="c-bad">O(n+r)</td><td className="c-good">稳定</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">选择排序算法的准绳</div>
+          <div className="trait-desc">数据规模、是否基本有序、对稳定性的要求、空间预算、是否需要外排序——这些都是决策因素。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">O(n log n) 比较下界</div>
+          <div className="trait-desc">任何基于比较的排序算法，其最坏情况的比较次数必然 ≥ ⌈log₂(n!)⌉，信息论下界。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">实际性能 ≠ 渐近复杂度</div>
+          <div className="trait-desc">常数因子、缓存友好度、分支预测——都能让 O(n log n) 的快排跑赢 O(n log n) 的堆排。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">混合策略是现代默认</div>
+          <div className="trait-desc">Timsort / introsort 等工业级算法结合多种策略：大段归并/快排，小段插入——兼顾最坏保证与常数效率。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* Stability demonstration SVG */
+function StabilityDiagram() {
+  const items = [
+    { v: '5', sub: '' },
+    { v: '3', sub: '₁', accent: true },
+    { v: '8', sub: '' },
+    { v: '3', sub: '₂', accent: true },
+    { v: '1', sub: '' },
+  ];
+  const sortedStable = [
+    { v: '1', sub: '' },
+    { v: '3', sub: '₁', accent: true },
+    { v: '3', sub: '₂', accent: true },
+    { v: '5', sub: '' },
+    { v: '8', sub: '' },
+  ];
+  const sortedUnstable = [
+    { v: '1', sub: '' },
+    { v: '3', sub: '₂', accent: true },
+    { v: '3', sub: '₁', accent: true },
+    { v: '5', sub: '' },
+    { v: '8', sub: '' },
+  ];
+  const Row = ({ items, label }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+      <div style={{
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+        letterSpacing: '0.18em', textTransform: 'uppercase',
+        color: 'var(--ink-muted)', width: 120,
+      }}>{label}</div>
+      {items.map((it, i) => (
+        <div key={i} style={{
+          width: 48, height: 48, border: '1.5px solid var(--ink)',
+          background: it.accent ? 'var(--accent-faded)' : 'var(--cream)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'JetBrains Mono, monospace', fontSize: 16, fontWeight: 500,
+          color: it.accent ? 'var(--accent)' : 'var(--ink)',
+          position: 'relative',
+        }}>
+          {it.v}<sub style={{ fontSize: 10, marginLeft: 1 }}>{it.sub}</sub>
+        </div>
+      ))}
+    </div>
+  );
+  return (
+    <div>
+      <Row items={items} label="INPUT" />
+      <Row items={sortedStable} label="STABLE ✓" />
+      <Row items={sortedUnstable} label="UNSTABLE ×" />
+    </div>
+  );
+}
+
+/* Taxonomy SVG */
+function TaxonomyDiagram() {
+  // SVG-based tree diagram
+  return (
+    <svg viewBox="0 0 900 240" style={{ width: '100%', height: 'auto', maxWidth: 900 }}>
+      <style>{`
+        .tx-node-bg { fill: var(--cream); stroke: var(--ink); stroke-width: 1.5; }
+        .tx-node-accent { fill: var(--cream-light); stroke: var(--accent); stroke-width: 1.5; }
+        .tx-root-bg { fill: var(--accent); stroke: var(--accent); stroke-width: 1.5; }
+        .tx-lbl-root { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; fill: var(--cream); font-style: italic; }
+        .tx-lbl-branch { font-family: 'Fraunces', 'Noto Serif SC', serif; font-size: 14px; font-weight: 500; fill: var(--ink); }
+        .tx-lbl-leaf { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--ink-soft); }
+        .tx-line { stroke: var(--ink); stroke-width: 1; fill: none; }
+        .tx-line-soft { stroke: var(--line); stroke-width: 1; fill: none; }
+      `}</style>
+      {/* Root */}
+      <rect className="tx-root-bg" x="380" y="6" width="140" height="36" />
+      <text className="tx-lbl-root" x="450" y="29" textAnchor="middle">Sorting Algorithms</text>
+      {/* Branch lines */}
+      {[110, 270, 450, 630, 790].map((x) => (
+        <line key={x} className="tx-line" x1="450" y1="42" x2={x} y2="80" />
+      ))}
+      {/* Branches */}
+      {[
+        { x: 110, cn: '插入', en: 'Insertion', leaves: ['直接插入', '折半插入', '希尔排序'] },
+        { x: 270, cn: '交换', en: 'Exchange', leaves: ['起泡排序', '快速排序'] },
+        { x: 450, cn: '选择', en: 'Selection', leaves: ['简单选择', '堆排序'] },
+        { x: 630, cn: '归并', en: 'Merge', leaves: ['二路归并', '多路归并'] },
+        { x: 790, cn: '分配', en: 'Distribution', leaves: ['基数排序', '计数/桶'] },
+      ].map((b) => (
+        <g key={b.x}>
+          <rect className="tx-node-bg" x={b.x - 58} y="80" width="116" height="36" />
+          <text className="tx-lbl-branch" x={b.x} y="98" textAnchor="middle">{b.cn}</text>
+          <text className="tx-lbl-leaf" x={b.x} y="111" textAnchor="middle" fontStyle="italic">{b.en}</text>
+          {b.leaves.map((l, i) => (
+            <g key={i}>
+              <line className="tx-line-soft" x1={b.x} y1="116" x2={b.x} y2={140 + i * 28 - 6} />
+              <line className="tx-line-soft" x1={b.x} y1={140 + i * 28 - 6} x2={b.x - 40} y2={140 + i * 28 - 6} />
+              <text className="tx-lbl-leaf" x={b.x - 36} y={140 + i * 28 - 1}>· {l}</text>
+            </g>
+          ))}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 11 · 外部排序 External Sorting
+   ═════════════════════════════════════════════════════════════════════ */
+function ExternalSortModule() {
+  const [phase, setPhase] = useState(0); // 0: initial, 1: run-generation, 2: merge pass 1, 3: merge pass 2
+  const [log, pushLog, clearLog] = useLog();
+
+  const runs = [
+    ['08', '14', '25', '37', '49'],
+    ['09', '18', '24', '56', '61'],
+    ['13', '22', '45', '68', '72'],
+    ['03', '11', '33', '44', '51'],
+  ];
+  const mergedPass1 = [
+    ['08', '09', '14', '18', '24', '25', '37', '49', '56', '61'],
+    ['03', '11', '13', '22', '33', '44', '45', '51', '68', '72'],
+  ];
+  const mergedFinal = ['03', '08', '09', '11', '13', '14', '18', '22', '24', '25', '33', '37', '44', '45', '49', '51', '56', '61', '68', '72'];
+
+  const advance = () => {
+    if (phase >= 3) return;
+    const next = phase + 1;
+    setPhase(next);
+    if (next === 1) pushLog('§ 阶段一 · 生成初始归并段 (run)', 'run', 'info');
+    if (next === 2) pushLog('§ 阶段二 · 第一趟 2-路归并，4 段 → 2 段', 'merge', 'compare');
+    if (next === 3) pushLog('§ 阶段三 · 第二趟 2-路归并，2 段 → 1 段 · 完成', 'done', 'done');
+  };
+  const reset = () => { setPhase(0); clearLog(); pushLog('reset · 回到初始状态', '—', 'info'); };
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 11 / 12</div>
+          <div><strong>TYPE</strong> External</div>
+          <div><strong>STORAGE</strong> Disk / Tape</div>
+          <div><strong>BOTTLENECK</strong> I/O</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>当待排数据的规模远超内存容量时——譬如数十 GB 的日志、数亿行的用户表——所有内排序方法都束手无策。外部排序应运而生：它承认 I/O 才是真正的瓶颈，转而最小化读写磁盘的次数。经典方案由两阶段构成——"生成归并段"与"多路归并"。</p>
+          <p>第一阶段：把外存中的海量记录分批读入内存，每批在内存中排好序后写回外存，得到若干较短的有序"归并段"（run）。第二阶段：反复对归并段做 k-路归并，每一趟归并都把 k 段合并为一段，直到只剩一段。这正是磁盘版的归并排序。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>PASS₁</strong> Run-gen</div>
+          <div><strong>PASS₂</strong> k-merge</div>
+          <div><strong>METRIC</strong> I/O count</div>
+          <div><strong>TREE</strong> Loser-tree</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 11 · TWO-PASS EXTERNAL MERGE</span>
+        <span className="viz-label-right">PHASE {phase} / 3</span>
+
+        <div style={{ padding: '20px 10px' }}>
+          {phase === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 0', fontFamily: 'Fraunces, serif', fontStyle: 'italic', color: 'var(--ink-muted)', fontSize: 16 }}>
+              点击下方「下一阶段」开始演示 · press to step ▸
+            </div>
+          )}
+
+          {phase >= 1 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', marginBottom: 10 }}>
+                § PHASE 1 · RUN GENERATION (每段在内存内部排序后写回外存)
+              </div>
+              <div className="mway-diagram" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="mway-col">
+                  {runs.map((r, i) => (
+                    <div key={i} className="mway-run">
+                      <span className="lbl">RUN · 0{i + 1}</span>
+                      <span>{r.join(' · ')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {phase >= 2 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', marginBottom: 10 }}>
+                § PHASE 2 · MERGE PASS 1 (2-way · 4 runs → 2 runs)
+              </div>
+              <div className="mway-diagram">
+                <div className="mway-col">
+                  {runs.map((r, i) => (
+                    <div key={i} className="mway-run">
+                      <span className="lbl">R · 0{i + 1}</span>
+                      <span style={{ fontSize: 11 }}>{r.join(' ')}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mway-arrow">→</div>
+                <div className="mway-col">
+                  {mergedPass1.map((r, i) => (
+                    <div key={i} className="mway-run">
+                      <span className="lbl">M · 0{i + 1}</span>
+                      <span style={{ fontSize: 11 }}>{r.join(' ')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {phase >= 3 && (
+            <div>
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', marginBottom: 10 }}>
+                § PHASE 3 · MERGE PASS 2 (2-way · 2 runs → 1 run · DONE)
+              </div>
+              <div className="mway-diagram">
+                <div className="mway-col">
+                  {mergedPass1.map((r, i) => (
+                    <div key={i} className="mway-run">
+                      <span className="lbl">M · 0{i + 1}</span>
+                      <span style={{ fontSize: 11 }}>{r.join(' ')}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mway-arrow">→</div>
+                <div className="mway-col">
+                  <div className="mway-run" style={{ borderColor: 'var(--accent)', borderWidth: 2 }}>
+                    <span className="lbl">FINAL</span>
+                    <span style={{ fontSize: 10 }}>{mergedFinal.join(' ')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 11</span>
+          <span className="italic">两阶段外排序 · 每增加一路（k-way）就减少一趟磁盘读写，代价是内存中多一路缓冲。</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;PHASE · CONTROL</span>
+            <span>I/O ↓</span>
+          </div>
+
+          <div className="step-msg">
+            <span className="pre">NOTE</span>
+            <span>
+              {phase === 0 && '外部排序 · 初始状态，尚未开始。'}
+              {phase === 1 && '阶段一 · 分块读入内存内排后写回，生成 4 个初始归并段。'}
+              {phase === 2 && '阶段二·其一 · 4 段 2 路归并为 2 段，磁盘 I/O = 2n。'}
+              {phase === 3 && '阶段二·其二 · 2 段 2 路归并为最终有序段，总 I/O = 4n。'}
+            </span>
+          </div>
+
+          <div className="counters">
+            <div className="counter">
+              <div className="counter-num">{phase >= 1 ? 4 : 0}</div>
+              <div className="counter-label">归并段 · runs</div>
+            </div>
+            <div className="counter">
+              <div className="counter-num">{phase >= 2 ? (phase >= 3 ? 2 : 1) : 0}</div>
+              <div className="counter-label">归并趟数 · pass</div>
+            </div>
+            <div className="counter">
+              <div className="counter-num">{phase * 2}</div>
+              <div className="counter-label">I/O · ×n</div>
+            </div>
+          </div>
+
+          <div className="btn-grid">
+            <button className="lab-btn accent" onClick={advance} disabled={phase >= 3}>
+              <span>下一阶段</span><span className="sym">→</span>
+            </button>
+            <button className="lab-btn" onClick={reset}>
+              <span>回到开头</span><span className="sym">↺</span>
+            </button>
+          </div>
+
+          <div style={{ height: 14 }} />
+
+          <div style={{ fontFamily: 'Fraunces, Noto Serif SC, serif', fontSize: 14, lineHeight: 1.7, color: 'var(--ink-soft)', borderTop: '1px solid var(--line)', paddingTop: 14 }}>
+            <strong style={{ color: 'var(--ink)', fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>
+              优化策略
+            </strong>
+            <ul style={{ paddingLeft: 20, margin: '10px 0 0' }}>
+              <li>增大归并路数 <strong>k</strong>，减少归并趟数至 ⌈log_k(m)⌉</li>
+              <li>使用<strong>败者树</strong>选最小键，将路间比较从 k−1 次降为 log₂k</li>
+              <li>用<strong>置换-选择</strong>生成更长的初始归并段</li>
+              <li>采用<strong>最佳归并树</strong>（Huffman 思想）安排归并顺序</li>
+            </ul>
+          </div>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>外排 I/O 开销 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · I/O COST</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>阶段 Phase</th>
+              <th>读 Read</th>
+              <th>写 Write</th>
+              <th>趟数 Pass</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>初始归并段生成</td><td>n</td><td>n</td><td>1</td><td>全部数据读入一次，排序后写回</td></tr>
+            <tr><td>每趟 k-路归并</td><td>n</td><td>n</td><td>1</td><td>所有归并段顺序读入与输出</td></tr>
+            <tr><td>总 I/O</td><td className="c-bad">n · (1 + ⌈log_k m⌉)</td><td className="c-bad">n · (1 + ⌈log_k m⌉)</td><td>—</td><td>m = 初始段数，k = 归并路数</td></tr>
+            <tr><td>加大 k 的收益</td><td className="c-good">↓</td><td className="c-good">↓</td><td className="c-good">↓</td><td>k↑ 使 log_k m 变小</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">I/O 为王</div>
+          <div className="trait-desc">外存读写速度比内存慢若干数量级，外排的优化目标不是比较次数，而是 I/O 次数。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">多路归并</div>
+          <div className="trait-desc">k 越大，归并趟数越少。但 k 路归并每次需在 k 个路首中选最小，需借助败者树加速。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">置换-选择</div>
+          <div className="trait-desc">利用内存作为"滑动窗口"，可生成平均长度 2M 的初始段（M 为内存容量），将初始段数减半。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">最佳归并树</div>
+          <div className="trait-desc">若归并段长度不一，按 Huffman 思想先归并最短者，可显著降低总 I/O。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 12 · 排序算法的分析与应用 Analysis & Application
+   ═════════════════════════════════════════════════════════════════════ */
+function AnalysisModule() {
+  const [scenario, setScenario] = useState('small');
+
+  const recommendations = {
+    small: {
+      title: '数据量小 (n ≤ 50)',
+      best: '直接插入排序',
+      why: '在小规模数据上，常数因子主导渐近复杂度。直接插入排序的内层循环极短、缓存友好、分支可预测，实测常快于 O(n log n) 算法。',
+      also: '起泡排序与简单选择排序在此规模下表现相近，但插入排序胜在对基本有序的数据接近 O(n)。',
+    },
+    'nearly-sorted': {
+      title: '基本有序',
+      best: '直接插入排序',
+      why: '若序列已基本有序，每次扫描只需移动极少元素，复杂度趋近 O(n)。这是直接插入排序的"高光时刻"。',
+      also: '起泡排序配合"本趟无交换则终止"的优化也能逼近 O(n)。Timsort 正是利用这一点。',
+    },
+    large: {
+      title: '大规模 · 一般用途',
+      best: '快速排序',
+      why: '快速排序的常数因子极小、缓存友好，平均 O(n log n)。现代实现通常采用三数取中 + 尾递归 + 小段转插入排序的混合策略。',
+      also: '对需要最坏保证的场景，用堆排序；对需要稳定性的场景，用归并排序。introsort 在 O(n log n) 保证下以快排为主体。',
+    },
+    stable: {
+      title: '要求稳定',
+      best: '二路归并排序',
+      why: '归并排序是最坏情况 O(n log n) 的稳定排序，代价是 O(n) 辅助空间。适合多关键字排序、数据库二次排序等场景。',
+      also: 'Timsort（Python / Java 的默认算法）是归并排序的工业级优化，对真实数据（常含部分有序段）表现极好。',
+    },
+    memory: {
+      title: '内存受限',
+      best: '堆排序',
+      why: '堆排序是唯一同时具备 O(n log n) 最坏保证与 O(1) 原地空间的比较排序。适合嵌入式或栈受限的场景。',
+      also: '如果可容忍不稳定，且输入大致随机，快排的平均表现更好；但最坏 O(n²) 与 O(log n) 栈使其在严苛场景不如堆排。',
+    },
+    integer: {
+      title: '整数键 · 取值有限',
+      best: '基数排序 / 计数排序',
+      why: '当键是固定位数的整数或定长字符串时，基数排序可在 O(d·n) 时间内完成，突破比较排序的 n log n 下界。',
+      also: '取值范围很小（例如 0..1000）时，计数排序甚至更直接：O(n + r)。',
+    },
+    external: {
+      title: '数据超出内存',
+      best: '外部归并排序 (k-路)',
+      why: '当数据无法一次装入内存时，所有内排序算法都无能为力。外部归并排序通过分块读入、多路归并，以 I/O 最小化为目标。',
+      also: '大数据系统（Hadoop/Spark shuffle）的排序本质都是外部归并的变体。',
+    },
+  };
+
+  const r = recommendations[scenario];
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 12 / 12</div>
+          <div><strong>TYPE</strong> Synthesis</div>
+          <div><strong>SCOPE</strong> Practice</div>
+          <div><strong>VERDICT</strong> Contextual</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>讨论至此，十种排序算法已逐一陈列于案上。然而"哪种算法最好"本身就是一个伪命题——没有脱离场景的最优解。本节回到工程实践：给定数据规模、初始状态、稳定性要求与内存预算，哪一种算法才是合适的？</p>
+          <p>我们以五个维度——<strong>时间</strong>、<strong>空间</strong>、<strong>稳定性</strong>、<strong>最坏保证</strong>、<strong>初始序敏感度</strong>——对全体算法做横向对比，并就若干典型场景给出推荐。最后简述现代工业级排序器（如 Timsort、introsort）如何通过"混合策略"兼得多项之长。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>TIME</strong> Asymp.</div>
+          <div><strong>SPACE</strong> Memory</div>
+          <div><strong>STABLE</strong> Order</div>
+          <div><strong>BOUND</strong> Worst</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 12 · ALGORITHM MATRIX</span>
+        <span className="viz-label-right">COMPARATIVE</span>
+
+        <div style={{ padding: '20px 8px' }}>
+          <table className="analysis-table">
+            <thead>
+              <tr>
+                <th>算法 Algorithm</th>
+                <th>最好</th>
+                <th>平均</th>
+                <th>最坏</th>
+                <th>空间</th>
+                <th>稳定</th>
+                <th>原地</th>
+                <th>对初始序敏感</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>直接插入</td>
+                <td className="c-good">O(n)</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td>
+                <td className="c-good">O(1)</td><td className="c-good">是</td><td className="c-good">是</td><td>强</td>
+              </tr>
+              <tr>
+                <td>折半插入</td>
+                <td className="c-good">O(n log n)</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td>
+                <td className="c-good">O(1)</td><td className="c-good">是</td><td className="c-good">是</td><td>弱</td>
+              </tr>
+              <tr>
+                <td>起泡排序</td>
+                <td className="c-good">O(n)</td><td className="c-mid">O(n²)</td><td className="c-bad">O(n²)</td>
+                <td className="c-good">O(1)</td><td className="c-good">是</td><td className="c-good">是</td><td>强</td>
+              </tr>
+              <tr>
+                <td>简单选择</td>
+                <td className="c-bad">O(n²)</td><td className="c-bad">O(n²)</td><td className="c-bad">O(n²)</td>
+                <td className="c-good">O(1)</td><td className="c-bad">否</td><td className="c-good">是</td><td>无</td>
+              </tr>
+              <tr>
+                <td>希尔排序</td>
+                <td className="c-good">O(n log n)</td><td className="c-mid">O(n^1.3)</td><td className="c-bad">O(n²)</td>
+                <td className="c-good">O(1)</td><td className="c-bad">否</td><td className="c-good">是</td><td>弱</td>
+              </tr>
+              <tr>
+                <td>快速排序</td>
+                <td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td><td className="c-bad">O(n²)</td>
+                <td className="c-mid">O(log n)</td><td className="c-bad">否</td><td className="c-good">是*</td><td>弱 / 枢轴依赖</td>
+              </tr>
+              <tr>
+                <td>堆排序</td>
+                <td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td>
+                <td className="c-good">O(1)</td><td className="c-bad">否</td><td className="c-good">是</td><td>无</td>
+              </tr>
+              <tr>
+                <td>二路归并</td>
+                <td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td><td className="c-good">O(n log n)</td>
+                <td className="c-bad">O(n)</td><td className="c-good">是</td><td className="c-bad">否</td><td>无</td>
+              </tr>
+              <tr>
+                <td>基数排序</td>
+                <td className="c-good">O(d·n)</td><td className="c-good">O(d·n)</td><td className="c-good">O(d·n)</td>
+                <td className="c-bad">O(n+r)</td><td className="c-good">是</td><td className="c-bad">否</td><td>无</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 12</span>
+          <span className="italic">九种排序算法的五维对比 · * 快排原地性取决于如何计算"空间"，此处忽略递归栈。</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;SCENARIO · SELECTOR</span>
+            <span>CHOOSE ↓</span>
+          </div>
+
+          <div className="btn-grid">
+            {[
+              ['small', '数据量小', 'n ≤ 50'],
+              ['nearly-sorted', '基本有序', '≈ sorted'],
+              ['large', '大规模通用', 'general'],
+              ['stable', '要求稳定', 'stable'],
+              ['memory', '内存受限', 'O(1) space'],
+              ['integer', '整数键', 'int keys'],
+              ['external', '超大规模', 'external'],
+            ].map(([k, cn, en]) => (
+              <button
+                key={k}
+                className={`lab-btn ${scenario === k ? 'accent' : ''}`}
+                onClick={() => setScenario(k)}
+                style={{ gridColumn: k === 'external' ? 'span 2' : undefined }}
+              >
+                <span>{cn}</span><span className="sym">{scenario === k ? '●' : '◎'}</span>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ height: 18 }} />
+
+          <div style={{
+            padding: 18, background: 'var(--cream)', borderLeft: '3px solid var(--accent)',
+          }}>
+            <div style={{
+              fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+              letterSpacing: '0.18em', color: 'var(--accent)', marginBottom: 8,
+            }}>
+              SCENARIO · {r.title}
+            </div>
+            <div style={{
+              fontFamily: 'Fraunces, Noto Serif SC, serif', fontSize: 22,
+              fontWeight: 500, marginBottom: 10,
+            }}>
+              推荐：<span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>{r.best}</span>
+            </div>
+            <p style={{
+              fontSize: 14, lineHeight: 1.7, color: 'var(--ink-soft)', margin: '0 0 10px',
+            }}>{r.why}</p>
+            <p style={{
+              fontSize: 13, lineHeight: 1.7, color: 'var(--ink-muted)', margin: 0,
+              fontStyle: 'italic',
+            }}>备选 · {r.also}</p>
+          </div>
+        </div>
+
+        <div className="log-block" style={{ maxHeight: 'none' }}>
+          <div className="log-title">
+            <span><span className="num">§2</span> &nbsp;MODERN HYBRIDS</span>
+            <span>in situ</span>
+          </div>
+          <div style={{
+            fontFamily: 'JetBrains Mono, monospace', fontSize: 11, lineHeight: 1.85,
+            color: 'rgba(241, 234, 218, 0.85)', paddingTop: 6,
+          }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ color: 'var(--accent-soft)', marginBottom: 4, fontSize: 12 }}>▸ Timsort · Python / Java</div>
+              <div style={{ fontFamily: 'Fraunces, serif', fontSize: 13, lineHeight: 1.7, color: 'rgba(241, 234, 218, 0.75)' }}>
+                归并排序 + 对自然有序段 (run) 的利用 + 对小段用二分插入。最坏 O(n log n)、稳定，对真实数据极快。
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ color: 'var(--accent-soft)', marginBottom: 4, fontSize: 12 }}>▸ Introsort · C++ STL</div>
+              <div style={{ fontFamily: 'Fraunces, serif', fontSize: 13, lineHeight: 1.7, color: 'rgba(241, 234, 218, 0.75)' }}>
+                快排为主，递归深度超过 2 log n 时切换为堆排，小段转插入排序。兼得快排的常数与堆排的最坏保证。
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ color: 'var(--accent-soft)', marginBottom: 4, fontSize: 12 }}>▸ Dual-Pivot QuickSort · Java 7+</div>
+              <div style={{ fontFamily: 'Fraunces, serif', fontSize: 13, lineHeight: 1.7, color: 'rgba(241, 234, 218, 0.75)' }}>
+                用两个枢轴将序列切为三段，比较次数比单枢轴快排略多，但缓存表现更好，常数更小。
+              </div>
+            </div>
+            <div>
+              <div style={{ color: 'var(--accent-soft)', marginBottom: 4, fontSize: 12 }}>▸ Pdqsort · Rust / Boost</div>
+              <div style={{ fontFamily: 'Fraunces, serif', fontSize: 13, lineHeight: 1.7, color: 'rgba(241, 234, 218, 0.75)' }}>
+                Pattern-Defeating QuickSort · 检测常见模式 (已序、逆序、相等) 并切换策略，实测优于 introsort。
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>选型决策 <span className="flourish">rubric</span></h3>
+          <span className="num">§3 · DECISION</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>问题 Question</th>
+              <th>若 是 Yes</th>
+              <th>若 否 No</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>数据能装入内存?</td>
+              <td>继续下行</td>
+              <td className="c-bad">外部归并排序</td>
+              <td>超出内存一律走外排</td>
+            </tr>
+            <tr>
+              <td>键可按位分解且 d 远小于 log n?</td>
+              <td className="c-good">基数排序</td>
+              <td>继续下行</td>
+              <td>如 32 位整数、定长字符串</td>
+            </tr>
+            <tr>
+              <td>要求稳定排序?</td>
+              <td className="c-good">归并排序 / Timsort</td>
+              <td>继续下行</td>
+              <td>多关键字排序必要条件</td>
+            </tr>
+            <tr>
+              <td>需要最坏 O(n log n) 保证?</td>
+              <td className="c-good">堆排序 / 归并</td>
+              <td>继续下行</td>
+              <td>快排最坏 O(n²)</td>
+            </tr>
+            <tr>
+              <td>n 较小 (≤ 50) 或序列基本有序?</td>
+              <td className="c-good">直接插入排序</td>
+              <td className="c-good">快速排序 (introsort)</td>
+              <td>常数因子决胜</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">渐近 ≠ 实际</div>
+          <div className="trait-desc">O(n log n) 算法并不总是快于 O(n²)；常数因子、缓存局部性与分支预测都可能颠覆排名。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">场景决定算法</div>
+          <div className="trait-desc">没有脱离场景的最优算法——规模、初始序、稳定性、内存、键类型，任一维度都可能改写选型。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">混合是终局</div>
+          <div className="trait-desc">工业级排序器都是混合算法：大段用快排/归并，小段转插入，必要时退化为堆排以保证最坏情况。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">理论下界不可逾越</div>
+          <div className="trait-desc">比较排序的 Ω(n log n) 下界源自信息论，任何算法若声称突破它，必然是基于"不比较"的分配式策略。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ============================================================
+ *  Root · SortingLab
+ * ============================================================ */
+const TABS = [
+  { k: 'concepts',        num: '01', cn: '基本概念',   en: 'Concepts' },
+  { k: 'insertion',       num: '02', cn: '直接插入',   en: 'Insertion' },
+  { k: 'binaryInsertion', num: '03', cn: '折半插入',   en: 'Binary Ins.' },
+  { k: 'bubble',          num: '04', cn: '起泡排序',   en: 'Bubble' },
+  { k: 'selection',       num: '05', cn: '简单选择',   en: 'Selection' },
+  { k: 'shell',           num: '06', cn: '希尔排序',   en: 'Shell' },
+  { k: 'quick',           num: '07', cn: '快速排序',   en: 'Quick' },
+  { k: 'heap',            num: '08', cn: '堆排序',     en: 'Heap' },
+  { k: 'merge',           num: '09', cn: '二路归并',   en: 'Merge' },
+  { k: 'radix',           num: '10', cn: '基数排序',   en: 'Radix' },
+  { k: 'external',        num: '11', cn: '外部排序',   en: 'External' },
+  { k: 'analysis',        num: '12', cn: '分析与应用', en: 'Analysis' },
+];
+
+export default function SortingLab() {
+  const [tab, setTab] = useState('concepts');
+
+  const renderMain = () => {
+    if (tab === 'concepts') return <ConceptsModule />;
+    if (tab === 'external') return <ExternalSortModule />;
+    if (tab === 'analysis') return <AnalysisModule />;
+    const cfg = SPECIMENS[tab];
+    if (!cfg) return null;
+    return <SortingModule config={cfg} />;
+  };
+
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div className="lab-root">
+        <header className="lab-header">
+          <div className="header-top">
+            <div className="header-vol">
+              <span className="vol-num">VOL. 06</span>
+              <span className="vol-sep">·</span>
+              <span className="vol-date">MMXXVI</span>
+            </div>
+            <div className="header-plate">
+              PLATE VI · SORTING · 排序算法图谱
+            </div>
+            <div className="header-press">
+              <span>排序实验室</span>
+              <span className="press-dot">●</span>
+              <span>PRESS</span>
+            </div>
+          </div>
+          <div className="lab-title-block">
+            <h1 className="lab-title">
+              排序 <span className="title-it">· sorting</span>
+            </h1>
+            <div className="lab-sub">
+              <span className="sub-dot"></span>
+              <span className="sub-label">A VISUAL HANDBOOK</span>
+              <span className="sub-mid">·</span>
+              <span className="sub-it">in sorting forms</span>
+              <span className="sub-mid">·</span>
+              <span className="sub-label">12 SPECIMENS</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="lab-main">
+          <nav className="lab-tabs">
+            {TABS.map(t => (
+              <button
+                key={t.k}
+                className={`tab ${tab === t.k ? 'active' : ''}`}
+                onClick={() => setTab(t.k)}
+              >
+                <span className="tab-num">SPECIMEN · {t.num}</span>
+                <span className="tab-cn">{t.cn}</span>
+                <span className="tab-en">{t.en}</span>
+              </button>
+            ))}
+          </nav>
+
+          {renderMain()}
+        </main>
+
+        <footer className="lab-footer">
+          <div className="footer-line">
+            <span>— fin. —</span>
+          </div>
+          <div className="footer-meta">
+            <span>VOL. 06 · SORTING</span>
+            <span className="f-sep">·</span>
+            <span className="f-it">printed on cream paper</span>
+            <span className="f-sep">·</span>
+            <span>PLATE VI of the SERIES</span>
+            <span className="f-sep">·</span>
+            <span>§ ALGORITHMICA</span>
+          </div>
+        </footer>
+      </div>
+    </>
+  );
+}
