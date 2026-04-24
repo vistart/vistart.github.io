@@ -1,0 +1,19 @@
+/**
+ * Font pack · Gloock
+ * ═══════════════════════════════════════════════════════════════════════
+ * Gloock — a very new (2022) heavy modern serif. Playfair's successor
+ * with punchier contrast and more personality. Pairs with Inter body.
+ * Identifier: data-font="gloock"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Gloock
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="gloock"] {
+  --font-display:     'Gloock', 'Fraunces', serif;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.01em;
+  --display-leading:  1.0;
+}

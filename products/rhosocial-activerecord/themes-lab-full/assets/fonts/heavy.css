@@ -1,0 +1,13 @@
+/**
+ * Font pack · Heavy (Archivo Black display + Archivo body)
+ * Very bold, poster-like display weight.
+ * Identifier: data-font="heavy"
+ */
+html[data-font="heavy"] {
+  --font-display:     'Archivo Black', sans-serif;
+  --font-body:        'Archivo', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   900;
+  --display-tracking: -0.005em;
+  --display-leading:  0.95;
+}

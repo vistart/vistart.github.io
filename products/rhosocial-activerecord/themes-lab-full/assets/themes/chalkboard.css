@@ -1,0 +1,173 @@
+/**
+ * Theme · Chalkboard
+ * ═══════════════════════════════════════════════════════════════════════
+ * Dusty classroom blackboard with white chalk writing. Hand-drawn feel
+ * via Caveat font, slight "chalk dust" texture, eraser-like fades.
+ * Warm and educational; different from Terminal (CRT) or Matrix (hacker).
+ * Identifier used in HTML: data-theme="chalkboard"
+ *
+ * ━━ GOOGLE FONTS NEEDED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * (If you already added Caveat / Kalam for the Wireframe theme,
+ *  they are ready to go.)
+ *   &family=Caveat:wght@400;600;700
+ *   &family=Kalam:wght@300;400;700
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+[data-theme="chalkboard"] {
+  --bg:           #2F4A3C;            /* blackboard green */
+  --bg-2:         #243729;
+  --bg-elevated:  #355842;
+
+  --fg:           #F5F1E8;            /* slightly yellowed chalk */
+  --fg-muted:     #B8B2A0;            /* chalk dust */
+  --fg-faint:     #7E7A6B;
+
+  --accent:       #F9E68C;            /* chalk yellow */
+  --accent-2:     #F2A7B5;            /* chalk pink */
+  --accent-3:     #8FC2E0;            /* chalk blue */
+
+  --border:        rgba(245, 241, 232, 0.25);
+  --border-strong: rgba(245, 241, 232, 0.55);
+  --radius:        10px;
+  --radius-sm:     6px;
+
+  --font-display: 'Caveat', 'Comic Sans MS', cursive;
+  --font-body:    'Kalam', 'Comic Sans MS', cursive;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: 0;
+  --display-leading:  0.92;
+
+  --code-bg:       #1F3529;
+  --code-fg:       #F5F1E8;
+  --code-fg-muted: #9CA48F;
+  --code-border:   rgba(245,241,232,0.12);
+  --tok-keyword:   #F9E68C;
+  --tok-string:    #C1E8A7;
+  --tok-func:      #F2A7B5;
+  --tok-comment:   #7E8F7A;
+  --tok-num:       #F9B878;
+  --tok-class:     #FBE8A8;
+  --tok-self:      #B8B2A0;
+  --tok-dec:       #8FC2E0;
+  --tok-attr:      #B8B2A0;
+}
+
+/* Chalk dust texture — very faint noise */
+[data-theme="chalkboard"] body {
+  background-image:
+    radial-gradient(ellipse 1200px 600px at 20% 0%, rgba(245, 241, 232, 0.04), transparent 60%),
+    radial-gradient(ellipse 800px 400px at 80% 100%, rgba(245, 241, 232, 0.03), transparent 60%);
+  background-attachment: fixed;
+}
+/* Overlay a repeating dusty noise */
+[data-theme="chalkboard"] body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(245,241,232,0.015) 0.5px, transparent 1px);
+  background-size: 4px 4px;
+}
+[data-theme="chalkboard"] .page { position: relative; z-index: 1; }
+
+[data-theme="chalkboard"] .hero-title { font-weight: 700; }
+[data-theme="chalkboard"] .hero-title em {
+  font-style: normal; color: var(--accent);
+  text-decoration: underline wavy; text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+}
+[data-theme="chalkboard"] .hero-eyebrow {
+  background: var(--bg-elevated); color: var(--accent);
+  border: 2px solid var(--accent); border-radius: 999px;
+  font-family: var(--font-body); text-transform: none; letter-spacing: 0.02em;
+}
+[data-theme="chalkboard"] .hero-eyebrow::before { background: var(--accent); animation: none; }
+[data-theme="chalkboard"] .hero-sub { font-family: var(--font-body); font-size: 20px; font-weight: 300; line-height: 1.5; }
+
+[data-theme="chalkboard"] .btn {
+  border: 2px solid currentColor; border-radius: 999px;
+  font-family: var(--font-body); font-weight: 700;
+  text-transform: none; letter-spacing: 0;
+  padding: 10px 22px;
+}
+[data-theme="chalkboard"] .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+[data-theme="chalkboard"] .btn-ghost { background: transparent; color: var(--fg); border-color: var(--border-strong); }
+[data-theme="chalkboard"] .btn-ghost:hover { background: var(--bg-elevated); }
+
+/* Features — chalk circles around numbers */
+[data-theme="chalkboard"] .feature {
+  border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--bg-elevated);
+}
+[data-theme="chalkboard"] .feature:hover { border-color: var(--accent); }
+[data-theme="chalkboard"] .feature-num {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-body); font-weight: 700;
+  text-transform: none; letter-spacing: 0;
+}
+[data-theme="chalkboard"] .feature-icon { color: var(--accent); filter: drop-shadow(0 0 6px rgba(249, 230, 140, 0.4)); }
+[data-theme="chalkboard"] .feature-title { font-family: var(--font-display); font-weight: 700; font-size: 32px; }
+[data-theme="chalkboard"] .feature-title em { font-style: normal; color: var(--accent-2); }
+[data-theme="chalkboard"] .feature-desc { font-family: var(--font-body); font-weight: 300; font-size: 15px; }
+[data-theme="chalkboard"] .feature-tag { background: transparent; border: 1.5px dashed var(--border-strong); color: var(--accent-3); font-family: var(--font-body); font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+[data-theme="chalkboard"] .section-label { font-family: var(--font-body); color: var(--accent-2); font-weight: 700; letter-spacing: 0; text-transform: none; }
+[data-theme="chalkboard"] .section-title { font-family: var(--font-display); font-weight: 700; }
+[data-theme="chalkboard"] .section-title em { font-style: normal; color: var(--accent); text-decoration: underline wavy; text-decoration-thickness: 3px; }
+[data-theme="chalkboard"] .section-intro { font-family: var(--font-body); font-weight: 300; font-size: 17px; }
+
+[data-theme="chalkboard"] .stats-grid { border: 1.5px solid var(--border-strong); border-radius: 10px; background: var(--border); gap: 1.5px; }
+[data-theme="chalkboard"] .stat { background: var(--bg-elevated); }
+[data-theme="chalkboard"] .stat-num { font-family: var(--font-display); color: var(--accent); }
+[data-theme="chalkboard"] .stat:nth-child(2) .stat-num { color: var(--accent-2); }
+[data-theme="chalkboard"] .stat:nth-child(3) .stat-num { color: var(--accent-3); }
+[data-theme="chalkboard"] .stat:nth-child(4) .stat-num { color: var(--fg); }
+[data-theme="chalkboard"] .stat-label { font-family: var(--font-body); letter-spacing: 0; text-transform: none; font-weight: 700; }
+
+[data-theme="chalkboard"] .install-wrap {
+  border: 2px dashed var(--border-strong); border-radius: 14px;
+  background: var(--bg-elevated);
+}
+[data-theme="chalkboard"] .install-wrap::before {
+  content: 'today\'s lesson'; position: absolute; top: 18px; right: 28px;
+  font-family: var(--font-body); color: var(--accent-2); font-style: italic;
+  font-size: 14px; opacity: 0.8;
+}
+[data-theme="chalkboard"] .install-title { font-family: var(--font-display); font-weight: 700; }
+[data-theme="chalkboard"] .install-title em { font-style: normal; color: var(--accent); }
+[data-theme="chalkboard"] .install-sub { font-family: var(--font-body); font-weight: 300; }
+[data-theme="chalkboard"] .install-cmd { background: var(--code-bg); border: 1.5px solid var(--border-strong); border-radius: 8px; }
+[data-theme="chalkboard"] .install-cmd .prompt { color: var(--accent-2); }
+
+[data-theme="chalkboard"] .code-block { border: 1.5px solid var(--border-strong); border-radius: 10px; }
+[data-theme="chalkboard"] .control-bar { background: rgba(47, 74, 60, 0.90); border-bottom: 1.5px solid var(--border-strong); }
+[data-theme="chalkboard"] .chip { border: 1.5px solid var(--border-strong); border-radius: 999px; font-family: var(--font-body); text-transform: none; font-weight: 700; letter-spacing: 0; }
+[data-theme="chalkboard"] .chip.is-active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+[data-theme="chalkboard"] .brand-mark { color: var(--accent); font-family: 'Caveat', cursive; }
+[data-theme="chalkboard"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs */
+[data-theme="chalkboard"] .tabs-list { border: 1.5px dashed var(--border-strong); border-radius: 999px; background: var(--bg-2); padding: 4px; }
+[data-theme="chalkboard"] .tab { border-radius: 999px; font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-weight: 700; padding: 9px 18px; }
+[data-theme="chalkboard"] .tab.is-active { background: var(--accent); color: var(--bg); border: none; }
+
+/* Gallery */
+[data-theme="chalkboard"] .gallery-card { border: 1.5px dashed var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+[data-theme="chalkboard"] .gallery-card-title { font-family: var(--font-body); font-weight: 700; letter-spacing: 0; text-transform: none; font-size: 12px; }
+[data-theme="chalkboard"] .input, [data-theme="chalkboard"] .select, [data-theme="chalkboard"] textarea.input {
+  border: 1.5px solid var(--border-strong); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+}
+[data-theme="chalkboard"] .input:focus { border-color: var(--accent); }
+[data-theme="chalkboard"] .input-label { font-family: var(--font-body); font-weight: 700; letter-spacing: 0; }
+[data-theme="chalkboard"] .alert { border: 1.5px solid var(--border-strong); border-left-width: 6px; border-radius: 8px; background: var(--bg-2); font-family: var(--font-body); }
+[data-theme="chalkboard"] .badge { border-radius: 999px; font-family: var(--font-body); font-weight: 700; letter-spacing: 0; text-transform: none; border-width: 1.5px; }
+[data-theme="chalkboard"] .check-box { border: 1.5px solid var(--border-strong); border-radius: 4px; background: transparent; }
+[data-theme="chalkboard"] .switch-track { border: 1.5px solid var(--border-strong); background: var(--bg-2); }
+[data-theme="chalkboard"] .data-table th { font-family: var(--font-body); color: var(--accent); letter-spacing: 0; text-transform: none; font-weight: 700; font-size: 12px; }
+[data-theme="chalkboard"] .data-table { font-family: var(--font-body); }
+[data-theme="chalkboard"] .data-table td { border-color: var(--border); }

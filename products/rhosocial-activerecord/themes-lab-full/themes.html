@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="terminal" data-font="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rhosocial ActiveRecord — Theme Laboratory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=Archivo:wght@400;500;700&family=Archivo+Black&family=Orbitron:wght@500;700;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Caveat:wght@400;600;700&family=Kalam:wght@300;400;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=VT323&family=Unbounded:wght@500;700;800;900&family=Roboto+Slab:wght@400;500;700;900&family=Oswald:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=Abril+Fatface&family=Josefin+Sans:wght@400;500;600;700&family=Major+Mono+Display&family=Rubik:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,600;12..96,75..100,800&family=Gloock&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/themes/terminal.css">
+<link rel="stylesheet" href="assets/themes/editorial.css">
+<link rel="stylesheet" href="assets/themes/brutalist.css">
+<link rel="stylesheet" href="assets/themes/aurora.css">
+<link rel="stylesheet" href="assets/themes/synthwave.css">
+<link rel="stylesheet" href="assets/themes/sumi.css">
+<link rel="stylesheet" href="assets/themes/blueprint.css">
+<link rel="stylesheet" href="assets/themes/noir.css">
+<link rel="stylesheet" href="assets/themes/riso.css">
+<link rel="stylesheet" href="assets/themes/nordic.css">
+<link rel="stylesheet" href="assets/themes/solarpunk.css">
+<link rel="stylesheet" href="assets/themes/mocha.css">
+<link rel="stylesheet" href="assets/themes/wireframe.css">
+<link rel="stylesheet" href="assets/themes/anderson.css">
+<link rel="stylesheet" href="assets/themes/tokyo.css">
+<link rel="stylesheet" href="assets/themes/memphis.css">
+<link rel="stylesheet" href="assets/themes/chalkboard.css">
+<link rel="stylesheet" href="assets/themes/matrix.css">
+<link rel="stylesheet" href="assets/themes/steel.css">
+<link rel="stylesheet" href="assets/themes/frutiger.css">
+<link rel="stylesheet" href="assets/themes/newsprint.css">
+<link rel="stylesheet" href="assets/themes/candy.css">
+<link rel="stylesheet" href="assets/themes/botanical.css">
+<link rel="stylesheet" href="assets/core-extensions.css">
+<link rel="stylesheet" href="assets/fonts/tight.css">
+<link rel="stylesheet" href="assets/fonts/serif.css">
+<link rel="stylesheet" href="assets/fonts/geometric.css">
+<link rel="stylesheet" href="assets/fonts/heavy.css">
+<link rel="stylesheet" href="assets/fonts/allmono.css">
+<link rel="stylesheet" href="assets/fonts/reader.css">
+<link rel="stylesheet" href="assets/fonts/display-serif.css">
+<link rel="stylesheet" href="assets/fonts/neo-future.css">
+<link rel="stylesheet" href="assets/fonts/plex.css">
+<link rel="stylesheet" href="assets/fonts/playful.css">
+<link rel="stylesheet" href="assets/fonts/classic-serif.css">
+<link rel="stylesheet" href="assets/fonts/pixel.css">
+<link rel="stylesheet" href="assets/fonts/monumental.css">
+<link rel="stylesheet" href="assets/fonts/slab.css">
+<link rel="stylesheet" href="assets/fonts/condensed.css">
+<link rel="stylesheet" href="assets/fonts/expressive.css">
+<link rel="stylesheet" href="assets/fonts/deco.css">
+<link rel="stylesheet" href="assets/fonts/stencil.css">
+<link rel="stylesheet" href="assets/fonts/rubik.css">
+<link rel="stylesheet" href="assets/fonts/bricolage.css">
+<link rel="stylesheet" href="assets/fonts/gloock.css">
+<link rel="stylesheet" href="assets/fonts/crimson.css">
+<link rel="stylesheet" href="assets/fonts/dm.css">
+
+<!-- Arabic font fallback when dir="rtl" -->
+<style>
+  html[lang="ar"] { font-family: 'Noto Sans Arabic', var(--font-body); }
+  html[lang="ar"] code, html[lang="ar"] pre, html[lang="ar"] .install-cmd { direction: ltr; unicode-bidi: embed; text-align: left; }
+  html[lang="hi-in"] { font-family: 'Noto Sans Devanagari', var(--font-body); }
+</style>
+
+<!-- 14 i18n dictionaries -->
+<script src="assets/i18n/zh-cn.js"></script>
+<script src="assets/i18n/en-us.js"></script>
+<script src="assets/i18n/ja-jp.js"></script>
+<script src="assets/i18n/de-de.js"></script>
+<script src="assets/i18n/fr-fr.js"></script>
+<script src="assets/i18n/ko-kr.js"></script>
+<script src="assets/i18n/pt-pt.js"></script>
+<script src="assets/i18n/nl-nl.js"></script>
+<script src="assets/i18n/it-it.js"></script>
+<script src="assets/i18n/ru-ru.js"></script>
+<script src="assets/i18n/es-es.js"></script>
+<script src="assets/i18n/tr-tr.js"></script>
+<script src="assets/i18n/el-gr.js"></script>
+<script src="assets/i18n/ar.js"></script>
+<script src="assets/i18n/hi-in.js"></script>
+<script src="assets/i18n/id-id.js"></script>
+<script src="assets/i18n/vi-vn.js"></script>
+<script src="assets/i18n/pl-pl.js"></script>
+</head>
+<body>
+<header class="control-bar">
+  <div class="control-brand">
+    <span class="brand-mark size-md">&rho;<sub>AR</sub></span>
+    <span>rhosocial ActiveRecord</span>
+    <span class="dim" data-i18n="brand.subtitle">· Theme Lab</span>
+  </div>
+  <div class="dropdown" data-dropdown="theme">
+    <button class="dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+      <span class="dropdown-label" data-i18n="control.theme_label">Theme</span>
+      <span class="dropdown-value">Terminal</span>
+      <svg class="dropdown-caret" viewBox="0 0 12 12" fill="none"><path d="m3 5 3 3 3-3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="dropdown-menu" role="listbox">
+      <button class="dropdown-item is-active" data-value="terminal"><span class="dropdown-item-label">Terminal</span><span class="dropdown-item-kbd">&#8963;Q</span></button>
+      <button class="dropdown-item" data-value="editorial"><span class="dropdown-item-label">Editorial</span><span class="dropdown-item-kbd">&#8963;W</span></button>
+      <button class="dropdown-item" data-value="brutalist"><span class="dropdown-item-label">Brutalist</span><span class="dropdown-item-kbd">&#8963;E</span></button>
+      <button class="dropdown-item" data-value="aurora"><span class="dropdown-item-label">Aurora</span><span class="dropdown-item-kbd">&#8963;R</span></button>
+      <button class="dropdown-item" data-value="synthwave"><span class="dropdown-item-label">Synthwave</span><span class="dropdown-item-kbd">&#8963;T</span></button>
+      <button class="dropdown-item" data-value="sumi"><span class="dropdown-item-label">Sumi 墨</span><span class="dropdown-item-kbd">&#8963;Y</span></button>
+      <button class="dropdown-item" data-value="blueprint"><span class="dropdown-item-label">Blueprint</span><span class="dropdown-item-kbd">&#8963;U</span></button>
+      <button class="dropdown-item" data-value="noir"><span class="dropdown-item-label">Noir</span><span class="dropdown-item-kbd">&#8963;I</span></button>
+      <button class="dropdown-item" data-value="riso"><span class="dropdown-item-label">Riso</span><span class="dropdown-item-kbd">&#8963;O</span></button>
+      <button class="dropdown-item" data-value="nordic"><span class="dropdown-item-label">Nordic</span><span class="dropdown-item-kbd">&#8963;P</span></button>
+      <button class="dropdown-item" data-value="solarpunk"><span class="dropdown-item-label">Solarpunk</span><span class="dropdown-item-kbd">&#8963;A</span></button>
+      <button class="dropdown-item" data-value="mocha"><span class="dropdown-item-label">Mocha</span><span class="dropdown-item-kbd">&#8963;S</span></button>
+      <button class="dropdown-item" data-value="wireframe"><span class="dropdown-item-label">Wireframe</span><span class="dropdown-item-kbd">&#8963;D</span></button>
+      <button class="dropdown-item" data-value="anderson"><span class="dropdown-item-label">Anderson</span><span class="dropdown-item-kbd">&#8963;F</span></button>
+      <button class="dropdown-item" data-value="tokyo"><span class="dropdown-item-label">Tokyo Night</span><span class="dropdown-item-kbd">&#8963;G</span></button>
+      <button class="dropdown-item" data-value="memphis"><span class="dropdown-item-label">Memphis</span><span class="dropdown-item-kbd">&#8963;H</span></button>
+      <button class="dropdown-item" data-value="chalkboard"><span class="dropdown-item-label">Chalkboard</span><span class="dropdown-item-kbd">&#8963;J</span></button>
+      <button class="dropdown-item" data-value="matrix"><span class="dropdown-item-label">Matrix</span><span class="dropdown-item-kbd">&#8963;K</span></button>
+      <button class="dropdown-item" data-value="steel"><span class="dropdown-item-label">Steel</span><span class="dropdown-item-kbd">&#8963;L</span></button>
+      <button class="dropdown-item" data-value="frutiger"><span class="dropdown-item-label">Frutiger</span><span class="dropdown-item-kbd">&#8963;Z</span></button>
+      <button class="dropdown-item" data-value="newsprint"><span class="dropdown-item-label">Newsprint</span><span class="dropdown-item-kbd">&#8963;X</span></button>
+      <button class="dropdown-item" data-value="candy"><span class="dropdown-item-label">Candy</span><span class="dropdown-item-kbd">&#8963;C</span></button>
+      <button class="dropdown-item" data-value="botanical"><span class="dropdown-item-label">Botanical</span><span class="dropdown-item-kbd">&#8963;V</span></button>
+    </div>
+  </div>
+  <div class="dropdown" data-dropdown="font">
+    <button class="dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+      <span class="dropdown-label" data-i18n="control.font_label">Font</span>
+      <span class="dropdown-value" data-i18n-value="auto">Auto</span>
+      <svg class="dropdown-caret" viewBox="0 0 12 12" fill="none"><path d="m3 5 3 3 3-3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="dropdown-menu" role="listbox">
+      <button class="dropdown-item is-active" data-value="auto"><span class="dropdown-item-label" data-i18n="control.font_auto">Auto (theme default)</span><span class="dropdown-item-kbd">&#8679;Q</span></button>
+      <button class="dropdown-item" data-value="tight"><span class="dropdown-item-label">Tight Sans</span><span class="dropdown-item-kbd">&#8679;W</span></button>
+      <button class="dropdown-item" data-value="serif"><span class="dropdown-item-label">Editorial Serif</span><span class="dropdown-item-kbd">&#8679;E</span></button>
+      <button class="dropdown-item" data-value="geometric"><span class="dropdown-item-label">Geometric</span><span class="dropdown-item-kbd">&#8679;R</span></button>
+      <button class="dropdown-item" data-value="heavy"><span class="dropdown-item-label">Heavy Display</span><span class="dropdown-item-kbd">&#8679;T</span></button>
+      <button class="dropdown-item" data-value="allmono"><span class="dropdown-item-label">All Mono</span><span class="dropdown-item-kbd">&#8679;Y</span></button>
+      <button class="dropdown-item" data-value="reader"><span class="dropdown-item-label">Reader</span><span class="dropdown-item-kbd">&#8679;U</span></button>
+      <button class="dropdown-item" data-value="display-serif"><span class="dropdown-item-label">Display Serif</span><span class="dropdown-item-kbd">&#8679;I</span></button>
+      <button class="dropdown-item" data-value="neo-future"><span class="dropdown-item-label">Neo Future</span><span class="dropdown-item-kbd">&#8679;O</span></button>
+      <button class="dropdown-item" data-value="plex"><span class="dropdown-item-label">IBM Plex</span><span class="dropdown-item-kbd">&#8679;P</span></button>
+      <button class="dropdown-item" data-value="playful"><span class="dropdown-item-label">Playful (Caveat)</span><span class="dropdown-item-kbd">&#8679;A</span></button>
+      <button class="dropdown-item" data-value="classic-serif"><span class="dropdown-item-label">Classic Serif (Garamond)</span><span class="dropdown-item-kbd">&#8679;S</span></button>
+      <button class="dropdown-item" data-value="pixel"><span class="dropdown-item-label">Pixel (VT323)</span><span class="dropdown-item-kbd">&#8679;D</span></button>
+      <button class="dropdown-item" data-value="monumental"><span class="dropdown-item-label">Monumental (Unbounded)</span><span class="dropdown-item-kbd">&#8679;F</span></button>
+      <button class="dropdown-item" data-value="slab"><span class="dropdown-item-label">Slab (Roboto Slab)</span><span class="dropdown-item-kbd">&#8679;G</span></button>
+      <button class="dropdown-item" data-value="condensed"><span class="dropdown-item-label">Condensed (Oswald)</span><span class="dropdown-item-kbd">&#8679;H</span></button>
+      <button class="dropdown-item" data-value="expressive"><span class="dropdown-item-label">Expressive (Syne)</span><span class="dropdown-item-kbd">&#8679;J</span></button>
+      <button class="dropdown-item" data-value="deco"><span class="dropdown-item-label">Deco (Abril Fatface)</span><span class="dropdown-item-kbd">&#8679;K</span></button>
+      <button class="dropdown-item" data-value="stencil"><span class="dropdown-item-label">Stencil (Major Mono)</span><span class="dropdown-item-kbd">&#8679;L</span></button>
+      <button class="dropdown-item" data-value="rubik"><span class="dropdown-item-label">Rubik</span><span class="dropdown-item-kbd">&#8679;Z</span></button>
+      <button class="dropdown-item" data-value="bricolage"><span class="dropdown-item-label">Bricolage</span><span class="dropdown-item-kbd">&#8679;X</span></button>
+      <button class="dropdown-item" data-value="gloock"><span class="dropdown-item-label">Gloock</span><span class="dropdown-item-kbd">&#8679;C</span></button>
+      <button class="dropdown-item" data-value="crimson"><span class="dropdown-item-label">Crimson</span><span class="dropdown-item-kbd">&#8679;V</span></button>
+      <button class="dropdown-item" data-value="dm"><span class="dropdown-item-label">DM Sans / Mono</span><span class="dropdown-item-kbd">&#8679;B</span></button>
+    </div>
+  </div>
+  <div class="dropdown" data-dropdown="lang">
+    <button class="dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+      <span class="dropdown-label" data-i18n="control.lang_label">Language</span>
+      <span class="dropdown-value">简体中文</span>
+      <svg class="dropdown-caret" viewBox="0 0 12 12" fill="none"><path d="m3 5 3 3 3-3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="dropdown-menu" role="listbox">
+      <button class="dropdown-item is-active" data-value="zh-cn"><span class="dropdown-item-label">简体中文</span><span class="dropdown-item-kbd">&#8997;Q</span></button>
+      <button class="dropdown-item" data-value="en-us"><span class="dropdown-item-label">English</span><span class="dropdown-item-kbd">&#8997;W</span></button>
+      <button class="dropdown-item" data-value="ja-jp"><span class="dropdown-item-label">日本語</span><span class="dropdown-item-kbd">&#8997;E</span></button>
+      <button class="dropdown-item" data-value="de-de"><span class="dropdown-item-label">Deutsch</span><span class="dropdown-item-kbd">&#8997;R</span></button>
+      <button class="dropdown-item" data-value="fr-fr"><span class="dropdown-item-label">Français</span><span class="dropdown-item-kbd">&#8997;T</span></button>
+      <button class="dropdown-item" data-value="ko-kr"><span class="dropdown-item-label">한국어</span><span class="dropdown-item-kbd">&#8997;Y</span></button>
+      <button class="dropdown-item" data-value="pt-pt"><span class="dropdown-item-label">Português</span><span class="dropdown-item-kbd">&#8997;U</span></button>
+      <button class="dropdown-item" data-value="nl-nl"><span class="dropdown-item-label">Nederlands</span><span class="dropdown-item-kbd">&#8997;I</span></button>
+      <button class="dropdown-item" data-value="it-it"><span class="dropdown-item-label">Italiano</span><span class="dropdown-item-kbd">&#8997;O</span></button>
+      <button class="dropdown-item" data-value="ru-ru"><span class="dropdown-item-label">Русский</span><span class="dropdown-item-kbd">&#8997;P</span></button>
+      <button class="dropdown-item" data-value="es-es"><span class="dropdown-item-label">Español</span><span class="dropdown-item-kbd">&#8997;A</span></button>
+      <button class="dropdown-item" data-value="tr-tr"><span class="dropdown-item-label">Türkçe</span><span class="dropdown-item-kbd">&#8997;S</span></button>
+      <button class="dropdown-item" data-value="el-gr"><span class="dropdown-item-label">Ελληνικά</span><span class="dropdown-item-kbd">&#8997;D</span></button>
+      <button class="dropdown-item" data-value="ar"><span class="dropdown-item-label">العربية</span><span class="dropdown-item-kbd">&#8997;F</span></button>
+      <button class="dropdown-item" data-value="hi-in"><span class="dropdown-item-label">हिन्दी</span><span class="dropdown-item-kbd">&#8997;G</span></button>
+      <button class="dropdown-item" data-value="id-id"><span class="dropdown-item-label">Bahasa Indonesia</span><span class="dropdown-item-kbd">&#8997;H</span></button>
+      <button class="dropdown-item" data-value="vi-vn"><span class="dropdown-item-label">Tiếng Việt</span><span class="dropdown-item-kbd">&#8997;J</span></button>
+      <button class="dropdown-item" data-value="pl-pl"><span class="dropdown-item-label">Polski</span><span class="dropdown-item-kbd">&#8997;K</span></button>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <section class="hero section">
+    <div class="container hero-inner">
+      <div class="hero-eyebrow rise" data-i18n="hero.eyebrow">v1.0 · Apache 2.0 · Pure Python</div>
+      <h1 class="hero-title rise" data-i18n="hero.title">rhosocial ActiveRecord,<br>为 Python <em>重新设计</em>。</h1>
+      <p class="hero-sub rise" data-i18n="hero.sub"><strong>rhosocial-activerecord</strong> 用 Python 原生类型注解定义模型。</p>
+      <div class="hero-ctas rise">
+        <a href="#install" class="btn btn-primary">pip install rhosocial-activerecord</a>
+        <a href="#features" class="btn btn-ghost" data-i18n="hero.cta_secondary">查看特性 &rarr;</a>
+      </div>
+    </div>
+  </section>
+  <section id="features" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label" data-i18n="features.label">Why</div>
+        <h2 class="section-title" data-i18n="features.title">为什么是 <em>rhosocial ActiveRecord</em>。</h2>
+      </div>
+      <div class="features-grid">
+        <article class="feature rise">
+          <div class="feature-num" data-i18n="features.f1.num">01 / 类型即字段</div>
+          <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 2 4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4Z"/></svg></div>
+          <h3 class="feature-title" data-i18n="features.f1.title"><em>Type-safe</em> by construction</h3>
+          <p class="feature-desc" data-i18n="features.f1.desc">...</p>
+          <span class="feature-tag">typing</span>
+        </article>
+        <article class="feature rise">
+          <div class="feature-num" data-i18n="features.f2.num">02 / 异步一等</div>
+          <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><path d="M21 3v6h-6"/></svg></div>
+          <h3 class="feature-title" data-i18n="features.f2.title">Sync &amp; async, <em>one API</em></h3>
+          <p class="feature-desc" data-i18n="features.f2.desc">...</p>
+          <span class="feature-tag">asyncio</span>
+        </article>
+        <article class="feature rise">
+          <div class="feature-num" data-i18n="features.f3.num">03 / 后端可插拔</div>
+          <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><rect x="2" y="10" width="20" height="5" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/></svg></div>
+          <h3 class="feature-title" data-i18n="features.f3.title">Pluggable <em>backends</em></h3>
+          <p class="feature-desc" data-i18n="features.f3.desc">...</p>
+          <span class="feature-tag">backend abc</span>
+        </article>
+        <article class="feature rise">
+          <div class="feature-num" data-i18n="features.f4.num">04 / 关系显式</div>
+          <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h8a2 2 0 0 1 2 2v7"/><path d="M15 18H7a2 2 0 0 1-2-2V9"/></svg></div>
+          <h3 class="feature-title" data-i18n="features.f4.title"><em>Relations</em> made explicit</h3>
+          <p class="feature-desc" data-i18n="features.f4.desc">...</p>
+          <span class="feature-tag">eager · reverse</span>
+        </article>
+        <article class="feature rise">
+          <div class="feature-num" data-i18n="features.f5.num">05 / 事务原子</div>
+          <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h3 class="feature-title" data-i18n="features.f5.title">Transactions, <em>properly nested</em></h3>
+          <p class="feature-desc" data-i18n="features.f5.desc">...</p>
+          <span class="feature-tag">savepoint</span>
+        </article>
+        <article class="feature rise">
+          <div class="feature-num" data-i18n="features.f6.num">06 / Pythonic</div>
+          <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="m9 10 3 3 3-3"/></svg></div>
+          <h3 class="feature-title" data-i18n="features.f6.title">Reads like <em>English</em></h3>
+          <p class="feature-desc" data-i18n="features.f6.desc">...</p>
+          <span class="feature-tag">no DSL</span>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="showcase">
+        <div class="showcase-text">
+          <div class="section-header" style="margin-bottom: 0;">
+            <div class="section-label" data-i18n="practice.label">In Practice</div>
+            <h2 class="section-title" data-i18n="practice.title">从 3.8 到 3.12，<em>一路升级</em>。</h2>
+            <p class="section-intro" data-i18n="practice.intro">对应 testsuite 仓库的文件。</p>
+          </div>
+          <div class="showcase-points">
+            <div class="showcase-point"><span class="showcase-point-num">01</span><span class="showcase-point-text" data-i18n="practice.p1">...</span></div>
+            <div class="showcase-point"><span class="showcase-point-num">02</span><span class="showcase-point-text" data-i18n="practice.p2">...</span></div>
+            <div class="showcase-point"><span class="showcase-point-num">03</span><span class="showcase-point-text" data-i18n="practice.p3">...</span></div>
+            <div class="showcase-point"><span class="showcase-point-num">04</span><span class="showcase-point-text" data-i18n="practice.p4">...</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="tabs" data-tabs>
+            <div class="tabs-list" role="tablist">
+              <button class="tab is-active" data-tab="py38">Python 3.8</button>
+              <button class="tab" data-tab="py39">3.9+</button>
+              <button class="tab" data-tab="py310">3.10+</button>
+              <button class="tab" data-tab="py311">3.11+</button>
+              <button class="tab" data-tab="py312">3.12+</button>
+            </div>
+            <div class="tab-panel is-active" data-panel="py38">
+              <div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-filename">models_py38.py</span><span class="code-badge">py 3.8</span></div>
+                <div class="code-body"><pre><span class="tok-k">from</span> rhosocial.activerecord.model <span class="tok-k">import</span> <span class="tok-cls">ActiveRecord</span>
+<span class="tok-k">from</span> typing <span class="tok-k">import</span> <span class="tok-cls">Optional</span>, <span class="tok-cls">List</span>, <span class="tok-cls">Dict</span>
+
+<span class="tok-k">class</span> <span class="tok-cls">User</span>(<span class="tok-cls">ActiveRecord</span>):
+    <span class="tok-attr">__table_name__</span> = <span class="tok-s">'users'</span>
+    id:       <span class="tok-cls">Optional</span>[<span class="tok-cls">int</span>] = <span class="tok-k">None</span>
+    username: <span class="tok-cls">str</span>
+    tags:     <span class="tok-cls">List</span>[<span class="tok-cls">str</span>] = []
+    meta:     <span class="tok-cls">Dict</span>[<span class="tok-cls">str</span>, <span class="tok-cls">str</span>] = {}</pre></div></div>
+            </div>
+            <div class="tab-panel" data-panel="py39">
+              <div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-filename">models_py39.py</span><span class="code-badge">py 3.9+ · PEP 585</span></div>
+                <div class="code-body"><pre><span class="tok-k">from</span> rhosocial.activerecord.model <span class="tok-k">import</span> <span class="tok-cls">ActiveRecord</span>
+<span class="tok-k">from</span> typing <span class="tok-k">import</span> <span class="tok-cls">Optional</span>
+
+<span class="tok-k">class</span> <span class="tok-cls">User</span>(<span class="tok-cls">ActiveRecord</span>):
+    <span class="tok-attr">__table_name__</span> = <span class="tok-s">'users'</span>
+    id:       <span class="tok-cls">Optional</span>[<span class="tok-cls">int</span>] = <span class="tok-k">None</span>
+    username: <span class="tok-cls">str</span>
+    tags:     <span class="tok-cls">list</span>[<span class="tok-cls">str</span>] = []      <span class="tok-c"># PEP 585</span>
+    meta:     <span class="tok-cls">dict</span>[<span class="tok-cls">str</span>, <span class="tok-cls">str</span>] = {}</pre></div></div>
+            </div>
+            <div class="tab-panel" data-panel="py310">
+              <div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-filename">models_py310.py</span><span class="code-badge">py 3.10+ · PEP 604</span></div>
+                <div class="code-body"><pre><span class="tok-k">from</span> rhosocial.activerecord.model <span class="tok-k">import</span> <span class="tok-cls">ActiveRecord</span>
+
+<span class="tok-k">class</span> <span class="tok-cls">User</span>(<span class="tok-cls">ActiveRecord</span>):
+    <span class="tok-attr">__table_name__</span> = <span class="tok-s">'users'</span>
+    id:       <span class="tok-cls">int</span> | <span class="tok-k">None</span> = <span class="tok-k">None</span>  <span class="tok-c"># PEP 604</span>
+    username: <span class="tok-cls">str</span>
+    tags:     <span class="tok-cls">list</span>[<span class="tok-cls">str</span>] = []
+    meta:     <span class="tok-cls">dict</span>[<span class="tok-cls">str</span>, <span class="tok-cls">str</span>] = {}</pre></div></div>
+            </div>
+            <div class="tab-panel" data-panel="py311">
+              <div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-filename">models_py311.py</span><span class="code-badge">py 3.11+ · PEP 673</span></div>
+                <div class="code-body"><pre><span class="tok-k">from</span> rhosocial.activerecord.model <span class="tok-k">import</span> <span class="tok-cls">ActiveRecord</span>
+<span class="tok-k">from</span> typing <span class="tok-k">import</span> <span class="tok-cls">Self</span>
+
+<span class="tok-k">class</span> <span class="tok-cls">User</span>(<span class="tok-cls">ActiveRecord</span>):
+    <span class="tok-attr">__table_name__</span> = <span class="tok-s">'users'</span>
+    id:        <span class="tok-cls">int</span> | <span class="tok-k">None</span> = <span class="tok-k">None</span>
+    is_active: <span class="tok-cls">bool</span> = <span class="tok-k">True</span>
+
+    <span class="tok-k">def</span> <span class="tok-f">activate</span>(<span class="tok-self">self</span>) -&gt; <span class="tok-cls">Self</span>:
+        <span class="tok-self">self</span>.is_active = <span class="tok-k">True</span>
+        <span class="tok-k">return</span> <span class="tok-self">self</span></pre></div></div>
+            </div>
+            <div class="tab-panel" data-panel="py312">
+              <div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-filename">models_py312.py</span><span class="code-badge">py 3.12+ · PEP 695 · @override</span></div>
+                <div class="code-body"><pre><span class="tok-k">from</span> rhosocial.activerecord.model <span class="tok-k">import</span> <span class="tok-cls">ActiveRecord</span>
+<span class="tok-k">from</span> typing <span class="tok-k">import</span> <span class="tok-cls">Self</span>, override
+
+<span class="tok-k">class</span> <span class="tok-cls">User</span>(<span class="tok-cls">ActiveRecord</span>):
+    <span class="tok-attr">__table_name__</span> = <span class="tok-s">'users'</span>
+    id: <span class="tok-cls">int</span> | <span class="tok-k">None</span> = <span class="tok-k">None</span>
+
+    <span class="tok-dec">@override</span>
+    <span class="tok-k">def</span> <span class="tok-f">__repr__</span>(<span class="tok-self">self</span>) -&gt; <span class="tok-cls">str</span>:
+        <span class="tok-k">return</span> <span class="tok-s">f'User(...)'</span>
+
+<span class="tok-k">class</span> <span class="tok-cls">Result</span>[<span class="tok-cls">T</span>]:        <span class="tok-c"># PEP 695</span>
+    <span class="tok-k">def</span> <span class="tok-f">__init__</span>(<span class="tok-self">self</span>, v: <span class="tok-cls">T</span>) -&gt; <span class="tok-k">None</span>:
+        <span class="tok-self">self</span>.v = v</pre></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="feature-split">
+        <div class="feature-split-text">
+          <div class="section-label" data-i18n="split_sync.label">Side by side</div>
+          <h2 class="section-title" data-i18n="split_sync.title">同步 = 异步，<em>语义一致</em>。</h2>
+          <p class="section-intro" data-i18n="split_sync.intro">...</p>
+          <a href="#" class="btn btn-ghost" data-i18n="split_sync.cta">阅读 async 指南 &rarr;</a>
+        </div>
+        <div class="feature-visual"><span class="feature-visual-label">async · sync</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="feature-split is-reversed">
+        <div class="feature-split-text">
+          <div class="section-label" data-i18n="split_backend.label">Backend freedom</div>
+          <h2 class="section-title" data-i18n="split_backend.title">写你自己的<em>后端</em>，也就几十行。</h2>
+          <p class="section-intro" data-i18n="split_backend.intro">...</p>
+          <a href="#" class="btn btn-ghost" data-i18n="split_backend.cta">后端开发指南 &rarr;</a>
+        </div>
+        <div class="feature-visual"><span class="feature-visual-label">Backend ABC</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label" data-i18n="pricing.label">Plans</div>
+        <h2 class="section-title" data-i18n="pricing.title">选择你的<em>档位</em>。</h2>
+        <p class="section-intro" data-i18n="pricing.intro">...</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-tier" data-i18n="pricing.c1.tier">Community</div>
+          <div class="pricing-price"><span class="amount">$0</span><span class="per">/ forever</span></div>
+          <p class="pricing-desc" data-i18n="pricing.c1.desc">...</p>
+          <ul class="pricing-features">
+            <li data-i18n="pricing.c1.f1">...</li>
+            <li data-i18n="pricing.c1.f2">...</li>
+            <li data-i18n="pricing.c1.f3">...</li>
+            <li class="is-disabled" data-i18n="pricing.c1.f4">...</li>
+            <li class="is-disabled" data-i18n="pricing.c1.f5">...</li>
+          </ul>
+          <button class="btn btn-ghost" data-i18n="pricing.c1.cta">Get Started</button>
+        </div>
+        <div class="pricing-card is-featured">
+          <div class="pricing-badge" data-i18n="pricing.badge">Most Popular</div>
+          <div class="pricing-tier" data-i18n="pricing.c2.tier">Team</div>
+          <div class="pricing-price"><span class="amount">$29</span><span class="per">/ user / mo</span></div>
+          <p class="pricing-desc" data-i18n="pricing.c2.desc">...</p>
+          <ul class="pricing-features">
+            <li data-i18n="pricing.c2.f1">...</li>
+            <li data-i18n="pricing.c2.f2">...</li>
+            <li data-i18n="pricing.c2.f3">...</li>
+            <li data-i18n="pricing.c2.f4">...</li>
+            <li class="is-disabled" data-i18n="pricing.c2.f5">...</li>
+          </ul>
+          <button class="btn btn-primary" data-i18n="pricing.c2.cta">Start 14-day trial</button>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier" data-i18n="pricing.c3.tier">Enterprise</div>
+          <div class="pricing-price"><span class="amount" data-i18n="pricing.c3.price_label">联系我们</span></div>
+          <p class="pricing-desc" data-i18n="pricing.c3.desc">...</p>
+          <ul class="pricing-features">
+            <li data-i18n="pricing.c3.f1">...</li>
+            <li data-i18n="pricing.c3.f2">...</li>
+            <li data-i18n="pricing.c3.f3">...</li>
+            <li data-i18n="pricing.c3.f4">...</li>
+            <li data-i18n="pricing.c3.f5">...</li>
+          </ul>
+          <button class="btn btn-ghost" data-i18n="pricing.c3.cta">Contact Sales</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label" data-i18n="compare.label">Compare</div>
+        <h2 class="section-title" data-i18n="compare.title">各档位<em>特性对比</em>。</h2>
+      </div>
+      <div class="feature-compare">
+        <table>
+          <thead><tr><th data-i18n="compare.col_feature">功能</th><th>Community</th><th class="col-featured">Team</th><th>Enterprise</th></tr></thead>
+          <tbody>
+            <tr><td data-i18n="compare.row1">...</td><td><span class="check-yes">&check;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row2">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row3">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row4">...</td><td><span class="check-yes">&check;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row5">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row6">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row7">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td></tr>
+            <tr><td data-i18n="compare.row8">...</td><td data-i18n="compare.row8c">&mdash;</td><td class="col-featured" data-i18n="compare.row8t">24h</td><td><strong data-i18n="compare.row8e">4h</strong></td></tr>
+            <tr><td data-i18n="compare.row9">...</td><td>$0</td><td class="col-featured">$348 / user</td><td>$20k+</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label" data-i18n="gallery.label">Component Gallery</div>
+        <h2 class="section-title" data-i18n="gallery.title">每种主题下的<em>控件表现</em>。</h2>
+      </div>
+      <div class="gallery">
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_buttons">Buttons</div>
+          <div class="demo-stack">
+            <div class="demo-row">
+              <button class="btn btn-primary">Primary</button>
+              <button class="btn btn-ghost">Ghost</button>
+              <button class="btn btn-danger">Danger</button>
+            </div>
+            <div class="demo-row">
+              <button class="btn btn-primary btn-sm">Small</button>
+              <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>With icon</button>
+              <button class="btn btn-ghost" disabled>Disabled</button>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_btngroup">Button group</div>
+          <div class="demo-stack">
+            <div class="btn-group" role="group">
+              <button class="btn-group-btn is-active">Day</button>
+              <button class="btn-group-btn">Week</button>
+              <button class="btn-group-btn">Month</button>
+              <button class="btn-group-btn">Year</button>
+            </div>
+            <div class="btn-group" role="group">
+              <button class="btn-group-btn is-active">Sync</button>
+              <button class="btn-group-btn">Async</button>
+              <button class="btn-group-btn">Both</button>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_form">Form controls</div>
+          <div class="demo-stack">
+            <div class="input-group">
+              <label class="input-label" for="demo-email" data-i18n="gallery.form_email">邮箱地址</label>
+              <input class="input" id="demo-email" type="email" placeholder="jane@example.com">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="demo-note" data-i18n="gallery.form_note">备注</label>
+              <textarea class="input" id="demo-note"></textarea>
+            </div>
+            <div class="demo-row" style="gap: 20px;">
+              <label class="check"><input type="checkbox" checked><span class="check-box"></span><span data-i18n="gallery.form_preload">预加载</span></label>
+              <label class="switch"><input type="checkbox" checked><span class="switch-track"></span><span data-i18n="gallery.form_async">异步</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_radio">Radio group</div>
+          <div class="radio-group">
+            <label class="radio"><input type="radio" name="mode" checked><span class="radio-dot"></span><span data-i18n="gallery.radio_sync">Sync</span></label>
+            <label class="radio"><input type="radio" name="mode"><span class="radio-dot"></span><span data-i18n="gallery.radio_async">Async</span></label>
+            <label class="radio"><input type="radio" name="mode"><span class="radio-dot"></span><span data-i18n="gallery.radio_both">Both</span></label>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_multi">Multi-select list</div>
+          <div class="option-list">
+            <label class="option-item">
+              <input type="checkbox" checked><span class="option-check"></span>
+              <span class="option-body"><span class="option-title" data-i18n="gallery.multi1_t">PostgreSQL</span><span class="option-desc" data-i18n="gallery.multi1_d">Main production</span></span>
+              <span class="option-tag">12+</span>
+            </label>
+            <label class="option-item">
+              <input type="checkbox" checked><span class="option-check"></span>
+              <span class="option-body"><span class="option-title" data-i18n="gallery.multi2_t">MySQL</span><span class="option-desc" data-i18n="gallery.multi2_d">Legacy</span></span>
+              <span class="option-tag">8.0+</span>
+            </label>
+            <label class="option-item">
+              <input type="checkbox"><span class="option-check"></span>
+              <span class="option-body"><span class="option-title" data-i18n="gallery.multi3_t">SQLite</span><span class="option-desc" data-i18n="gallery.multi3_d">Tests</span></span>
+              <span class="option-tag">3.25+</span>
+            </label>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_dropdown">Dropdown</div>
+          <div class="demo-stack">
+            <div class="dropdown" data-dropdown="demo-backend">
+              <button class="dropdown-trigger" style="width: 100%;">
+                <span class="dropdown-label">Backend</span>
+                <span class="dropdown-value">PostgreSQL</span>
+                <svg class="dropdown-caret" viewBox="0 0 12 12" fill="none"><path d="m3 5 3 3 3-3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="dropdown-menu" role="listbox">
+                <button class="dropdown-item" data-value="sqlite"><span class="dropdown-item-label">SQLite</span></button>
+                <button class="dropdown-item is-active" data-value="postgres"><span class="dropdown-item-label">PostgreSQL</span></button>
+                <button class="dropdown-item" data-value="mysql"><span class="dropdown-item-label">MySQL</span></button>
+                <button class="dropdown-item" data-value="mssql"><span class="dropdown-item-label">SQL Server</span></button>
+                <button class="dropdown-item" data-value="oracle"><span class="dropdown-item-label">Oracle</span></button>
+              </div>
+            </div>
+            <p style="font-size: 12px; color: var(--fg-muted); margin: 0;" data-i18n="gallery.backend_note">Same as the top bar.</p>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_alerts">Alerts</div>
+          <div class="demo-stack">
+            <div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div class="alert-body" data-i18n="gallery.alert_info">...</div></div>
+            <div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><div class="alert-body" data-i18n="gallery.alert_success">...</div></div>
+            <div class="alert alert-warn"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0ZM12 9v4M12 17h.01"/></svg><div class="alert-body" data-i18n="gallery.alert_warn">...</div></div>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_badges">Badges</div>
+          <div class="demo-row">
+            <span class="badge badge-info">New</span>
+            <span class="badge badge-success">Stable</span>
+            <span class="badge badge-warn">Beta</span>
+            <span class="badge badge-danger">Deprecated</span>
+            <span class="badge badge-neutral">v1.0.0</span>
+          </div>
+          <div class="demo-row" style="margin-top: 14px;">
+            <span class="badge badge-neutral">py 3.8</span>
+            <span class="badge badge-info">py 3.10+</span>
+            <span class="badge badge-success">py 3.12+</span>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_progress">Progress</div>
+          <div class="demo-stack">
+            <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted);margin-bottom:6px;"><span data-i18n="gallery.prog_coverage">测试覆盖率</span><span>92%</span></div><div class="progress"><div class="progress-fill" style="width: 92%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted);margin-bottom:6px;"><span data-i18n="gallery.prog_backend">后端完成度</span><span>60%</span></div><div class="progress"><div class="progress-fill" style="width: 60%;background:var(--accent-2);"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted);margin-bottom:6px;"><span data-i18n="gallery.prog_locale">文档本地化</span><span>30%</span></div><div class="progress"><div class="progress-fill" style="width: 30%;background:var(--accent-3);"></div></div></div>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_grid">Grid showcase (12 col)</div>
+          <div class="grid-showcase">
+            <div class="grid-cell is-span-12">Hero / header &middot; span 12</div>
+            <div class="grid-cell is-span-3">Nav &middot; 3</div>
+            <div class="grid-cell is-span-6">Content &middot; 6</div>
+            <div class="grid-cell is-span-3">Aside &middot; 3</div>
+            <div class="grid-cell is-span-4">Card &middot; 4</div>
+            <div class="grid-cell is-span-4">Card &middot; 4</div>
+            <div class="grid-cell is-span-4">Card &middot; 4</div>
+          </div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-title" data-i18n="gallery.c_rtl">RTL preview</div>
+          <div dir="rtl" style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px;">
+            <div class="feature-num" style="margin-bottom: 10px;">٠١ / عينة</div>
+            <h4 style="font-family: var(--font-display); font-weight: 600; color: var(--fg); margin-bottom: 6px;">يقرأ مثل اللغة الإنجليزية</h4>
+            <p style="font-size: 13px; color: var(--fg-muted); line-height: 1.5; margin: 0;">نفس مكون العرض يعمل من اليمين إلى اليسار دون تعديل.</p>
+          </div>
+        </div>
+        <div class="gallery-card" style="grid-column: span 2;">
+          <div class="gallery-card-title" data-i18n="gallery.c_table">Striped data table</div>
+          <div style="overflow-x: auto;">
+          <table class="data-table striped">
+            <thead><tr><th>Backend</th><th>Package</th><th>Dialect</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>SQLite</td><td><code>rhosocial-activerecord</code></td><td>3.25+</td><td><span class="badge badge-success">Built-in</span></td></tr>
+              <tr><td>PostgreSQL</td><td><code>&hellip;-postgres</code></td><td>12+</td><td><span class="badge badge-success">Stable</span></td></tr>
+              <tr><td>MySQL</td><td><code>&hellip;-mysql</code></td><td>8.0+</td><td><span class="badge badge-warn">Beta</span></td></tr>
+              <tr><td>SQL Server</td><td><code>&hellip;-mssql</code></td><td>2019+</td><td><span class="badge badge-warn">Beta</span></td></tr>
+              <tr><td>Oracle</td><td><code>&hellip;-oracle</code></td><td>19c+</td><td><span class="badge badge-info">Planned</span></td></tr>
+              <tr><td>Custom</td><td>your package</td><td>any</td><td><span class="badge badge-neutral">Backend ABC</span></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label" data-i18n="album.label">Gallery</div>
+        <h2 class="section-title" data-i18n="album.title">从<em>案例</em>学起。</h2>
+      </div>
+      <div class="album">
+        <figure class="album-item"><div class="album-thumb"><span class="album-tag">Tutorial</span></div><figcaption class="album-caption"><span class="album-title" data-i18n="album.a1">...</span><span class="album-meta">2024-06</span></figcaption></figure>
+        <figure class="album-item"><div class="album-thumb"><span class="album-tag">Async</span></div><figcaption class="album-caption"><span class="album-title" data-i18n="album.a2">...</span><span class="album-meta">2024-07</span></figcaption></figure>
+        <figure class="album-item"><div class="album-thumb"><span class="album-tag">Relations</span></div><figcaption class="album-caption"><span class="album-title" data-i18n="album.a3">...</span><span class="album-meta">2024-08</span></figcaption></figure>
+        <figure class="album-item"><div class="album-thumb"><span class="album-tag">Backends</span></div><figcaption class="album-caption"><span class="album-title" data-i18n="album.a4">...</span><span class="album-meta">2024-09</span></figcaption></figure>
+        <figure class="album-item"><div class="album-thumb"><span class="album-tag">Perf</span></div><figcaption class="album-caption"><span class="album-title" data-i18n="album.a5">...</span><span class="album-meta">2024-10</span></figcaption></figure>
+        <figure class="album-item"><div class="album-thumb"><span class="album-tag">Tx</span></div><figcaption class="album-caption"><span class="album-title" data-i18n="album.a6">...</span><span class="album-meta">2024-11</span></figcaption></figure>
+      </div>
+    </div>
+  </section>
+  <section class="section" style="padding-left: 0; padding-right: 0;">
+    <div class="container" style="padding: 0 clamp(20px, 5vw, 80px);">
+      <div class="section-header">
+        <div class="section-label" data-i18n="voices.label">Voices</div>
+        <h2 class="section-title" data-i18n="voices.title">他们<em>这样说</em>。</h2>
+      </div>
+    </div>
+    <div class="carousel">
+      <div class="carousel-track">
+        <article class="carousel-card">
+          <p class="carousel-quote" data-i18n="voices.q1">...</p>
+          <div class="carousel-author"><span class="carousel-avatar">JL</span><div><div class="carousel-name">Jamie Lee</div><div class="carousel-role" data-i18n="voices.q1_role">...</div></div></div>
+        </article>
+        <article class="carousel-card">
+          <p class="carousel-quote" data-i18n="voices.q2">...</p>
+          <div class="carousel-author"><span class="carousel-avatar">MN</span><div><div class="carousel-name">Mira Nakamura</div><div class="carousel-role" data-i18n="voices.q2_role">...</div></div></div>
+        </article>
+        <article class="carousel-card">
+          <p class="carousel-quote" data-i18n="voices.q3">...</p>
+          <div class="carousel-author"><span class="carousel-avatar">DK</span><div><div class="carousel-name">David Koh</div><div class="carousel-role" data-i18n="voices.q3_role">...</div></div></div>
+        </article>
+        <article class="carousel-card">
+          <p class="carousel-quote" data-i18n="voices.q4">...</p>
+          <div class="carousel-author"><span class="carousel-avatar">RP</span><div><div class="carousel-name">Rafael Pereira</div><div class="carousel-role" data-i18n="voices.q4_role">...</div></div></div>
+        </article>
+        <article class="carousel-card">
+          <p class="carousel-quote" data-i18n="voices.q5">...</p>
+          <div class="carousel-author"><span class="carousel-avatar">YX</span><div><div class="carousel-name">于夏</div><div class="carousel-role" data-i18n="voices.q5_role">...</div></div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header" style="text-align: center;">
+        <div class="section-label" style="display: inline-block;" data-i18n="auth.label">Auth</div>
+        <h2 class="section-title" style="margin: 0 auto;" data-i18n="auth.title">登录到 <em>rhosocial</em>。</h2>
+      </div>
+      <form class="login-card" onsubmit="return false;">
+        <div class="login-header">
+          <h3 class="login-title" data-i18n="auth.welcome">欢迎回来</h3>
+          <p class="login-sub" data-i18n="auth.sub">...</p>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="login-email" data-i18n="auth.email">邮箱</label>
+          <input class="input" id="login-email" type="email" placeholder="jane@example.com">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="login-pw" data-i18n="auth.password">密码</label>
+          <input class="input" id="login-pw" type="password" placeholder="••••••••">
+        </div>
+        <div class="login-row">
+          <label class="check"><input type="checkbox"><span class="check-box"></span><span data-i18n="auth.remember">记住我</span></label>
+          <a class="login-link" href="#" data-i18n="auth.forgot">忘记密码？</a>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;" data-i18n="auth.login">登录</button>
+        <div class="login-divider"><span data-i18n="auth.or">OR</span></div>
+        <div class="login-oauth">
+          <button class="btn btn-ghost" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            <span data-i18n="auth.github">Continue with GitHub</span>
+          </button>
+          <button class="btn btn-ghost" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg>
+            <span data-i18n="auth.twitter">Continue with Twitter</span>
+          </button>
+        </div>
+        <div class="login-footer"><span data-i18n="auth.no_account">还没有账号？</span><a class="login-link" href="#" data-i18n="auth.register">注册</a></div>
+      </form>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-header"><div class="section-label" data-i18n="stats.label">By the numbers</div><h2 class="section-title" data-i18n="stats.title">一些<em>数字</em>。</h2></div>
+      <div class="stats-grid">
+        <div class="stat"><div class="stat-num">5<span class="unit">backends</span></div><div class="stat-label" data-i18n="stats.s1">可选数据库方言</div></div>
+        <div class="stat"><div class="stat-num">100<span class="unit">%</span></div><div class="stat-label" data-i18n="stats.s2">类型注解覆盖</div></div>
+        <div class="stat"><div class="stat-num">3.8<span class="unit">+</span></div><div class="stat-label" data-i18n="stats.s3">最低 Python 版本</div></div>
+        <div class="stat"><div class="stat-num">0<span class="unit">deps</span></div><div class="stat-label" data-i18n="stats.s4">外部 ORM 依赖</div></div>
+      </div>
+    </div>
+  </section>
+  <section id="install" class="section">
+    <div class="container-narrow">
+      <div class="install-wrap">
+        <div class="section-label" style="margin-bottom: 18px;" data-i18n="install.label">Get started</div>
+        <h2 class="install-title" data-i18n="install.title">一行安装，<em>十分钟</em>上手。</h2>
+        <p class="install-sub" data-i18n="install.sub">...</p>
+        <div class="install-cmd">
+          <span class="prompt">$</span>
+          <span>pip install rhosocial-activerecord</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('pip install rhosocial-activerecord'); this.textContent='Copied'; setTimeout(()=>this.textContent='Copy',1200)">Copy</button>
+        </div>
+        <div style="margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <a href="https://docs.python-activerecord.dev.rho.social/" class="btn btn-primary" data-i18n="install.docs">阅读文档 &rarr;</a>
+          <a href="https://github.com/rhosocial/python-activerecord" class="btn btn-ghost">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <footer class="footer">
+    <div>&copy; rhosocial &middot; rhosocial-activerecord &middot; Apache 2.0</div>
+    <div data-i18n="footer.hotkeys">23 themes × 24 font packs</div>
+  </footer>
+</main>
+<script>
+  const html = document.documentElement;
+
+  /* Keyboard maps — must stay in sync with the dropdown item order. */
+  const THEMES = [
+    'terminal','editorial','brutalist','aurora','synthwave','sumi','blueprint','noir','riso','nordic',
+    'solarpunk','mocha','wireframe','anderson','tokyo','memphis','chalkboard','matrix','steel',
+    'frutiger','newsprint','candy','botanical'
+  ];
+  const FONTS = [
+    'auto','tight','serif','geometric','heavy','allmono','reader','display-serif','neo-future','plex',
+    'playful','classic-serif','pixel','monumental','slab','condensed','expressive','deco','stencil',
+    'rubik','bricolage','gloock','crimson','dm'
+  ];
+  /* LANGS matches dropdown order; index → QWERTY key. */
+  const LANGS = [
+    'zh-cn','en-us','ja-jp','de-de','fr-fr','ko-kr','pt-pt','nl-nl','it-it','ru-ru',  // q-p
+    'es-es','tr-tr','el-gr','ar','hi-in','id-id','vi-vn','pl-pl'                      // a-k
+  ];
+
+  const QWERTY = 'qwertyuiop' + 'asdfghjkl' + 'zxcvbnm';
+
+  /* ── i18n ─────────────────────────────────────────────────── */
+
+  /**
+   * Language detection precedence:
+   *   1. ?lang=xx-yy URL param (if it matches an available lang)
+   *   2. localStorage["rhosocial-lang"]  (user's previous choice)
+   *   3. navigator.languages  — best-match to available, UN-languages collapse to canonical
+   *   4. 'en-us'  (final fallback)
+   *
+   * UN working languages (zh/en/fr/ru/es/ar) and any regional variant
+   * (zh-TW, es-MX, fr-CA, …) always collapse to the single canonical locale
+   * we ship, per project policy.
+   */
+  const LANG_COLLAPSE = {
+    zh: 'zh-cn',   en: 'en-us',   fr: 'fr-fr',   ru: 'ru-ru',   es: 'es-es',   ar: 'ar',
+    ja: 'ja-jp',   de: 'de-de',   ko: 'ko-kr',   pt: 'pt-pt',   nl: 'nl-nl',   it: 'it-it',
+    tr: 'tr-tr',   el: 'el-gr',   hi: 'hi-in',
+    id: 'id-id',   in: 'id-id',   /* `in` is the legacy ISO-639-1 tag for Indonesian */
+    vi: 'vi-vn',   pl: 'pl-pl'
+  };
+
+  function matchLang(tag) {
+    if (!tag) return null;
+    const lower = String(tag).toLowerCase();
+    if (LANGS.indexOf(lower) !== -1) return lower;      // exact: 'zh-cn', 'pt-pt'
+    const primary = lower.split('-')[0];                 // 'zh-tw' → 'zh', 'es-mx' → 'es'
+    return LANG_COLLAPSE[primary] || null;
+  }
+
+  function detectInitialLang() {
+    // 1. URL ?lang=
+    try {
+      const url = new URLSearchParams(location.search).get('lang');
+      const m = matchLang(url);
+      if (m) return m;
+    } catch (_) {}
+    // 2. localStorage
+    try {
+      const stored = localStorage.getItem('rhosocial-lang');
+      const m = matchLang(stored);
+      if (m) return m;
+    } catch (_) {}
+    // 3. navigator.languages (preferred order)
+    const navLangs = (navigator.languages && navigator.languages.length)
+      ? navigator.languages
+      : [navigator.language || navigator.userLanguage || ''];
+    for (const tag of navLangs) {
+      const m = matchLang(tag);
+      if (m) return m;
+    }
+    // 4. final fallback
+    return 'en-us';
+  }
+
+  let currentLang = detectInitialLang();
+
+  function get(path, dict) {
+    return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), dict);
+  }
+  function applyI18n() {
+    const dict = window.I18N && window.I18N[currentLang];
+    if (!dict) return;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const val = get(el.getAttribute('data-i18n'), dict);
+      if (val !== undefined) el.innerHTML = val;
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      const val = get(el.getAttribute('data-i18n-ph'), dict);
+      if (val !== undefined) el.setAttribute('placeholder', val);
+    });
+    /* Refresh current-value labels in the three control dropdowns,
+       since their text just got rewritten by applyI18n too. */
+    refreshDropdownValueLabel('theme', html.getAttribute('data-theme'));
+    refreshDropdownValueLabel('font',  html.getAttribute('data-font'));
+    refreshDropdownValueLabel('lang',  currentLang);
+  }
+  function refreshDropdownValueLabel(kind, value) {
+    const dd = document.querySelector('[data-dropdown="' + kind + '"]');
+    if (!dd) return;
+    const item = dd.querySelector('.dropdown-item[data-value="' + value + '"]');
+    if (!item) return;
+    const valueEl = dd.querySelector('.dropdown-value');
+    if (valueEl) valueEl.textContent = item.querySelector('.dropdown-item-label')?.textContent || value;
+  }
+
+  /* ── Unified setter for theme / font / lang ──────────────── */
+  function setValue(kind, value) {
+    if (kind === 'lang') {
+      currentLang = value;
+      html.setAttribute('lang', value);
+      html.setAttribute('dir', value === 'ar' ? 'rtl' : 'ltr');
+      try { localStorage.setItem('rhosocial-lang', value); } catch (_) {}
+      applyI18n();
+    } else {
+      html.setAttribute('data-' + kind, value);
+    }
+    const dd = document.querySelector('[data-dropdown="' + kind + '"]');
+    if (!dd) return;
+    let activatedLabel = null;
+    dd.querySelectorAll('.dropdown-item').forEach(it => {
+      const match = it.getAttribute('data-value') === value;
+      it.classList.toggle('is-active', match);
+      if (match) activatedLabel = it.querySelector('.dropdown-item-label')?.textContent || value;
+    });
+    const valueEl = dd.querySelector('.dropdown-value');
+    if (valueEl && activatedLabel) valueEl.textContent = activatedLabel;
+  }
+
+  function closeAllDropdowns(except) {
+    document.querySelectorAll('.dropdown.is-open').forEach(d => {
+      if (d !== except) {
+        d.classList.remove('is-open');
+        d.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-dropdown]').forEach(dd => {
+    const trigger = dd.querySelector('.dropdown-trigger');
+    const kind = dd.getAttribute('data-dropdown');
+    trigger.addEventListener('click', e => {
+      e.stopPropagation();
+      const willOpen = !dd.classList.contains('is-open');
+      closeAllDropdowns(dd);
+      dd.classList.toggle('is-open', willOpen);
+      trigger.setAttribute('aria-expanded', String(willOpen));
+    });
+    dd.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('click', e => {
+        e.stopPropagation();
+        const value = item.getAttribute('data-value');
+        const label = item.querySelector('.dropdown-item-label')?.textContent;
+        if (kind === 'theme' || kind === 'font' || kind === 'lang') {
+          setValue(kind, value);
+        } else {
+          // Generic demo dropdown — just update label locally
+          dd.querySelectorAll('.dropdown-item').forEach(it => it.classList.toggle('is-active', it === item));
+          const valueEl = dd.querySelector('.dropdown-value');
+          if (valueEl) valueEl.textContent = label || value;
+        }
+        dd.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+      });
+    });
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown')) closeAllDropdowns();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeAllDropdowns();
+  });
+
+  /* ── Tabs ────────────────────────────────────────────────── */
+  document.querySelectorAll('[data-tabs]').forEach(group => {
+    group.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-tab');
+        group.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('is-active', b === btn));
+        group.querySelectorAll('[data-panel]').forEach(p => p.classList.toggle('is-active', p.getAttribute('data-panel') === key));
+      });
+    });
+  });
+
+  /* ── Keyboard shortcuts: Ctrl=theme · Shift=font · Alt=lang ── */
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+    const key = e.key.toLowerCase();
+    const idx = QWERTY.indexOf(key);
+    if (idx < 0) return;
+    const onlyCtrl  = e.ctrlKey  && !e.shiftKey && !e.altKey && !e.metaKey;
+    const onlyShift = e.shiftKey && !e.ctrlKey  && !e.altKey && !e.metaKey;
+    const onlyAlt   = e.altKey   && !e.ctrlKey  && !e.shiftKey && !e.metaKey;
+    if (onlyCtrl  && THEMES[idx]) { e.preventDefault(); setValue('theme', THEMES[idx]); }
+    else if (onlyShift && FONTS[idx])  { e.preventDefault(); setValue('font',  FONTS[idx]); }
+    else if (onlyAlt   && LANGS[idx])  { e.preventDefault(); setValue('lang',  LANGS[idx]); }
+  });
+
+  /* ── Initial render ──────────────────────────────────────── */
+  /* Detect browser language and select it — unless user picks one via URL or has a saved choice. */
+  setValue('lang', detectInitialLang());
+</script>
+</body>
+</html>

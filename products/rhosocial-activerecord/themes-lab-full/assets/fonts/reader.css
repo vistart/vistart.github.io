@@ -1,0 +1,12 @@
+/**
+ * Font pack · Reader (Newsreader serif, long-form friendly)
+ * Identifier: data-font="reader"
+ */
+html[data-font="reader"] {
+  --font-display:     'Newsreader', serif;
+  --font-body:        'Newsreader', serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.01em;
+  --display-leading:  1.0;
+}

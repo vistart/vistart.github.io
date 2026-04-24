@@ -1,0 +1,143 @@
+/**
+ * Theme · Anderson
+ * ═══════════════════════════════════════════════════════════════════════
+ * Wes-Anderson-ish pastel palette: butter cream + dusty pink + mint +
+ * marigold. Strong symmetry bias on section headers and install block.
+ * Feels like a hotel-lobby film still.
+ * Identifier used in HTML: data-theme="anderson"
+ *
+ * Google Fonts needed (already in default themes.html): Instrument Serif
+ */
+
+[data-theme="anderson"] {
+  --bg:           #F6E9CD;           /* butter cream */
+  --bg-2:         #EDDFBE;
+  --bg-elevated:  #FCF2DC;
+
+  --fg:           #2B3B50;            /* dusty navy */
+  --fg-muted:     #5E6F80;
+  --fg-faint:     #94A3AF;
+
+  --accent:       #D98390;            /* dusty pink rose */
+  --accent-2:     #88C2B5;            /* muted mint */
+  --accent-3:     #E6B85C;            /* marigold */
+
+  --border:        rgba(43, 59, 80, 0.14);
+  --border-strong: rgba(43, 59, 80, 0.34);
+  --radius:        10px;
+  --radius-sm:     6px;
+
+  --font-display: 'Instrument Serif', 'Fraunces', serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.015em;
+  --display-leading:  1.0;
+
+  --code-bg:       #2B3B50;
+  --code-fg:       #F6E9CD;
+  --code-fg-muted: #94A3AF;
+  --code-border:   rgba(246,233,205,0.12);
+  --tok-keyword:   #E8A4B1;
+  --tok-string:    #B5D9CF;
+  --tok-func:      #F0CA80;
+  --tok-comment:   #6E8094;
+  --tok-num:       #F0CA80;
+  --tok-class:     #EFB9C4;
+  --tok-self:      #BFC9D3;
+  --tok-dec:       #F0CA80;
+  --tok-attr:      #BFC9D3;
+}
+
+/* Ultra-subtle vignette so it feels cinematic */
+[data-theme="anderson"] body {
+  background-image: radial-gradient(ellipse 1400px 600px at 50% 0%, rgba(217, 131, 144, 0.08), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Hero — centered, symmetric bias */
+[data-theme="anderson"] .hero { text-align: center; }
+[data-theme="anderson"] .hero-inner { max-width: 900px; margin: 0 auto; }
+[data-theme="anderson"] .hero-title { margin-left: auto; margin-right: auto; max-width: none; font-style: italic; }
+[data-theme="anderson"] .hero-title em { font-style: normal; color: var(--accent); }
+[data-theme="anderson"] .hero-sub { margin-left: auto; margin-right: auto; }
+[data-theme="anderson"] .hero-ctas { justify-content: center; }
+[data-theme="anderson"] .hero-eyebrow {
+  background: var(--accent); color: var(--bg-elevated);
+  border-color: var(--accent); border-radius: 999px;
+}
+[data-theme="anderson"] .hero-eyebrow::before { background: var(--bg-elevated); }
+
+/* Symmetric ornament for section titles — diamond punctuation */
+[data-theme="anderson"] .section-header { text-align: center; }
+[data-theme="anderson"] .section-header .section-title,
+[data-theme="anderson"] .section-header .section-intro { margin-left: auto; margin-right: auto; }
+[data-theme="anderson"] .section-label::before { content: '◆ '; color: var(--accent); }
+[data-theme="anderson"] .section-label::after  { content: ' ◆'; color: var(--accent); }
+[data-theme="anderson"] .section-title { font-style: italic; font-weight: 400; }
+[data-theme="anderson"] .section-title em { font-style: normal; color: var(--accent); }
+
+[data-theme="anderson"] .btn { border-radius: 999px; padding: 12px 24px; font-weight: 500; }
+[data-theme="anderson"] .btn-primary { background: var(--accent); color: var(--bg-elevated); }
+[data-theme="anderson"] .btn-ghost { border: 2px solid var(--fg); color: var(--fg); background: transparent; }
+
+/* Feature cards — colored by column, symmetric rounding */
+[data-theme="anderson"] .feature { border-radius: 16px; border: 1px solid var(--border); background: var(--bg-elevated); }
+[data-theme="anderson"] .feature:nth-child(3n+1) { background: var(--bg-elevated); }
+[data-theme="anderson"] .feature:nth-child(3n+2) { background: #F5E4D4; }        /* peach tint */
+[data-theme="anderson"] .feature:nth-child(3n+3) { background: #E3EEE3; }        /* mint tint */
+[data-theme="anderson"] .feature:hover { transform: translateY(-3px); border-color: var(--accent); }
+[data-theme="anderson"] .feature-num { color: var(--accent); font-family: var(--font-display); font-style: italic; font-size: 13px; }
+[data-theme="anderson"] .feature-icon { color: var(--accent-2); }
+[data-theme="anderson"] .feature:nth-child(3n+2) .feature-icon { color: var(--accent-3); }
+[data-theme="anderson"] .feature:nth-child(3n+3) .feature-icon { color: var(--accent); }
+[data-theme="anderson"] .feature-title { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-style: italic; }
+[data-theme="anderson"] .feature-title em { font-style: normal; color: var(--accent); font-weight: 400; }
+[data-theme="anderson"] .feature-tag { background: var(--fg); color: var(--bg-elevated); border-radius: 999px; font-family: var(--font-display); font-style: italic; letter-spacing: 0.02em; text-transform: none; padding: 3px 10px; }
+
+[data-theme="anderson"] .stats-grid { border-radius: 16px; background: var(--border); gap: 1px; }
+[data-theme="anderson"] .stat { text-align: center; padding: 40px 24px; }
+[data-theme="anderson"] .stat:nth-child(1) { background: var(--bg-elevated); }
+[data-theme="anderson"] .stat:nth-child(2) { background: #F5E4D4; }
+[data-theme="anderson"] .stat:nth-child(3) { background: #E3EEE3; }
+[data-theme="anderson"] .stat:nth-child(4) { background: #F0E3EA; }
+[data-theme="anderson"] .stat-num { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--fg); }
+[data-theme="anderson"] .stat-label { letter-spacing: 0.1em; }
+
+/* Install — framed block centered */
+[data-theme="anderson"] .install-wrap {
+  background: var(--accent); color: var(--bg-elevated);
+  border-radius: 20px; border: none;
+  text-align: center;
+}
+[data-theme="anderson"] .install-wrap::before {
+  content: '★'; position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+  color: var(--accent-3); font-size: 18px;
+}
+[data-theme="anderson"] .install-title, [data-theme="anderson"] .install-sub { margin-left: auto; margin-right: auto; }
+[data-theme="anderson"] .install-title { color: var(--bg-elevated); font-style: italic; font-weight: 400; }
+[data-theme="anderson"] .install-title em { color: var(--accent-3); font-style: normal; }
+[data-theme="anderson"] .install-sub { color: rgba(252, 242, 220, 0.9); }
+[data-theme="anderson"] .install-wrap .section-label { color: rgba(252, 242, 220, 0.75); }
+[data-theme="anderson"] .install-cmd { background: var(--fg); color: var(--bg-elevated); border-radius: 8px; margin: 0 auto; }
+[data-theme="anderson"] .install-wrap > div:last-child { justify-content: center; }
+
+[data-theme="anderson"] .code-block { border-radius: 12px; }
+[data-theme="anderson"] .control-bar { background: rgba(246, 233, 205, 0.85); }
+[data-theme="anderson"] .chip { border-radius: 999px; background: var(--bg-elevated); }
+[data-theme="anderson"] .chip.is-active { background: var(--fg); color: var(--bg-elevated); border-color: var(--fg); }
+[data-theme="anderson"] .brand-mark { color: var(--accent); font-style: italic; }
+[data-theme="anderson"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs */
+[data-theme="anderson"] .tabs-list { border-radius: 999px; background: var(--bg-2); border: none; padding: 5px; }
+[data-theme="anderson"] .tab { border-radius: 999px; font-family: var(--font-display); font-style: italic; font-weight: 500; text-transform: none; letter-spacing: 0; padding: 9px 18px; }
+[data-theme="anderson"] .tab.is-active { background: var(--accent); color: var(--bg-elevated); border: none; }
+
+/* Gallery */
+[data-theme="anderson"] .gallery-card { border-radius: 14px; }
+[data-theme="anderson"] .input, [data-theme="anderson"] .select, [data-theme="anderson"] textarea.input { border-radius: 8px; background: var(--bg); }
+[data-theme="anderson"] .input:focus { border-color: var(--accent); }
+[data-theme="anderson"] .alert { border-radius: 12px; background: var(--bg-elevated); }
+[data-theme="anderson"] .badge { border-radius: 999px; font-family: var(--font-display); font-style: italic; letter-spacing: 0; text-transform: none; font-weight: 500; }
+[data-theme="anderson"] .data-table th { color: var(--accent); font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: 0.04em; text-transform: none; font-size: 13px; }

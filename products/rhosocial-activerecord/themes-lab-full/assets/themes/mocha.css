@@ -1,0 +1,129 @@
+/**
+ * Theme · Mocha
+ * ═══════════════════════════════════════════════════════════════════════
+ * Cozy coffee-shop warmth. Espresso + cream + caramel + cinnamon.
+ * Rounded shapes, nothing harsh, long-form readable.
+ * Identifier used in HTML: data-theme="mocha"
+ *
+ * Google Fonts needed (already in default themes.html): Newsreader, Inter Tight
+ */
+
+[data-theme="mocha"] {
+  --bg:           #F3EBE0;          /* oat cream */
+  --bg-2:         #E8DDCC;
+  --bg-elevated:  #FAF3E9;
+
+  --fg:           #2A1D15;          /* espresso */
+  --fg-muted:     #6B4F3A;          /* mocha */
+  --fg-faint:     #A08D79;
+
+  --accent:       #B8834A;          /* caramel */
+  --accent-2:     #C25F3C;          /* cinnamon */
+  --accent-3:     #E8D3B0;          /* cream foam */
+
+  --border:        rgba(42, 29, 21, 0.14);
+  --border-strong: rgba(42, 29, 21, 0.30);
+  --radius:        20px;
+  --radius-sm:     12px;
+
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.02em;
+  --display-leading:  1.0;
+
+  --code-bg:       #2A1D15;
+  --code-fg:       #F3EBE0;
+  --code-fg-muted: #A08D79;
+  --code-border:   rgba(243,235,224,0.12);
+  --tok-keyword:   #E8B77A;
+  --tok-string:    #C2D8A8;
+  --tok-func:      #E89A78;
+  --tok-comment:   #7A6654;
+  --tok-num:       #E8B77A;
+  --tok-class:     #F0CE98;
+  --tok-self:      #C4B09A;
+  --tok-dec:       #E89A78;
+  --tok-attr:      #C4B09A;
+}
+
+/* Warm radial background */
+[data-theme="mocha"] body {
+  background-image:
+    radial-gradient(ellipse 900px 500px at 20% 10%, rgba(184, 131, 74, 0.12), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 100%, rgba(194, 95, 60, 0.08), transparent 60%);
+  background-attachment: fixed;
+}
+
+[data-theme="mocha"] .hero-title em { font-style: italic; color: var(--accent-2); font-weight: 400; }
+[data-theme="mocha"] .hero-eyebrow {
+  background: var(--accent); color: var(--bg-elevated);
+  border-color: var(--accent); border-radius: 999px;
+  font-family: var(--font-display); font-style: italic;
+  text-transform: none; letter-spacing: 0.05em;
+}
+[data-theme="mocha"] .hero-eyebrow::before { background: var(--bg-elevated); }
+
+[data-theme="mocha"] .btn { border-radius: 999px; padding: 14px 26px; font-weight: 600; }
+[data-theme="mocha"] .btn-primary { background: var(--fg); color: var(--bg-elevated); }
+[data-theme="mocha"] .btn-primary:hover { background: var(--accent-2); }
+[data-theme="mocha"] .btn-ghost { border-color: var(--border-strong); background: var(--bg-elevated); }
+
+/* Features — soft rounded cards, warm hover */
+[data-theme="mocha"] .feature {
+  border-radius: 20px; border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+[data-theme="mocha"] .feature:hover {
+  border-color: var(--accent);
+  box-shadow: 0 12px 32px rgba(184, 131, 74, 0.15);
+}
+[data-theme="mocha"] .feature-num { color: var(--accent-2); font-style: italic; font-family: var(--font-display); font-size: 13px; font-weight: 600; }
+[data-theme="mocha"] .feature-icon { color: var(--accent); }
+[data-theme="mocha"] .feature-title { font-family: var(--font-display); font-weight: 600; font-size: 24px; }
+[data-theme="mocha"] .feature-title em { font-weight: 400; font-style: italic; color: var(--accent-2); }
+[data-theme="mocha"] .feature-tag { background: var(--accent-3); color: var(--fg); border-radius: 999px; padding: 3px 10px; }
+
+[data-theme="mocha"] .section-label { color: var(--accent-2); font-family: var(--font-display); font-style: italic; letter-spacing: 0.1em; font-size: 13px; text-transform: none; }
+[data-theme="mocha"] .section-title em { font-style: italic; color: var(--accent-2); }
+
+[data-theme="mocha"] .stats-grid { border-radius: 24px; background: var(--border); gap: 1px; }
+[data-theme="mocha"] .stat { padding: 40px 32px; }
+[data-theme="mocha"] .stat-num { font-family: var(--font-display); font-weight: 600; color: var(--accent-2); }
+[data-theme="mocha"] .stat-num .unit { color: var(--accent); font-style: italic; }
+
+/* Install — warm espresso card */
+[data-theme="mocha"] .install-wrap {
+  background: var(--fg); color: var(--bg-elevated);
+  border-radius: 28px; border: none;
+  box-shadow: 0 16px 48px rgba(42, 29, 21, 0.20);
+}
+[data-theme="mocha"] .install-title { color: var(--bg-elevated); }
+[data-theme="mocha"] .install-title em { color: var(--accent); font-style: italic; }
+[data-theme="mocha"] .install-sub { color: var(--accent-3); }
+[data-theme="mocha"] .install-wrap .section-label { color: var(--accent); }
+[data-theme="mocha"] .install-cmd { background: rgba(255, 255, 255, 0.08); color: var(--bg-elevated); border: 1px solid rgba(232, 211, 176, 0.2); border-radius: 12px; }
+[data-theme="mocha"] .install-cmd .prompt { color: var(--accent); }
+
+[data-theme="mocha"] .code-block { border-radius: 20px; }
+[data-theme="mocha"] .control-bar { background: rgba(243, 235, 224, 0.85); }
+[data-theme="mocha"] .chip { border-radius: 999px; background: var(--bg-elevated); border-color: var(--border); }
+[data-theme="mocha"] .chip.is-active { background: var(--fg); color: var(--bg-elevated); border-color: var(--fg); }
+[data-theme="mocha"] .brand-mark { color: var(--accent); font-style: italic; }
+
+/* Tabs */
+[data-theme="mocha"] .tabs-list { border-radius: 999px; background: var(--bg-2); border: none; padding: 5px; }
+[data-theme="mocha"] .tab { border-radius: 999px; font-family: var(--font-display); font-style: italic; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 14px; padding: 9px 18px; }
+[data-theme="mocha"] .tab.is-active { background: var(--bg-elevated); color: var(--accent-2); border: none; box-shadow: 0 2px 6px rgba(42,29,21,0.08); }
+
+/* Gallery */
+[data-theme="mocha"] .gallery-card { border-radius: 20px; }
+[data-theme="mocha"] .input, [data-theme="mocha"] .select, [data-theme="mocha"] textarea.input {
+  border-radius: 12px; background: var(--bg); padding: 11px 15px;
+  border-color: var(--border);
+}
+[data-theme="mocha"] .input:focus { border-color: var(--accent); }
+[data-theme="mocha"] .alert { border-radius: 14px; background: var(--bg); }
+[data-theme="mocha"] .badge { border-radius: 999px; font-weight: 600; }
+[data-theme="mocha"] .data-table th { color: var(--accent-2); font-family: var(--font-display); font-style: italic; font-weight: 600; text-transform: none; letter-spacing: 0.02em; font-size: 12px; }

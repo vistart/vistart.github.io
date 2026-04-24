@@ -1,0 +1,143 @@
+/**
+ * Theme · Noir
+ * ═══════════════════════════════════════════════════════════════════════
+ * Pure black + champagne gold + Cormorant serif. Art Deco luxury.
+ * Identifier used in HTML: data-theme="noir"
+ */
+
+[data-theme="noir"] {
+  --bg:           #0A0807;
+  --bg-2:         #141210;
+  --bg-elevated:  #0F0D0B;
+
+  --fg:           #F0E5CC;
+  --fg-muted:     #A39278;
+  --fg-faint:     #675B48;
+
+  --accent:       #D4A64A;           /* champagne gold */
+  --accent-2:     #B87333;           /* deeper bronze */
+  --accent-3:     #E8DBBA;
+
+  --border:        rgba(212, 166, 74, 0.22);
+  --border-strong: rgba(212, 166, 74, 0.55);
+  --radius:        0px;
+  --radius-sm:     0px;
+
+  --font-display: 'Cormorant Garamond', 'Fraunces', serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.01em;
+  --display-leading:  0.95;
+
+  --code-bg:       #050403;
+  --code-fg:       #F0E5CC;
+  --code-fg-muted: #8A7D67;
+  --code-border:   rgba(212,166,74,0.2);
+  --tok-keyword:   #D4A64A;
+  --tok-string:    #E8DBBA;
+  --tok-func:      #B87333;
+  --tok-comment:   #675B48;
+  --tok-num:       #E8DBBA;
+  --tok-class:     #E8C978;
+  --tok-self:      #A39278;
+  --tok-dec:       #B87333;
+  --tok-attr:      #A39278;
+}
+
+[data-theme="noir"] body {
+  background-image: radial-gradient(ellipse 1000px 500px at 50% 0%, rgba(212, 166, 74, 0.05), transparent 70%);
+  background-attachment: fixed;
+}
+
+[data-theme="noir"] .hero-title { font-weight: 400; }
+[data-theme="noir"] .hero-title em { font-weight: 400; font-style: italic; color: var(--accent); }
+[data-theme="noir"] .hero-eyebrow {
+  background: transparent; border-color: var(--accent); color: var(--accent);
+  font-family: var(--font-display); font-style: italic;
+  text-transform: none; letter-spacing: 0.1em;
+}
+
+[data-theme="noir"] .btn-primary { background: var(--accent); color: #0A0807; font-weight: 500; letter-spacing: 0.04em; }
+[data-theme="noir"] .btn-ghost { border-color: var(--accent); color: var(--accent); background: transparent; }
+[data-theme="noir"] .btn-ghost:hover { background: rgba(212,166,74,0.08); }
+
+/* Features — double hairline */
+[data-theme="noir"] .feature {
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--border);
+  border-radius: 0;
+  position: relative;
+}
+[data-theme="noir"] .feature::before {
+  content: ''; position: absolute;
+  top: 14px; left: 14px; right: 14px; bottom: 14px;
+  border: 0.5px solid transparent;
+  pointer-events: none;
+  transition: border-color 200ms ease;
+}
+[data-theme="noir"] .feature:hover::before { border-color: var(--accent); }
+[data-theme="noir"] .feature:hover { transform: none; }
+[data-theme="noir"] .feature-num { color: var(--accent); font-style: italic; font-family: var(--font-display); font-size: 13px; }
+[data-theme="noir"] .feature-title { font-family: var(--font-display); font-weight: 600; font-size: 26px; letter-spacing: -0.01em; }
+[data-theme="noir"] .feature-title em { font-weight: 400; color: var(--accent); }
+[data-theme="noir"] .feature-icon { color: var(--accent); }
+[data-theme="noir"] .feature-tag { background: transparent; border: 0.5px solid var(--border-strong); color: var(--accent); }
+
+[data-theme="noir"] .section-label { color: var(--accent); font-family: var(--font-display); font-style: italic; text-transform: none; letter-spacing: 0.12em; font-size: 14px; }
+[data-theme="noir"] .section-title { font-weight: 400; }
+[data-theme="noir"] .section-title::before { content: '—— '; color: var(--accent); opacity: 0.5; }
+
+[data-theme="noir"] .stats-grid { border: 0.5px solid var(--border-strong); border-radius: 0; background: var(--border); gap: 0.5px; }
+[data-theme="noir"] .stat { background: var(--bg-elevated); border-right: none; position: relative; }
+[data-theme="noir"] .stat::after { content: '◆'; position: absolute; top: 16px; right: 20px; color: var(--accent); font-size: 10px; opacity: 0.5; }
+[data-theme="noir"] .stat-num { color: var(--accent); font-weight: 400; }
+[data-theme="noir"] .stat-num .unit { color: var(--fg-muted); }
+
+[data-theme="noir"] .install-wrap {
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--accent);
+  border-radius: 0;
+  position: relative;
+}
+[data-theme="noir"] .install-wrap::before {
+  content: ''; position: absolute;
+  top: 12px; left: 12px; right: 12px; bottom: 12px;
+  border: 0.5px solid var(--accent);
+  pointer-events: none;
+  opacity: 0.4;
+}
+[data-theme="noir"] .install-wrap::after {
+  content: '◆'; position: absolute;
+  top: 16px; left: 50%; transform: translateX(-50%);
+  color: var(--accent); font-size: 12px;
+}
+[data-theme="noir"] .install-title em { font-weight: 400; }
+[data-theme="noir"] .install-cmd { background: #050403; border: 0.5px solid var(--accent); border-radius: 0; }
+[data-theme="noir"] .install-cmd .prompt { color: var(--accent); }
+[data-theme="noir"] .code-block { border: 0.5px solid var(--border-strong); border-radius: 0; }
+
+[data-theme="noir"] .control-bar { background: rgba(10,8,7,0.85); border-bottom: 0.5px solid var(--border-strong); }
+[data-theme="noir"] .chip { border-radius: 0; border-color: var(--border); font-family: var(--font-body); }
+[data-theme="noir"] .chip.is-active { background: var(--accent); color: #0A0807; border-color: var(--accent); }
+[data-theme="noir"] .brand-mark { color: var(--accent); }
+[data-theme="noir"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs */
+[data-theme="noir"] .tabs-list { border-radius: 0; background: var(--bg-2); border: 0.5px solid var(--border); }
+[data-theme="noir"] .tab { font-family: var(--font-display); font-style: italic; font-size: 13px; }
+[data-theme="noir"] .tab.is-active { background: transparent; color: var(--accent); border: 0.5px solid var(--accent); }
+
+/* Gallery */
+[data-theme="noir"] .gallery-card { border-radius: 0; border: 0.5px solid var(--border); }
+[data-theme="noir"] .input,
+[data-theme="noir"] .select,
+[data-theme="noir"] textarea.input {
+  border-radius: 0;
+  background: rgba(0,0,0,0.3);
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+[data-theme="noir"] .alert { border-radius: 0; background: var(--bg-elevated); }
+[data-theme="noir"] .badge { border-radius: 0; border-width: 0.5px; }
+[data-theme="noir"] .data-table th { color: var(--accent); letter-spacing: 0.12em; }

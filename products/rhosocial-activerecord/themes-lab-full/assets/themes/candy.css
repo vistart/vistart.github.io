@@ -1,0 +1,172 @@
+/**
+ * Theme · Candy
+ * ═══════════════════════════════════════════════════════════════════════
+ * Bubblegum Y2K cute. Pale pink base + hot pink + cotton-candy blue +
+ * sunflower yellow. Puffy shadows, oversized rounding, sparkle accents.
+ * Different from Anderson (pastel film) — this is MUCH more saturated,
+ * cartoon-y, maximalist candy shop.
+ * Identifier: data-theme="candy"
+ *
+ * Google Fonts needed (already loaded): Space Grotesk, Inter Tight
+ * (Works even better with the `rubik` font pack.)
+ */
+
+[data-theme="candy"] {
+  --bg:           #FFF3F7;
+  --bg-2:         #FFE2EC;
+  --bg-elevated:  #FFFFFF;
+
+  --fg:           #3B1C30;              /* deep plum */
+  --fg-muted:     #7D4A66;
+  --fg-faint:     #C1A2B1;
+
+  --accent:       #FF6EC7;              /* bubblegum */
+  --accent-2:     #7FDBFF;              /* cotton candy blue */
+  --accent-3:     #FFDC5E;              /* sunflower */
+
+  --border:        rgba(59, 28, 48, 0.12);
+  --border-strong: rgba(59, 28, 48, 0.28);
+  --radius:        24px;
+  --radius-sm:     16px;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.03em;
+  --display-leading:  0.98;
+
+  --code-bg:       #3B1C30;
+  --code-fg:       #FFF3F7;
+  --code-fg-muted: #C1A2B1;
+  --code-border:   rgba(255, 110, 199, 0.2);
+  --tok-keyword:   #FF6EC7;
+  --tok-string:    #B5EBBF;
+  --tok-func:      #7FDBFF;
+  --tok-comment:   #8A5F7A;
+  --tok-num:       #FFDC5E;
+  --tok-class:     #FFB4E3;
+  --tok-self:      #C1A2B1;
+  --tok-dec:       #7FDBFF;
+  --tok-attr:      #C1A2B1;
+}
+
+/* Soft pink-peach-sky gradient + scattered bubbles */
+[data-theme="candy"] body {
+  background:
+    radial-gradient(circle 120px at 15% 12%, rgba(255, 220, 94, 0.35), transparent 65%),
+    radial-gradient(circle 180px at 88% 18%, rgba(127, 219, 255, 0.35), transparent 65%),
+    radial-gradient(circle 150px at 10% 78%, rgba(255, 110, 199, 0.25), transparent 65%),
+    radial-gradient(circle 220px at 80% 88%, rgba(255, 220, 94, 0.22), transparent 65%),
+    linear-gradient(180deg, #FFF3F7 0%, #FFE6F2 100%);
+  background-attachment: fixed;
+}
+
+[data-theme="candy"] .hero-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, #FF6EC7 0%, #FFDC5E 50%, #7FDBFF 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+[data-theme="candy"] .hero-eyebrow {
+  background: var(--accent); color: #fff;
+  border-color: var(--accent); border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(255, 110, 199, 0.35);
+}
+[data-theme="candy"] .hero-eyebrow::before { background: #fff; }
+
+/* Buttons — puffy shadows */
+[data-theme="candy"] .btn { border-radius: 999px; padding: 13px 26px; font-weight: 700; }
+[data-theme="candy"] .btn-primary {
+  background: linear-gradient(135deg, #FF6EC7 0%, #FF9FD1 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(255, 110, 199, 0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+[data-theme="candy"] .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255, 110, 199, 0.55); }
+[data-theme="candy"] .btn-ghost { background: var(--bg-elevated); border: 2px solid var(--accent); color: var(--accent); box-shadow: 0 4px 12px rgba(255, 110, 199, 0.15); }
+[data-theme="candy"] .btn-danger { background: linear-gradient(135deg, #FF5555, #FF9999); color: #fff; }
+
+/* Features — soft pastel rotation by column */
+[data-theme="candy"] .feature {
+  border-radius: 24px; border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: 0 8px 24px rgba(59, 28, 48, 0.06);
+}
+[data-theme="candy"] .feature:nth-child(3n+1) { background: #FFF5EE; }   /* peach */
+[data-theme="candy"] .feature:nth-child(3n+2) { background: #EEF9FF; }   /* sky */
+[data-theme="candy"] .feature:nth-child(3n+3) { background: #FFF0F8; }   /* rose */
+[data-theme="candy"] .feature:hover { transform: translateY(-4px); box-shadow: 0 14px 36px rgba(255, 110, 199, 0.2); border-color: var(--accent); }
+[data-theme="candy"] .feature-num {
+  display: inline-block; padding: 3px 10px;
+  background: var(--accent); color: #fff; border-radius: 999px;
+  font-weight: 700; font-size: 10px;
+  box-shadow: 0 2px 6px rgba(255, 110, 199, 0.35);
+}
+[data-theme="candy"] .feature:nth-child(3n+2) .feature-num { background: var(--accent-2); box-shadow: 0 2px 6px rgba(127, 219, 255, 0.45); color: var(--fg); }
+[data-theme="candy"] .feature:nth-child(3n+3) .feature-num { background: var(--accent-3); box-shadow: 0 2px 6px rgba(255, 220, 94, 0.45); color: var(--fg); }
+[data-theme="candy"] .feature-icon { color: var(--accent); }
+[data-theme="candy"] .feature:nth-child(3n+2) .feature-icon { color: #0097CC; }
+[data-theme="candy"] .feature:nth-child(3n+3) .feature-icon { color: #D4A800; }
+[data-theme="candy"] .feature-title em { color: var(--accent); font-style: italic; }
+[data-theme="candy"] .feature-tag { background: var(--bg-2); color: var(--fg); border-radius: 999px; font-weight: 600; }
+
+[data-theme="candy"] .section-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, #FF6EC7, #FFDC5E);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="candy"] .stats-grid { border-radius: 24px; background: var(--border); gap: 1px; }
+[data-theme="candy"] .stat { background: var(--bg-elevated); padding: 40px 28px; }
+[data-theme="candy"] .stat:nth-child(1) { background: #FFF5EE; }
+[data-theme="candy"] .stat:nth-child(2) { background: #EEF9FF; }
+[data-theme="candy"] .stat:nth-child(3) { background: #FFF0F8; }
+[data-theme="candy"] .stat:nth-child(4) { background: #FFFCEB; }
+[data-theme="candy"] .stat-num { color: var(--accent); }
+[data-theme="candy"] .stat:nth-child(2) .stat-num { color: #0097CC; }
+[data-theme="candy"] .stat:nth-child(3) .stat-num { color: #D4A800; }
+[data-theme="candy"] .stat:nth-child(4) .stat-num { color: var(--fg); }
+
+[data-theme="candy"] .install-wrap {
+  background: linear-gradient(135deg, #FF6EC7 0%, #FFDC5E 100%);
+  color: #fff; border: none; border-radius: 32px;
+  box-shadow: 0 16px 48px rgba(255, 110, 199, 0.25);
+}
+[data-theme="candy"] .install-title { color: #fff; }
+[data-theme="candy"] .install-title em { color: var(--accent-2); font-style: normal; }
+[data-theme="candy"] .install-sub { color: rgba(255,255,255,0.9); }
+[data-theme="candy"] .install-wrap .section-label { color: rgba(255,255,255,0.75); }
+[data-theme="candy"] .install-cmd { background: #fff; color: var(--fg); border-radius: 999px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06); }
+[data-theme="candy"] .install-cmd .prompt { color: var(--accent); }
+
+[data-theme="candy"] .code-block { border-radius: 24px; box-shadow: 0 8px 24px rgba(59, 28, 48, 0.1); }
+[data-theme="candy"] .control-bar { background: rgba(255, 243, 247, 0.85); backdrop-filter: blur(14px); }
+[data-theme="candy"] .chip { border-radius: 999px; background: var(--bg-elevated); border-color: var(--border); }
+[data-theme="candy"] .chip.is-active {
+  background: linear-gradient(135deg, #FF6EC7, #FFB3D9);
+  color: #fff; border-color: transparent;
+  box-shadow: 0 2px 8px rgba(255, 110, 199, 0.4);
+}
+[data-theme="candy"] .brand-mark {
+  background: linear-gradient(135deg, #FF6EC7, #FFDC5E);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* Tabs */
+[data-theme="candy"] .tabs-list { border-radius: 999px; background: var(--bg-2); border: none; padding: 5px; }
+[data-theme="candy"] .tab { border-radius: 999px; font-weight: 600; }
+[data-theme="candy"] .tab.is-active { background: var(--accent); color: #fff; border: none; box-shadow: 0 2px 6px rgba(255, 110, 199, 0.35); }
+
+/* Gallery */
+[data-theme="candy"] .gallery-card { border-radius: 24px; box-shadow: 0 4px 16px rgba(59, 28, 48, 0.06); }
+[data-theme="candy"] .input, [data-theme="candy"] .select, [data-theme="candy"] textarea.input {
+  border-radius: 999px; background: var(--bg-elevated); padding: 11px 18px;
+}
+[data-theme="candy"] textarea.input { border-radius: 20px; }
+[data-theme="candy"] .input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255, 110, 199, 0.2); }
+[data-theme="candy"] .alert { border-radius: 18px; }
+[data-theme="candy"] .badge { border-radius: 999px; font-weight: 700; }
+[data-theme="candy"] .check-box { border-radius: 6px; }
+[data-theme="candy"] .progress { background: var(--bg-2); }

@@ -1,0 +1,12 @@
+/**
+ * Font pack · Geometric (Space Grotesk everywhere)
+ * Identifier: data-font="geometric"
+ */
+html[data-font="geometric"] {
+  --font-display:     'Space Grotesk', sans-serif;
+  --font-body:        'Space Grotesk', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.025em;
+  --display-leading:  1.02;
+}

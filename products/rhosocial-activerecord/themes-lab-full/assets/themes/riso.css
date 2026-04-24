@@ -1,0 +1,152 @@
+/**
+ * Theme · Riso
+ * ═══════════════════════════════════════════════════════════════════════
+ * Risograph zine / spot-color print aesthetic.
+ * Cream paper + hot pink + electric blue + teal, with halftone dot texture.
+ * Identifier used in HTML: data-theme="riso"
+ *
+ * Google Fonts needed (already in default themes.html): Space Grotesk
+ */
+
+[data-theme="riso"] {
+  /* Surfaces — cream risograph paper */
+  --bg:           #F7EFDE;
+  --bg-2:         #EFE4CC;
+  --bg-elevated:  #FCF6E8;
+
+  /* Text */
+  --fg:           #1B1812;
+  --fg-muted:     #5A5145;
+  --fg-faint:     #8E8574;
+
+  /* Accents — four spot inks: fluoro-pink, electric blue, teal, yellow */
+  --accent:       #FF3D8A;            /* fluoro pink */
+  --accent-2:     #2E5BFF;            /* electric blue */
+  --accent-3:     #16A894;            /* teal green */
+
+  --border:        rgba(27, 24, 18, 0.22);
+  --border-strong: rgba(27, 24, 18, 0.55);
+  --radius:        4px;
+  --radius-sm:     2px;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.03em;
+  --display-leading:  0.96;
+
+  --code-bg:       #1B1812;
+  --code-fg:       #F7EFDE;
+  --code-fg-muted: #968D7A;
+  --code-border:   rgba(247,239,222,0.15);
+  --tok-keyword:   #FF3D8A;
+  --tok-string:    #FFD466;
+  --tok-func:      #4D82FF;
+  --tok-comment:   #7A7164;
+  --tok-num:       #FFD466;
+  --tok-class:     #6BD4C1;
+  --tok-self:      #D8CEB8;
+  --tok-dec:       #4D82FF;
+  --tok-attr:      #D8CEB8;
+}
+
+/* Halftone dots over the whole page (very subtle paper texture) */
+[data-theme="riso"] body {
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255, 61, 138, 0.06) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 50% 50%, rgba(46, 91, 255,  0.05) 0.8px, transparent 1.5px);
+  background-size: 6px 6px, 9px 9px;
+  background-position: 0 0, 3px 4px;
+}
+
+/* Hero title — misregistered double print (pink ghost behind) */
+[data-theme="riso"] .hero-title {
+  position: relative;
+  text-shadow: 2px 2px 0 rgba(255, 61, 138, 0.35);
+}
+[data-theme="riso"] .hero-title em {
+  font-style: normal;
+  background: var(--accent);
+  color: #FCF6E8;
+  padding: 0 0.08em;
+  box-shadow: 3px 3px 0 var(--accent-2);
+}
+[data-theme="riso"] .hero-eyebrow {
+  background: var(--accent-3); color: #FCF6E8;
+  border-color: var(--accent-3); border-radius: 2px;
+}
+[data-theme="riso"] .hero-eyebrow::before { background: #FCF6E8; }
+
+/* Buttons — spot-color blocks */
+[data-theme="riso"] .btn { border-radius: 2px; font-weight: 600; letter-spacing: 0.01em; }
+[data-theme="riso"] .btn-primary { background: var(--accent); color: #FCF6E8; box-shadow: 3px 3px 0 var(--accent-2); }
+[data-theme="riso"] .btn-primary:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--accent-2); }
+[data-theme="riso"] .btn-ghost { border: 2px solid var(--fg); background: transparent; }
+[data-theme="riso"] .btn-danger { background: var(--accent); color: #FCF6E8; }
+
+/* Feature cards — alternating spot inks on numbers */
+[data-theme="riso"] .feature {
+  border: 2px solid var(--fg); border-radius: 4px;
+  box-shadow: 4px 4px 0 var(--accent-2);
+  background: var(--bg-elevated);
+}
+[data-theme="riso"] .feature:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--accent-2); border-color: var(--accent); }
+[data-theme="riso"] .feature:nth-child(3n+1) { box-shadow: 4px 4px 0 var(--accent); }
+[data-theme="riso"] .feature:nth-child(3n+2) { box-shadow: 4px 4px 0 var(--accent-2); }
+[data-theme="riso"] .feature:nth-child(3n+3) { box-shadow: 4px 4px 0 var(--accent-3); }
+[data-theme="riso"] .feature-num {
+  display: inline-block; padding: 2px 6px;
+  background: var(--accent); color: #FCF6E8;
+  font-weight: 600; font-size: 10px;
+}
+[data-theme="riso"] .feature:nth-child(3n+2) .feature-num { background: var(--accent-2); }
+[data-theme="riso"] .feature:nth-child(3n+3) .feature-num { background: var(--accent-3); }
+[data-theme="riso"] .feature-title em { font-style: normal; color: var(--accent); font-weight: 700; }
+[data-theme="riso"] .feature-icon { color: var(--accent-2); }
+[data-theme="riso"] .feature-tag { background: var(--fg); color: var(--bg-elevated); border-radius: 2px; }
+
+[data-theme="riso"] .section-title em { color: var(--accent); font-style: italic; }
+
+/* Stats — big color blocks with paper border */
+[data-theme="riso"] .stats-grid { border: 2px solid var(--fg); border-radius: 4px; gap: 2px; background: var(--fg); box-shadow: 5px 5px 0 var(--accent); }
+[data-theme="riso"] .stat { background: var(--bg-elevated); }
+[data-theme="riso"] .stat:nth-child(1) .stat-num { color: var(--accent); }
+[data-theme="riso"] .stat:nth-child(2) .stat-num { color: var(--accent-2); }
+[data-theme="riso"] .stat:nth-child(3) .stat-num { color: var(--accent-3); }
+[data-theme="riso"] .stat:nth-child(4) .stat-num { color: var(--fg); }
+
+[data-theme="riso"] .install-wrap {
+  border: 2px solid var(--fg); border-radius: 4px;
+  background: var(--accent-3); color: #FCF6E8;
+  box-shadow: 6px 6px 0 var(--accent);
+}
+[data-theme="riso"] .install-title { color: #FCF6E8; }
+[data-theme="riso"] .install-title em { color: #FCF6E8; text-decoration: underline wavy; text-decoration-color: var(--accent); }
+[data-theme="riso"] .install-sub { color: rgba(252, 246, 232, 0.85); }
+[data-theme="riso"] .install-wrap .section-label { color: rgba(252, 246, 232, 0.7); }
+[data-theme="riso"] .install-cmd { background: var(--fg); border-radius: 2px; }
+
+[data-theme="riso"] .code-block { border: 2px solid var(--fg); border-radius: 4px; box-shadow: 4px 4px 0 var(--accent-2); }
+[data-theme="riso"] .control-bar { border-bottom: 2px solid var(--fg); }
+[data-theme="riso"] .chip { border-radius: 2px; border-width: 1.5px; font-weight: 600; }
+[data-theme="riso"] .chip.is-active { background: var(--accent); color: #FCF6E8; border-color: var(--fg); }
+[data-theme="riso"] .brand-mark { color: var(--accent); }
+[data-theme="riso"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs */
+[data-theme="riso"] .tabs-list { background: var(--bg-elevated); border: 2px solid var(--fg); border-radius: 4px; padding: 3px; }
+[data-theme="riso"] .tab { border-radius: 2px; font-weight: 600; }
+[data-theme="riso"] .tab.is-active { background: var(--accent); color: #FCF6E8; border: none; box-shadow: inset 0 0 0 1.5px var(--fg); }
+
+/* Gallery */
+[data-theme="riso"] .gallery-card { border: 2px solid var(--fg); border-radius: 4px; box-shadow: 4px 4px 0 var(--accent-3); }
+[data-theme="riso"] .input, [data-theme="riso"] .select, [data-theme="riso"] textarea.input {
+  border: 1.5px solid var(--fg); border-radius: 2px; background: var(--bg-elevated);
+}
+[data-theme="riso"] .input:focus { border-color: var(--accent); box-shadow: 3px 3px 0 var(--accent); }
+[data-theme="riso"] .alert { border: 1.5px solid var(--fg); border-left-width: 6px; border-radius: 2px; box-shadow: 3px 3px 0 var(--accent-3); }
+[data-theme="riso"] .badge { border-radius: 2px; border-width: 1.5px; font-weight: 700; }
+[data-theme="riso"] .check-box { border: 1.5px solid var(--fg); border-radius: 2px; }
+[data-theme="riso"] .switch-track { border: 1.5px solid var(--fg); border-radius: 999px; }
+[data-theme="riso"] .data-table th { background: var(--fg); color: var(--bg-elevated); }

@@ -1,0 +1,126 @@
+/**
+ * Theme · Nordic
+ * ═══════════════════════════════════════════════════════════════════════
+ * Scandinavian / glacier minimalism. Pale icy blues + sage + off-white.
+ * Lots of whitespace, generous rounding, restrained accents.
+ * Identifier used in HTML: data-theme="nordic"
+ *
+ * Google Fonts needed (already in default themes.html): Instrument Serif, Inter Tight
+ */
+
+[data-theme="nordic"] {
+  --bg:           #F2F6F8;
+  --bg-2:         #E6EDF1;
+  --bg-elevated:  #FFFFFF;
+
+  --fg:           #1C2A35;
+  --fg-muted:     #5D7280;
+  --fg-faint:     #9AAAB6;
+
+  --accent:       #2E5F85;            /* deep glacier blue */
+  --accent-2:     #7A9B7A;            /* sage */
+  --accent-3:     #C4888C;            /* dusty rose */
+
+  --border:        rgba(28, 42, 53, 0.10);
+  --border-strong: rgba(28, 42, 53, 0.22);
+  --radius:        16px;
+  --radius-sm:     10px;
+
+  --font-display: 'Instrument Serif', 'Fraunces', serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.02em;
+  --display-leading:  1.0;
+
+  --code-bg:       #1C2A35;
+  --code-fg:       #E4EBF0;
+  --code-fg-muted: #8DA3B3;
+  --code-border:   rgba(228,235,240,0.08);
+  --tok-keyword:   #8AB4D6;
+  --tok-string:    #B4C89A;
+  --tok-func:      #D4A0A3;
+  --tok-comment:   #5D7280;
+  --tok-num:       #B4C89A;
+  --tok-class:     #C4D8E8;
+  --tok-self:      #B0BFCA;
+  --tok-dec:       #D4A0A3;
+  --tok-attr:      #B0BFCA;
+}
+
+[data-theme="nordic"] .hero { padding-top: clamp(100px, 14vw, 200px); }
+[data-theme="nordic"] .hero-title { font-weight: 400; }
+[data-theme="nordic"] .hero-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+[data-theme="nordic"] .hero-eyebrow {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  color: var(--accent);
+  padding: 6px 14px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+}
+
+[data-theme="nordic"] .btn { border-radius: 999px; font-weight: 500; padding: 12px 24px; }
+[data-theme="nordic"] .btn-primary { background: var(--accent); color: var(--bg-elevated); }
+[data-theme="nordic"] .btn-ghost { border-color: var(--border-strong); color: var(--fg); background: var(--bg-elevated); }
+
+/* Features — very airy, no borders, just hover-lift */
+[data-theme="nordic"] .feature {
+  border: none;
+  background: var(--bg-elevated);
+  box-shadow: 0 1px 2px rgba(28, 42, 53, 0.04);
+  padding: 36px 32px;
+}
+[data-theme="nordic"] .feature:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(28, 42, 53, 0.08);
+  border-color: transparent;
+}
+[data-theme="nordic"] .feature-num { color: var(--accent); font-weight: 500; }
+[data-theme="nordic"] .feature-icon { color: var(--accent); }
+[data-theme="nordic"] .feature-title { font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: -0.02em; }
+[data-theme="nordic"] .feature-title em { font-style: italic; color: var(--accent); }
+[data-theme="nordic"] .feature-tag { background: var(--bg); color: var(--fg-muted); border-radius: 999px; padding: 3px 10px; }
+
+[data-theme="nordic"] .section-label { letter-spacing: 0.22em; }
+[data-theme="nordic"] .section-title { font-weight: 400; }
+[data-theme="nordic"] .section-title em { font-style: italic; color: var(--accent); }
+
+/* Stats — clean dividers, no fills */
+[data-theme="nordic"] .stats-grid { background: var(--bg-elevated); gap: 1px; border-radius: 16px; }
+[data-theme="nordic"] .stat { padding: 40px 28px; }
+[data-theme="nordic"] .stat-num { font-family: var(--font-display); font-weight: 400; color: var(--accent); }
+[data-theme="nordic"] .stat-num .unit { color: var(--fg-muted); }
+
+[data-theme="nordic"] .install-wrap {
+  background: var(--bg-elevated);
+  border-radius: 24px;
+  box-shadow: 0 16px 48px rgba(46, 95, 133, 0.10);
+  border: none;
+}
+[data-theme="nordic"] .install-cmd { background: var(--bg); color: var(--fg); border: 1px solid var(--border); }
+[data-theme="nordic"] .install-cmd .copy-btn { color: var(--fg-muted); border-color: var(--border-strong); }
+[data-theme="nordic"] .install-cmd .copy-btn:hover { color: var(--fg); background: transparent; }
+
+[data-theme="nordic"] .code-block { border-radius: 16px; }
+[data-theme="nordic"] .control-bar { background: rgba(242, 246, 248, 0.82); }
+[data-theme="nordic"] .chip { border-radius: 999px; background: var(--bg-elevated); }
+[data-theme="nordic"] .chip.is-active { background: var(--accent); color: var(--bg-elevated); border-color: var(--accent); }
+[data-theme="nordic"] .brand-mark { color: var(--accent); }
+
+/* Tabs */
+[data-theme="nordic"] .tabs-list { background: var(--bg); border-radius: 999px; border: none; }
+[data-theme="nordic"] .tab { border-radius: 999px; padding: 10px 18px; font-family: var(--font-body); font-weight: 500; letter-spacing: 0; text-transform: none; }
+[data-theme="nordic"] .tab.is-active { background: var(--bg-elevated); color: var(--accent); border-color: transparent; box-shadow: 0 2px 6px rgba(28,42,53,0.06); }
+
+/* Gallery */
+[data-theme="nordic"] .gallery-card { border-radius: 16px; border: none; box-shadow: 0 2px 8px rgba(28, 42, 53, 0.04); }
+[data-theme="nordic"] .input, [data-theme="nordic"] .select, [data-theme="nordic"] textarea.input {
+  border-radius: 10px; background: var(--bg); border-color: transparent;
+  padding: 10px 14px;
+}
+[data-theme="nordic"] .input:focus { border-color: var(--accent); background: var(--bg-elevated); }
+[data-theme="nordic"] .alert { border-radius: 12px; border: 1px solid var(--border); }
+[data-theme="nordic"] .badge { border-radius: 999px; font-weight: 500; letter-spacing: 0.06em; }
+[data-theme="nordic"] .progress { background: var(--bg); }
+[data-theme="nordic"] .data-table th { font-weight: 500; color: var(--fg-muted); }

@@ -1,0 +1,19 @@
+/**
+ * Font pack · Crimson
+ * ═══════════════════════════════════════════════════════════════════════
+ * Crimson Pro — a classical book serif tuned for long-form reading.
+ * Alternative to EB Garamond. Heavier regular weight, cleaner italic.
+ * Identifier: data-font="crimson"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="crimson"] {
+  --font-display:     'Crimson Pro', Georgia, serif;
+  --font-body:        'Crimson Pro', Georgia, serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.005em;
+  --display-leading:  1.0;
+}

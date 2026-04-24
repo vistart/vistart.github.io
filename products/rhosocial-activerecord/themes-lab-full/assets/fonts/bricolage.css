@@ -1,0 +1,21 @@
+/**
+ * Font pack · Bricolage
+ * ═══════════════════════════════════════════════════════════════════════
+ * Bricolage Grotesque — modern variable-axis display from Mathieu Triay.
+ * Has opsz (optical size) and wdth (width) axes. Good on designer /
+ * editorial / modern-art pages. Pair with DM Mono or IBM Plex Mono.
+ * Identifier: data-font="bricolage"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,600;12..96,75..100,800
+ *   &family=IBM+Plex+Mono:wght@400;500;700   (skip if already added)
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="bricolage"] {
+  --font-display:     'Bricolage Grotesque', sans-serif;
+  --font-body:        'Bricolage Grotesque', sans-serif;
+  --font-mono:        'IBM Plex Mono', 'JetBrains Mono', monospace;
+  --display-weight:   800;
+  --display-tracking: -0.03em;
+  --display-leading:  0.98;
+}

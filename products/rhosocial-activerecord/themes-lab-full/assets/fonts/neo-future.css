@@ -1,0 +1,13 @@
+/**
+ * Font pack · Neo Future (Orbitron display + Space Grotesk body)
+ * Retro-future, sci-fi feel. Uppercase shows best.
+ * Identifier: data-font="neo-future"
+ */
+html[data-font="neo-future"] {
+  --font-display:     'Orbitron', sans-serif;
+  --font-body:        'Space Grotesk', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   800;
+  --display-tracking: 0.015em;
+  --display-leading:  1.08;
+}

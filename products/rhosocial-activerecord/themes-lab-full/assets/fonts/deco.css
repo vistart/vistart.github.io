@@ -1,0 +1,21 @@
+/**
+ * Font pack · Deco
+ * ═══════════════════════════════════════════════════════════════════════
+ * Abril Fatface display + Josefin Sans body. 1920s Art Deco, Gatsby
+ * magazine feel. Works beautifully with light/warm themes (Editorial,
+ * Sumi, Mocha, Anderson) and adds glamour to dark ones (Noir).
+ * Identifier: data-font="deco"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Abril+Fatface
+ *   &family=Josefin+Sans:wght@400;500;600;700
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="deco"] {
+  --font-display:     'Abril Fatface', serif;
+  --font-body:        'Josefin Sans', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.015em;
+  --display-leading:  1.0;
+}

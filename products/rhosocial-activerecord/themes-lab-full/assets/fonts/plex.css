@@ -1,0 +1,20 @@
+/**
+ * Font pack · IBM Plex
+ * ═══════════════════════════════════════════════════════════════════════
+ * IBM's technical sans + matching monospace. Feels engineered, corporate-tech.
+ * Identifier: data-font="plex"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Append to themes.html fonts <link>:
+ *   &family=IBM+Plex+Sans:wght@400;500;600;700
+ *   &family=IBM+Plex+Mono:wght@400;500;700
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="plex"] {
+  --font-display:     'IBM Plex Sans', sans-serif;
+  --font-body:        'IBM Plex Sans', sans-serif;
+  --font-mono:        'IBM Plex Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.02em;
+  --display-leading:  1.02;
+}

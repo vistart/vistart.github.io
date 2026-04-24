@@ -1,0 +1,141 @@
+/**
+ * Theme · Editorial
+ * ═══════════════════════════════════════════════════════════════════════
+ * Warm cream + editorial red + Fraunces serif display.
+ * Identifier used in HTML: data-theme="editorial"
+ */
+
+[data-theme="editorial"] {
+  --bg:           #F5F0E6;
+  --bg-2:         #EDE7DA;
+  --bg-elevated:  #FAF6EC;
+
+  --fg:           #141413;
+  --fg-muted:     #5A5852;
+  --fg-faint:     #8E8B82;
+
+  --accent:       #C8102E;
+  --accent-2:     #2D6A4F;
+  --accent-3:     #8B5E34;
+
+  --border:        #141413;
+  --border-strong: #141413;
+  --radius:        0px;
+  --radius-sm:     0px;
+
+  --font-display: 'Fraunces', 'Times New Roman', serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.025em;
+  --display-leading:  0.98;
+
+  --code-bg:       #141413;
+  --code-fg:       #F5F0E6;
+  --code-fg-muted: #A7A59E;
+  --code-border:   rgba(255,255,255,0.1);
+  --tok-keyword:   #FF8C94;
+  --tok-string:    #E6C999;
+  --tok-func:      #B8D8BA;
+  --tok-comment:   #7A7A74;
+  --tok-num:       #E6C999;
+  --tok-class:     #E8A7B0;
+  --tok-self:      #C5C1B4;
+  --tok-dec:       #E6C999;
+  --tok-attr:      #C5C1B4;
+}
+
+[data-theme="editorial"] .hero-title { font-variation-settings: "opsz" 144; }
+[data-theme="editorial"] .hero-title em { font-weight: 400; font-variation-settings: "opsz" 144; }
+
+/* Eyebrow — a simple red rule, no pill */
+[data-theme="editorial"] .hero-eyebrow {
+  border: none; padding: 0;
+  color: var(--accent);
+}
+[data-theme="editorial"] .hero-eyebrow::before {
+  background: var(--accent);
+  width: 24px; height: 1px;
+  border-radius: 0;
+  animation: none;
+}
+
+/* Horizontal rule between sections */
+[data-theme="editorial"] .section { border-top: 1px solid var(--border); }
+[data-theme="editorial"] .hero { border-top: none; }
+
+[data-theme="editorial"] .section-label { color: var(--accent); }
+[data-theme="editorial"] .section-label::before { content: '§ '; }
+
+/* Features — vertical rules instead of cards */
+[data-theme="editorial"] .feature {
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 8px 24px 28px;
+  background: transparent;
+}
+[data-theme="editorial"] .feature:hover { border-color: var(--accent); transform: none; }
+[data-theme="editorial"] .feature-num { color: var(--accent); font-weight: 600; }
+[data-theme="editorial"] .feature-icon { color: var(--accent); }
+[data-theme="editorial"] .feature-title { font-weight: 600; font-size: 22px; }
+[data-theme="editorial"] .feature-tag { border: 1px solid var(--border); background: transparent; border-radius: 0; }
+
+/* Buttons */
+[data-theme="editorial"] .btn-primary { background: var(--fg); color: var(--bg); border-radius: 0; }
+[data-theme="editorial"] .btn-ghost { border-radius: 0; border-color: var(--border); }
+
+/* Stats — newspaper rule */
+[data-theme="editorial"] .stats-grid {
+  border-radius: 0; background: transparent; gap: 0;
+  border-top: 2px solid var(--border); border-bottom: 2px solid var(--border);
+  border-left: none; border-right: none;
+}
+[data-theme="editorial"] .stat { background: transparent; border-right: 1px solid var(--border); padding: 32px 24px; }
+[data-theme="editorial"] .stat:last-child { border-right: none; }
+[data-theme="editorial"] .stat-num { font-weight: 400; font-style: italic; }
+
+/* Install wrap — has a "Chapter III" flourish */
+[data-theme="editorial"] .install-wrap { border-radius: 0; border: 2px solid var(--border); background: transparent; }
+[data-theme="editorial"] .install-wrap::before {
+  content: 'Chapter III';
+  position: absolute; top: 24px; right: 24px;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+[data-theme="editorial"] .install-cmd { border-radius: 0; }
+[data-theme="editorial"] .code-block { border-radius: 0; border: 2px solid var(--fg); }
+
+/* Control bar */
+[data-theme="editorial"] .chip { border-radius: 0; }
+[data-theme="editorial"] .chip.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+[data-theme="editorial"] .brand-mark { color: var(--accent); }
+
+/* Tabs — squared */
+[data-theme="editorial"] .tabs-list { border-radius: 0; border-width: 0 0 2px 0; padding: 0; background: transparent; gap: 0; }
+[data-theme="editorial"] .tab { border-radius: 0; border: none; padding: 10px 16px; }
+[data-theme="editorial"] .tab.is-active { background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); box-shadow: none; margin-bottom: -2px; }
+
+/* Gallery */
+[data-theme="editorial"] .gallery-card { border-radius: 0; background: transparent; border-width: 2px 0 0 0; padding: 24px 0 0; }
+[data-theme="editorial"] .input,
+[data-theme="editorial"] .select,
+[data-theme="editorial"] textarea.input { border-radius: 0; border-width: 0 0 1px 0; background: transparent; padding-left: 0; padding-right: 0; }
+[data-theme="editorial"] .input:focus { border-color: var(--accent); box-shadow: none; }
+[data-theme="editorial"] .alert { border-radius: 0; }
+[data-theme="editorial"] .badge { border-radius: 0; }
+
+/* Drop cap for the hero subtitle */
+[data-theme="editorial"] .hero-sub::first-letter {
+  font-family: var(--font-display);
+  font-size: 3em;
+  font-weight: 600;
+  font-style: italic;
+  float: left;
+  line-height: 0.9;
+  margin: 6px 12px 0 0;
+  color: var(--accent);
+}

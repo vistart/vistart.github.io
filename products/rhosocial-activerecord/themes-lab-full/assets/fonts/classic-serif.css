@@ -1,0 +1,21 @@
+/**
+ * Font pack · Classic Serif
+ * ═══════════════════════════════════════════════════════════════════════
+ * EB Garamond for display + body. Old-book / Oxford essay feel.
+ * Very comfortable for long-form reading. Runs slim so you may want a
+ * larger base size if you apply this pack to a dense layout.
+ * Identifier: data-font="classic-serif"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Append to themes.html fonts <link>:
+ *   &family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="classic-serif"] {
+  --font-display:     'EB Garamond', Georgia, serif;
+  --font-body:        'EB Garamond', Georgia, serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   500;
+  --display-tracking: -0.01em;
+  --display-leading:  1.0;
+}

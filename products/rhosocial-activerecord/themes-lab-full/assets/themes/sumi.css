@@ -1,0 +1,131 @@
+/**
+ * Theme · Sumi 墨
+ * ═══════════════════════════════════════════════════════════════════════
+ * Warm rice paper + sumi ink + hinomaru seal red. East-Asian literary.
+ * Identifier used in HTML: data-theme="sumi"
+ */
+
+[data-theme="sumi"] {
+  --bg:           #F0E8D4;
+  --bg-2:         #E6DDC5;
+  --bg-elevated:  #F6F0DF;
+
+  --fg:           #1E1914;
+  --fg-muted:     #5F574A;
+  --fg-faint:     #8F8676;
+
+  --accent:       #A9261F;           /* hinomaru red */
+  --accent-2:     #6B7D4E;           /* bamboo green */
+  --accent-3:     #B88A4A;           /* gold leaf */
+
+  --border:        rgba(30, 25, 20, 0.18);
+  --border-strong: rgba(30, 25, 20, 0.38);
+  --radius:        2px;
+  --radius-sm:     0px;
+
+  --font-display: 'Newsreader', 'Fraunces', serif;
+  --font-body:    'Newsreader', Georgia, serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.015em;
+  --display-leading:  1.0;
+
+  --code-bg:       #1E1914;
+  --code-fg:       #E6DDC5;
+  --code-fg-muted: #8A8273;
+  --code-border:   rgba(230,221,197,0.14);
+  --tok-keyword:   #D88B88;
+  --tok-string:    #C9B687;
+  --tok-func:      #A8B48A;
+  --tok-comment:   #6B655A;
+  --tok-num:       #C9B687;
+  --tok-class:     #E2B074;
+  --tok-self:      #B8AE96;
+  --tok-dec:       #A8B48A;
+  --tok-attr:      #B8AE96;
+}
+
+[data-theme="sumi"] body {
+  background-image:
+    radial-gradient(ellipse 800px 400px at 30% 10%, rgba(185, 150, 100, 0.07), transparent 60%),
+    radial-gradient(ellipse 600px 500px at 80% 90%, rgba(185, 150, 100, 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+[data-theme="sumi"] .hero-title em { font-weight: 400; font-style: italic; }
+[data-theme="sumi"] .hero-eyebrow {
+  background: var(--accent); color: #F6F0DF;
+  border-color: var(--accent); border-radius: 2px;
+  font-family: var(--font-display);
+  text-transform: none; letter-spacing: 0.04em;
+  font-style: italic;
+}
+[data-theme="sumi"] .hero-eyebrow::before { background: #F6F0DF; }
+
+[data-theme="sumi"] .btn { border-radius: 2px; }
+[data-theme="sumi"] .btn-primary { background: var(--fg); color: var(--bg-elevated); }
+[data-theme="sumi"] .btn-ghost { border-color: var(--border-strong); border-width: 1.5px; }
+
+/* Feature — red ink stroke on left */
+[data-theme="sumi"] .feature {
+  border-radius: 2px; border-width: 0.5px;
+  background: var(--bg-elevated);
+  padding-left: 30px;
+  position: relative;
+}
+[data-theme="sumi"] .feature::before {
+  content: '';
+  position: absolute;
+  top: 28px; left: 0;
+  width: 3px; height: 40px;
+  background: var(--accent);
+}
+[data-theme="sumi"] .feature-num { font-style: italic; color: var(--accent); }
+[data-theme="sumi"] .feature-title { font-weight: 600; font-size: 22px; }
+[data-theme="sumi"] .feature-title em { font-weight: 400; font-style: italic; color: var(--accent); }
+[data-theme="sumi"] .feature-icon { color: var(--accent); }
+[data-theme="sumi"] .feature-tag { background: transparent; border: 1px solid var(--border-strong); font-style: italic; }
+
+[data-theme="sumi"] .section-title em { font-style: italic; }
+[data-theme="sumi"] .stats-grid { border-radius: 2px; background: var(--border); }
+[data-theme="sumi"] .stat-num { font-style: italic; }
+
+/* Install wrap — has a rotated "印" red seal */
+[data-theme="sumi"] .install-wrap {
+  border-radius: 2px; border-width: 0.5px;
+  background: var(--bg-elevated);
+}
+[data-theme="sumi"] .install-wrap::before {
+  content: '印';
+  position: absolute; top: 30px; right: 30px;
+  font-family: 'Newsreader', serif;
+  font-size: 52px;
+  color: #F6F0DF;
+  background: var(--accent);
+  width: 72px; height: 72px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--accent);
+  transform: rotate(-4deg);
+  letter-spacing: 0;
+  line-height: 1;
+  padding-top: 4px;
+}
+[data-theme="sumi"] .code-block { border-radius: 2px; border-width: 0.5px; }
+[data-theme="sumi"] .chip { border-radius: 2px; border-width: 0.5px; font-family: var(--font-body); }
+[data-theme="sumi"] .chip.is-active { background: var(--accent); color: var(--bg-elevated); border-color: var(--accent); }
+[data-theme="sumi"] .brand-mark { color: var(--accent); font-style: italic; }
+
+/* Tabs */
+[data-theme="sumi"] .tabs-list { border-radius: 2px; background: var(--bg-2); }
+[data-theme="sumi"] .tab { font-family: var(--font-display); font-style: italic; }
+[data-theme="sumi"] .tab.is-active { background: var(--bg-elevated); color: var(--accent); border-color: var(--border-strong); }
+
+/* Gallery */
+[data-theme="sumi"] .gallery-card { border-radius: 2px; }
+[data-theme="sumi"] .input,
+[data-theme="sumi"] .select,
+[data-theme="sumi"] textarea.input {
+  border-radius: 2px; background: var(--bg);
+  font-family: var(--font-body);
+}
+[data-theme="sumi"] .alert { border-radius: 2px; font-family: var(--font-body); }
+[data-theme="sumi"] .badge { border-radius: 2px; }

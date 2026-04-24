@@ -1,0 +1,151 @@
+/**
+ * Theme · Botanical
+ * ═══════════════════════════════════════════════════════════════════════
+ * Victorian library / botanical garden maximalism. Deep forest green +
+ * warm cream text + gold + burgundy. Dark theme but warm and ornate,
+ * different from Noir (which is sleek Art Deco monochrome).
+ * Identifier: data-theme="botanical"
+ *
+ * Google Fonts needed (already loaded): Cormorant Garamond, Inter Tight
+ */
+
+[data-theme="botanical"] {
+  --bg:           #16382A;              /* deep forest */
+  --bg-2:         #0F2B1F;
+  --bg-elevated:  #1C4A35;
+
+  --fg:           #F1E8D3;              /* warm cream */
+  --fg-muted:     #B5A68F;
+  --fg-faint:     #8A7D6B;
+
+  --accent:       #D4A64A;              /* gold leaf */
+  --accent-2:     #8B2635;              /* burgundy wine */
+  --accent-3:     #9FB088;              /* sage */
+
+  --border:        rgba(241, 232, 211, 0.14);
+  --border-strong: rgba(241, 232, 211, 0.30);
+  --radius:        6px;
+  --radius-sm:     4px;
+
+  --font-display: 'Cormorant Garamond', 'Fraunces', serif;
+  --font-body:    'Inter Tight', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.01em;
+  --display-leading:  0.98;
+
+  --code-bg:       #0A1F17;
+  --code-fg:       #F1E8D3;
+  --code-fg-muted: #8A7D6B;
+  --code-border:   rgba(212, 166, 74, 0.2);
+  --tok-keyword:   #D4A64A;
+  --tok-string:    #B4C89C;
+  --tok-func:      #E8A7A0;
+  --tok-comment:   #6B7D66;
+  --tok-num:       #E8C178;
+  --tok-class:     #E8D096;
+  --tok-self:      #B5A68F;
+  --tok-dec:       #E8A7A0;
+  --tok-attr:      #B5A68F;
+}
+
+/* Warm vignette + subtle paper texture */
+[data-theme="botanical"] body {
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% 0%, rgba(212, 166, 74, 0.08), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 80% 100%, rgba(139, 38, 53, 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+
+[data-theme="botanical"] .hero-title { font-weight: 400; }
+[data-theme="botanical"] .hero-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+[data-theme="botanical"] .hero-eyebrow {
+  background: transparent; border: 1px solid var(--accent); color: var(--accent);
+  font-family: var(--font-display); font-style: italic;
+  text-transform: none; letter-spacing: 0.12em;
+}
+
+/* Buttons — gold foil with serifed labels */
+[data-theme="botanical"] .btn { font-weight: 500; letter-spacing: 0.03em; padding: 12px 24px; }
+[data-theme="botanical"] .btn-primary { background: var(--accent); color: #16382A; }
+[data-theme="botanical"] .btn-ghost { border-color: var(--accent); color: var(--accent); background: transparent; }
+[data-theme="botanical"] .btn-ghost:hover { background: rgba(212, 166, 74, 0.08); }
+
+/* Features — double hairline with botanical flourish */
+[data-theme="botanical"] .feature {
+  border-radius: 6px; border: 0.5px solid var(--border);
+  background: var(--bg-elevated); position: relative;
+}
+[data-theme="botanical"] .feature::before {
+  content: ''; position: absolute;
+  top: 10px; left: 10px; right: 10px; bottom: 10px;
+  border: 0.5px solid transparent;
+  pointer-events: none; transition: border-color 200ms;
+}
+[data-theme="botanical"] .feature:hover::before { border-color: var(--accent); }
+[data-theme="botanical"] .feature:hover { transform: none; border-color: var(--accent); }
+[data-theme="botanical"] .feature-num { color: var(--accent); font-family: var(--font-display); font-style: italic; font-size: 13px; font-weight: 500; }
+[data-theme="botanical"] .feature-icon { color: var(--accent-3); }
+[data-theme="botanical"] .feature-title { font-family: var(--font-display); font-weight: 500; font-size: 28px; }
+[data-theme="botanical"] .feature-title em { font-weight: 400; font-style: italic; color: var(--accent); }
+[data-theme="botanical"] .feature-tag { background: transparent; border: 0.5px solid var(--border-strong); color: var(--accent); }
+
+[data-theme="botanical"] .section-label {
+  color: var(--accent); font-family: var(--font-display);
+  font-style: italic; text-transform: none;
+  letter-spacing: 0.1em; font-size: 14px;
+}
+[data-theme="botanical"] .section-title { font-weight: 400; }
+[data-theme="botanical"] .section-title::before { content: '❧ '; color: var(--accent); opacity: 0.7; }
+[data-theme="botanical"] .section-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+
+[data-theme="botanical"] .stats-grid { border-radius: 6px; background: var(--border); gap: 0.5px; border: 0.5px solid var(--border-strong); }
+[data-theme="botanical"] .stat { background: var(--bg-elevated); position: relative; }
+[data-theme="botanical"] .stat::after {
+  content: '❋'; position: absolute;
+  top: 14px; right: 18px;
+  color: var(--accent); font-size: 12px; opacity: 0.5;
+}
+[data-theme="botanical"] .stat-num { color: var(--accent); font-family: var(--font-display); font-weight: 400; }
+[data-theme="botanical"] .stat:nth-child(2) .stat-num { color: var(--accent-3); }
+
+/* Install — burgundy study block */
+[data-theme="botanical"] .install-wrap {
+  background: var(--accent-2); color: var(--fg);
+  border: 0.5px solid var(--accent);
+  border-radius: 6px; position: relative;
+}
+[data-theme="botanical"] .install-wrap::before {
+  content: ''; position: absolute;
+  top: 12px; left: 12px; right: 12px; bottom: 12px;
+  border: 0.5px solid var(--accent);
+  pointer-events: none;
+  opacity: 0.5;
+}
+[data-theme="botanical"] .install-title em { color: var(--accent); font-style: italic; font-weight: 400; }
+[data-theme="botanical"] .install-cmd { background: #0A1F17; border: 0.5px solid var(--accent); border-radius: 4px; }
+[data-theme="botanical"] .install-cmd .prompt { color: var(--accent); }
+
+[data-theme="botanical"] .code-block { border-radius: 6px; border: 0.5px solid var(--border-strong); }
+[data-theme="botanical"] .control-bar { background: rgba(22, 56, 42, 0.88); border-bottom: 0.5px solid var(--border-strong); }
+[data-theme="botanical"] .chip { border-radius: 4px; font-family: var(--font-body); }
+[data-theme="botanical"] .chip.is-active { background: var(--accent); color: #16382A; border-color: var(--accent); }
+[data-theme="botanical"] .brand-mark { color: var(--accent); }
+[data-theme="botanical"] .brand-mark sub { color: var(--accent-3); }
+
+/* Tabs */
+[data-theme="botanical"] .tabs-list { border-radius: 6px; background: var(--bg-2); border: 0.5px solid var(--border); }
+[data-theme="botanical"] .tab { font-family: var(--font-display); font-style: italic; font-size: 14px; text-transform: none; letter-spacing: 0; font-weight: 500; }
+[data-theme="botanical"] .tab.is-active { background: transparent; color: var(--accent); border: 0.5px solid var(--accent); box-shadow: none; }
+
+/* Gallery */
+[data-theme="botanical"] .gallery-card { border-radius: 6px; border: 0.5px solid var(--border); }
+[data-theme="botanical"] .input, [data-theme="botanical"] .select, [data-theme="botanical"] textarea.input {
+  border-radius: 4px; background: var(--bg-2);
+  border-color: var(--border-strong); color: var(--fg);
+}
+[data-theme="botanical"] .input:focus { border-color: var(--accent); }
+[data-theme="botanical"] .alert { border-radius: 4px; background: var(--bg-2); }
+[data-theme="botanical"] .badge { border-radius: 4px; border-width: 0.5px; font-family: var(--font-display); font-style: italic; font-weight: 500; text-transform: none; letter-spacing: 0.04em; }
+[data-theme="botanical"] .data-table th { color: var(--accent); font-family: var(--font-display); font-style: italic; text-transform: none; letter-spacing: 0.04em; font-weight: 500; font-size: 13px; }
+[data-theme="botanical"] .data-table td { border-color: var(--border); }

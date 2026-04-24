@@ -1,0 +1,19 @@
+/**
+ * Font pack · Condensed
+ * ═══════════════════════════════════════════════════════════════════════
+ * Oswald condensed display. Tall, narrow, urban-poster aesthetic.
+ * Great when real estate is limited but emphasis is needed.
+ * Identifier: data-font="condensed"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Oswald:wght@400;500;600;700
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="condensed"] {
+  --font-display:     'Oswald', 'Archivo Narrow', sans-serif;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.01em;
+  --display-leading:  1.0;
+}

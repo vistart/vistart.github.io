@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: npm ci
@@ -39,6 +39,13 @@ jobs:
           # 复制整个 games 目录到 dist
           cp -R games/* dist/games/
 
+      # 新增步骤：复制 games 目录到构建输出目录
+      - name: Copy products directory
+        run: |
+          # 创建目标目录（确保存在）
+          mkdir -p dist/products
+          # 复制整个 games 目录到 dist
+          cp -R products/* dist/products/
         # 配置 base URL 如果需要
         # - name: Update base href
         #   run: |
@@ -47,6 +54,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist  # Vue 项目默认编译到 dist 目录
-          branch: gh-pages  # 要部署到的分支
-          clean: true  # 清理 gh-pages 分支上的旧文件
+          folder: dist # Vue 项目默认编译到 dist 目录
+          branch: gh-pages # 要部署到的分支
+          clean: true # 清理 gh-pages 分支上的旧文件

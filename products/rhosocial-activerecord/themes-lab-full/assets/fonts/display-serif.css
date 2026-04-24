@@ -1,0 +1,13 @@
+/**
+ * Font pack · Display Serif (Cormorant Garamond display + Inter Tight body)
+ * Elegant, magazine / luxury editorial.
+ * Identifier: data-font="display-serif"
+ */
+html[data-font="display-serif"] {
+  --font-display:     'Cormorant Garamond', 'Fraunces', serif;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.005em;
+  --display-leading:  0.95;
+}

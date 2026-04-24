@@ -1,0 +1,16 @@
+/**
+ * Font pack · Tight Sans (Inter Tight everywhere)
+ * ═══════════════════════════════════════════════════════════════════════
+ * Clean, neutral, technical. Good default for most contexts.
+ * Identifier: data-font="tight"
+ *
+ * Uses html[...] selector to outrank [data-theme=...] in specificity.
+ */
+html[data-font="tight"] {
+  --font-display:     'Inter Tight', system-ui, -apple-system, sans-serif;
+  --font-body:        'Inter Tight', system-ui, -apple-system, sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.03em;
+  --display-leading:  1.02;
+}
