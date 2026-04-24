@@ -1,0 +1,2531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据结构 - 栈、队列和数组</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body class="bg-gray-900 min-h-screen">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useRef, useCallback, useMemo } = React;
+
+        /* ────────────────────────────────────────────────────────────────────
+           数据结构实验室 · 第二卷 · 栈 · 队列 · 数组
+           VOL. 02 — Stack · Queue · Array
+           Specimen 01 — Stack           (栈 — LIFO)
+           Specimen 02 — Circular Queue  (循环队列 — FIFO)
+           Specimen 03 — 2D Array        (二维数组 — Multi-dim)
+           ──────────────────────────────────────────────────────────────────── */
+
+        const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+:root {
+  --cream:        #F1EADA;
+  --cream-light:  #F7F2E6;
+  --cream-dark:   #E4DBC4;
+  --ink:          #1F1B17;
+  --ink-soft:     #3A3530;
+  --ink-muted:    #7A6F5E;
+  --accent:       #C7381A;
+  --accent-soft:  #D66B4D;
+  --accent-faded: rgba(199, 56, 26, 0.10);
+  --line:         #B5A78C;
+  --line-soft:    #CEC3A8;
+  --paper-grain:  rgba(31, 27, 23, 0.018);
+}
+
+* { box-sizing: border-box; }
+
+.lab-root {
+  min-height: 100vh;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
+  position: relative;
+  padding-bottom: 80px;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px);
+}
+
+.lab-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(199, 56, 26, 0.04), transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(31, 27, 23, 0.04), transparent 40%);
+  z-index: 0;
+}
+
+.lab-container { max-width: 1160px; margin: 0 auto; padding: 0 48px; position: relative; z-index: 1; }
+
+/* ─── Typography ─── */
+.serif   { font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif; }
+.mono    { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.italic  { font-style: italic; }
+
+.caps {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* ─── Header ─── */
+.lab-header {
+  padding: 48px 48px 0;
+  max-width: 1160px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.lab-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.lab-volume { display: flex; gap: 28px; align-items: baseline; }
+
+.lab-title-block { margin: 40px 0 12px; }
+
+.lab-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 400;
+  font-size: 88px;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.lab-title .em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144;
+}
+
+.lab-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 20px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  letter-spacing: 0.08em;
+  flex-wrap: wrap;
+}
+.lab-subtitle .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+.lab-header-bottom {
+  margin-top: 28px;
+  padding: 14px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ─── Tabs ─── */
+.lab-tabs { display: flex; gap: 0; margin: 48px 0 56px; border-bottom: 1px solid var(--line); }
+
+.lab-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 24px 28px;
+  cursor: pointer;
+  text-align: left;
+  border-left: 1px solid var(--line-soft);
+  position: relative;
+  transition: background 0.25s ease;
+  font-family: inherit;
+  color: var(--ink-muted);
+}
+.lab-tab:first-child { border-left: none; }
+.lab-tab:hover { background: var(--cream-light); color: var(--ink-soft); }
+
+.lab-tab-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  display: block;
+  margin-bottom: 8px;
+}
+.lab-tab-name {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.lab-tab-name-en {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--ink-muted);
+  margin-left: 10px;
+}
+
+.lab-tab.active {
+  color: var(--ink);
+  background: var(--cream-light);
+}
+.lab-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+}
+.lab-tab.active .lab-tab-num { color: var(--accent); }
+.lab-tab.active .lab-tab-name-en { color: var(--accent-soft); }
+
+/* ─── Module Intro ─── */
+.module-intro {
+  display: grid;
+  grid-template-columns: 180px 1fr 200px;
+  gap: 48px;
+  padding-bottom: 48px;
+  margin-bottom: 56px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.module-intro-side {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  line-height: 1.9;
+}
+.module-intro-side strong {
+  color: var(--ink);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.module-intro-body p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+.module-intro-body p:first-child::first-letter {
+  font-family: 'Fraunces', serif;
+  font-size: 58px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  float: left;
+  line-height: 0.9;
+  padding: 6px 10px 0 0;
+}
+
+/* ─── Viz Panel ─── */
+.viz-panel {
+  position: relative;
+  padding: 64px 48px 56px;
+  background: var(--cream-light);
+  margin-bottom: 56px;
+}
+
+.viz-panel::before,
+.viz-panel::after,
+.viz-corner {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+.viz-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.viz-panel::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.viz-corner.bl { bottom: -1px; left: -1px; top: auto; border-right: none; border-top: none; }
+.viz-corner.br { bottom: -1px; right: -1px; top: auto; border-left: none; border-top: none; }
+
+.viz-label {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.viz-label-right {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.viz-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 160px;
+  overflow-x: auto;
+  padding: 24px 0;
+}
+
+.viz-caption {
+  text-align: center;
+  margin-top: 24px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.viz-caption .fig {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 8px;
+}
+
+/* ─── Stack Viz ─── */
+.st-outer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  padding: 20px 0 40px;
+}
+
+.st-container {
+  position: relative;
+  width: 108px;
+  height: 380px;
+}
+
+.st-track {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 0;
+  height: 100%;
+  border-left: 1.5px solid var(--ink);
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+}
+
+.st-cell {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  animation: stackPush 0.4s ease;
+}
+
+.st-cell.hl {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateX(6px);
+  box-shadow: -4px 0 0 var(--ink);
+}
+
+.st-cell.top-mark::after {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px;
+  height: 2px;
+  background: var(--accent);
+}
+
+@keyframes stackPush {
+  from { opacity: 0; transform: translateY(-24px) scale(0.88); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.st-idx {
+  position: absolute;
+  left: calc(100% + 10px);
+  width: 40px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+  transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.st-base-label {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -28px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ink-muted);
+}
+
+.st-top-ptr {
+  position: absolute;
+  right: calc(100% + 8px);
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.st-top-ptr-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+}
+.st-top-ptr-line {
+  width: 30px;
+  height: 1.5px;
+  background: var(--accent);
+  position: relative;
+}
+.st-top-ptr-line::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid var(--accent);
+}
+
+.st-empty-ptr .st-top-ptr-text { color: var(--ink-muted); }
+.st-empty-ptr .st-top-ptr-line { background: var(--ink-muted); }
+.st-empty-ptr .st-top-ptr-line::after { border-left-color: var(--ink-muted); }
+
+.st-meta {
+  position: absolute;
+  left: calc(100% + 70px);
+  top: 0;
+  width: 180px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  line-height: 1.9;
+}
+.st-meta .val {
+  color: var(--ink);
+  font-weight: 500;
+}
+.st-meta .val.accent { color: var(--accent); }
+.st-meta hr {
+  border: none;
+  border-top: 1px solid var(--line-soft);
+  margin: 10px 0;
+}
+
+.st-empty-note {
+  position: absolute;
+  left: 0; right: 0;
+  top: 45%;
+  text-align: center;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
+/* ─── Queue (Circular) Viz ─── */
+.qu-outer {
+  width: 100%;
+  padding: 30px 20px 50px;
+  display: flex;
+  justify-content: center;
+}
+
+.qu-container {
+  position: relative;
+  padding: 48px 0 60px;
+}
+
+.qu-cells {
+  display: flex;
+  gap: 4px;
+  position: relative;
+}
+
+.qu-cell-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 62px;
+}
+
+.qu-cell {
+  width: 62px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+}
+.qu-cell.empty {
+  border-style: dashed;
+  border-color: var(--line);
+  color: var(--line);
+  background: transparent;
+}
+.qu-cell.empty::before { content: '—'; }
+.qu-cell.hl {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateY(-6px);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.qu-cell.fresh {
+  animation: cellEnter 0.35s ease;
+}
+
+@keyframes cellEnter {
+  from { opacity: 0; transform: translateY(-18px) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.qu-idx {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+}
+
+.qu-ptr {
+  position: absolute;
+  top: -34px;
+  width: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.qu-ptr.rear { color: var(--ink); }
+.qu-ptr-text { margin-bottom: 4px; }
+.qu-ptr-arrow {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid var(--accent);
+}
+.qu-ptr.rear .qu-ptr-arrow { border-top-color: var(--ink); }
+
+.qu-ptr.overlap {
+  font-size: 10px;
+}
+.qu-ptr.overlap .qu-ptr-text {
+  display: flex;
+  gap: 6px;
+}
+.qu-ptr.overlap .qu-ptr-text span:first-child { color: var(--accent); }
+.qu-ptr.overlap .qu-ptr-text span:last-child { color: var(--ink); }
+.qu-ptr.overlap .qu-ptr-arrow {
+  border-top-color: var(--ink-soft);
+}
+
+.qu-wrap-svg {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 0;
+  height: 46px;
+  overflow: visible;
+  pointer-events: none;
+}
+.qu-wrap-svg path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+.qu-wrap-svg text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  fill: var(--accent);
+  text-transform: uppercase;
+}
+
+.qu-status {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ink-muted);
+}
+.qu-status .pill {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  background: var(--cream);
+}
+.qu-status .pill.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-faded);
+}
+.qu-status .pill.full {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--cream-dark);
+}
+
+/* ─── 2D Array Viz ─── */
+.a2-outer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 44px;
+  padding: 12px 0;
+}
+
+.a2-grid-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.a2-col-labels {
+  display: grid;
+  margin-left: 28px;
+}
+.a2-col-labels span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-muted);
+  text-align: center;
+  text-transform: uppercase;
+  padding-bottom: 6px;
+}
+
+.a2-grid-rowwise {
+  display: flex;
+  flex-direction: column;
+}
+
+.a2-row-block {
+  display: flex;
+  align-items: center;
+}
+
+.a2-row-label {
+  width: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-muted);
+  text-align: right;
+  padding-right: 8px;
+  text-transform: uppercase;
+}
+
+.a2-row {
+  display: flex;
+  gap: 0;
+}
+
+.a2-cell {
+  width: 64px;
+  height: 52px;
+  border: 1px solid var(--ink);
+  margin: -0.5px 0 0 -0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--ink);
+  background: var(--cream);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+.a2-cell:hover {
+  background: var(--cream-dark);
+}
+.a2-cell.hl {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  z-index: 2;
+  box-shadow: 0 4px 0 var(--ink);
+  transform: translateY(-4px);
+}
+.a2-cell.trace {
+  background: var(--accent-faded);
+  color: var(--ink);
+}
+.a2-cell-idx {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  opacity: 0.7;
+}
+.a2-cell.hl .a2-cell-idx { color: rgba(241,234,218,0.7); }
+
+.a2-linear-block {
+  width: 100%;
+  max-width: 720px;
+}
+
+.a2-linear-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.a2-linear-title .mode-toggle {
+  display: flex;
+  gap: 2px;
+}
+.a2-linear-title .mode-toggle button {
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  padding: 4px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+}
+.a2-linear-title .mode-toggle button.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+.a2-linear-title .mode-toggle button:not(.active):hover {
+  background: var(--cream-dark);
+}
+
+.a2-linear-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.a2-linear-cell {
+  min-width: 54px;
+  height: 46px;
+  border: 1px solid var(--ink);
+  margin: -0.5px 0 0 -0.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--cream);
+  transition: all 0.25s ease;
+  position: relative;
+}
+.a2-linear-cell .k {
+  position: absolute;
+  top: 2px;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+}
+.a2-linear-cell.hl {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.a2-linear-cell.hl .k { color: rgba(241,234,218,0.7); }
+.a2-linear-cell.trace {
+  background: var(--accent-faded);
+}
+
+.a2-addr {
+  margin-top: 22px;
+  padding: 14px 20px;
+  border: 1px solid var(--ink);
+  background: var(--cream);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.a2-addr .lbl {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.a2-addr .formula {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.a2-addr .formula .em { color: var(--accent); }
+.a2-addr .result {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.a2-addr .result .em { color: var(--accent); font-weight: 700; }
+
+/* ─── Controls ─── */
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 48px;
+  margin-bottom: 56px;
+}
+
+.control-block {
+  background: var(--cream-light);
+  padding: 32px 28px;
+  position: relative;
+}
+
+.control-block-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+}
+.control-block-title .num { color: var(--accent); }
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.input-row label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  width: 80px;
+}
+
+.lab-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.lab-input:focus {
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent-faded);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.btn-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.lab-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 10px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.lab-btn:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+.lab-btn:active { transform: translate(1px, 1px); }
+.lab-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--cream);
+  color: var(--ink);
+}
+.lab-btn:disabled:hover { background: var(--cream); color: var(--ink); }
+
+.lab-btn .sym {
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1;
+}
+.lab-btn:hover .sym { color: var(--accent-soft); }
+
+.lab-btn.accent {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+.lab-btn.accent:hover { background: var(--ink); border-color: var(--ink); }
+.lab-btn.accent .sym { color: var(--cream); }
+
+.lab-btn.danger {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lab-btn.danger:hover { background: var(--accent); color: var(--cream); border-color: var(--accent); }
+.lab-btn.danger .sym { color: var(--accent); }
+.lab-btn.danger:hover .sym { color: var(--cream); }
+
+/* ─── Log ─── */
+.log-block {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 28px 28px 20px;
+  position: relative;
+}
+.log-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(241, 234, 218, 0.2);
+  display: flex;
+  justify-content: space-between;
+}
+.log-title .num { color: var(--accent-soft); }
+.log-title .act { cursor: pointer; }
+.log-list {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 300px;
+  overflow-y: auto;
+  color: rgba(241, 234, 218, 0.7);
+}
+.log-item {
+  display: grid;
+  grid-template-columns: 62px 1fr 56px;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(241, 234, 218, 0.1);
+  animation: logEnter 0.25s ease;
+}
+.log-item .t { color: rgba(241, 234, 218, 0.4); font-size: 10px; }
+.log-item .msg { color: var(--cream); }
+.log-item.success .msg { color: var(--cream); }
+.log-item.error   .msg { color: var(--accent-soft); }
+.log-item.info    .msg { color: rgba(241, 234, 218, 0.7); }
+.log-item .c {
+  text-align: right;
+  color: var(--accent-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.log-empty {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: rgba(241, 234, 218, 0.4);
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+@keyframes logEnter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.log-list::-webkit-scrollbar { width: 6px; }
+.log-list::-webkit-scrollbar-thumb { background: rgba(241, 234, 218, 0.2); }
+
+/* ─── Complexity Table ─── */
+.complexity-block { margin-bottom: 40px; }
+.complexity-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 14px;
+  margin-bottom: 0;
+  border-bottom: 1.5px solid var(--ink);
+}
+.complexity-title h3 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.complexity-title .num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+
+.complexity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+}
+.complexity-table th,
+.complexity-table td {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.complexity-table th {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--ink);
+}
+.complexity-table td:first-child {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.complexity-table .c-good { color: #2B7A4B; }
+.complexity-table .c-bad  { color: var(--accent); }
+.complexity-table .c-mid  { color: #B86F1F; }
+
+/* ─── Traits Grid ─── */
+.traits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line-soft);
+  margin-bottom: 56px;
+  border: 1px solid var(--line-soft);
+}
+.trait {
+  background: var(--cream);
+  padding: 24px 26px;
+}
+.trait-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.trait-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 19px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.trait-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ─── Footer ─── */
+.lab-footer {
+  margin-top: 80px;
+  padding: 28px 0;
+  border-top: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.flourish {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .lab-container, .lab-header { padding: 0 24px; }
+  .lab-title { font-size: 56px; }
+  .module-intro { grid-template-columns: 1fr; gap: 24px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .traits-grid { grid-template-columns: 1fr; }
+  .lab-tab-name { font-size: 20px; }
+  .lab-tab-name-en { display: block; margin-left: 0; margin-top: 2px; font-size: 14px; }
+  .st-meta { display: none; }
+  .a2-cell { width: 52px; height: 46px; font-size: 15px; }
+}
+`;
+
+        /* ═════════════════════════════════════════════════════════════════════
+           Helper · operation log
+           ═════════════════════════════════════════════════════════════════════ */
+        function useLog() {
+            const [log, setLog] = useState([]);
+            const idRef = useRef(0);
+            const push = useCallback((msg, complexity = '—', kind = 'success') => {
+                const now = new Date();
+                const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+                setLog(prev => [{ id: ++idRef.current, t, msg, complexity, kind }, ...prev].slice(0, 30));
+            }, []);
+            const clear = useCallback(() => setLog([]), []);
+            return [log, push, clear];
+        }
+
+        function LogPanel({ log, onClear, num }) {
+            return (
+                <div className="log-block">
+                    <div className="log-title">
+                        <span><span className="num">{num}</span> &nbsp;OPERATION · LOG</span>
+                        <span className="act" onClick={onClear}>[ CLEAR ]</span>
+                    </div>
+                    <div className="log-list">
+                        {log.length === 0 ? (
+                            <div className="log-empty">— no entries yet —</div>
+                        ) : log.map(e => (
+                            <div key={e.id} className={`log-item ${e.kind}`}>
+                                <span className="t">{e.t}</span>
+                                <span className="msg">{e.msg}</span>
+                                <span className="c">{e.complexity}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           Specimen 01 · Stack  (栈)
+           ═════════════════════════════════════════════════════════════════════ */
+        const ST_CAPACITY = 8;
+        const ST_CELL_H = 42;
+        const ST_GAP = 2;
+
+        function StackModule() {
+            const idRef = useRef(100);
+            const [items, setItems] = useState(() =>
+                [42, 17, 89].map(v => ({ id: ++idRef.current, value: v }))
+            );
+            const [hl, setHl] = useState(null);
+            const [log, pushLog, clearLog] = useLog();
+
+            const [valIn, setValIn] = useState('');
+            const [searchIn, setSearchIn] = useState('');
+
+            const parsedVal = () => {
+                const v = parseInt(valIn, 10);
+                return Number.isNaN(v) ? Math.floor(Math.random() * 99) + 1 : v;
+            };
+
+            const flash = (idx, ms = 1200) => {
+                setHl(idx);
+                setTimeout(() => setHl(null), ms);
+            };
+
+            const push = () => {
+                if (items.length >= ST_CAPACITY) {
+                    pushLog(`push × 栈满溢出 stack overflow · 容量 ${ST_CAPACITY}`, '—', 'error');
+                    return;
+                }
+                const v = parsedVal();
+                const newItem = { id: ++idRef.current, value: v };
+                setItems(prev => [...prev, newItem]);
+                pushLog(`push · 压入 ${v} → top=[${items.length}]`, 'O(1)', 'success');
+                flash(items.length);
+            };
+
+            const pop = () => {
+                if (items.length === 0) {
+                    pushLog(`pop × 空栈 stack underflow`, '—', 'error');
+                    return;
+                }
+                const topIdx = items.length - 1;
+                const v = items[topIdx].value;
+                setHl(topIdx);
+                setTimeout(() => {
+                    setItems(prev => prev.slice(0, -1));
+                    setHl(null);
+                }, 240);
+                pushLog(`pop · 弹出 ${v} ← top=[${topIdx}]`, 'O(1)', 'success');
+            };
+
+            const peek = () => {
+                if (items.length === 0) {
+                    pushLog(`peek × 空栈无栈顶`, '—', 'error');
+                    return;
+                }
+                const topIdx = items.length - 1;
+                pushLog(`peek · 栈顶 = ${items[topIdx].value} · 不改变结构`, 'O(1)', 'info');
+                flash(topIdx);
+            };
+
+            const search = (val) => {
+                const target = parseInt(val, 10);
+                if (Number.isNaN(target)) {
+                    pushLog(`search × 请输入数值`, '—', 'error');
+                    return;
+                }
+                if (items.length === 0) {
+                    pushLog(`search × 空栈`, '—', 'error');
+                    return;
+                }
+                // 从栈顶向栈底扫描，体现栈的后入先出访问顺序
+                let cursor = items.length - 1;
+                let steps = 0;
+                const step = () => {
+                    steps += 1;
+                    if (cursor < 0) {
+                        pushLog(`search ${target} × 未找到 · 扫描 ${steps - 1} 次`, 'O(n)', 'info');
+                        setHl(null);
+                        return;
+                    }
+                    setHl(cursor);
+                    if (items[cursor].value === target) {
+                        pushLog(`search ${target} ✓ 位于 [${cursor}] · 距栈顶 ${items.length - 1 - cursor}`, 'O(n)', 'success');
+                        setTimeout(() => setHl(null), 800);
+                        return;
+                    }
+                    cursor -= 1;
+                    setTimeout(step, 240);
+                };
+                step();
+            };
+
+            const clear = () => {
+                if (items.length === 0) {
+                    pushLog(`clear · 栈已为空`, '—', 'info');
+                    return;
+                }
+                setItems([]);
+                pushLog(`clear · 整栈清空 · 丢弃 ${items.length} 个元素`, 'O(1)', 'success');
+            };
+
+            const reset = () => {
+                setItems([42, 17, 89].map(v => ({ id: ++idRef.current, value: v })));
+                pushLog(`reset · 恢复初始状态`, '—', 'info');
+            };
+
+            const topIdx = items.length - 1;
+            const topValue = topIdx >= 0 ? items[topIdx].value : '∅';
+
+            return (
+                <>
+                    <section className="module-intro">
+                        <aside className="module-intro-side">
+                            <div><strong>SPECIMEN</strong> 01 / 03</div>
+                            <div><strong>TYPE</strong> LIFO</div>
+                            <div><strong>ACCESS</strong> One-end</div>
+                            <div><strong>CAPACITY</strong> {ST_CAPACITY}</div>
+                            <div><strong>SIZE</strong> <span style={{ color: 'var(--accent)' }}>{items.length}</span></div>
+                        </aside>
+                        <div className="module-intro-body">
+                            <p>栈是一种只允许在一端进行操作的线性表——入、出、窥视皆限于"栈顶"一处。这种克制反而使它格外清晰：每一次 push 都压在最上，每一次 pop 都卸下最上。这便是"后进先出"（LIFO）的古老契约。</p>
+                            <p>函数调用、表达式求值、回溯搜索——几乎任何需要"暂存 · 回退"的场景背后都有它的身影。它以一种约束换来了秩序的明朗：凡进入的，皆将逆序离开。</p>
+                        </div>
+                        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+                            <div><strong>PUSH</strong> O(1)</div>
+                            <div><strong>POP</strong> O(1)</div>
+                            <div><strong>PEEK</strong> O(1)</div>
+                            <div><strong>SEARCH</strong> O(n)</div>
+                            <div><strong>TOP</strong> <span style={{ color: 'var(--accent)' }}>{topValue}</span></div>
+                        </aside>
+                    </section>
+
+                    <section className="viz-panel">
+                        <span className="viz-corner bl" />
+                        <span className="viz-corner br" />
+                        <span className="viz-label">FIG. 01 · VERTICAL SPECIMEN</span>
+                        <span className="viz-label-right">
+                            TOP = [{topIdx >= 0 ? topIdx : '∅'}] · {items.length} / {ST_CAPACITY}
+                        </span>
+
+                        <div className="viz-canvas-wrap">
+                            <div className="st-outer">
+                                <div className="st-container">
+                                    {/* 栈体三壁 */}
+                                    <div className="st-track" />
+
+                                    {/* 空栈提示 */}
+                                    {items.length === 0 && (
+                                        <div className="st-empty-note">— 空栈 · stack is empty —</div>
+                                    )}
+
+                                    {/* 栈顶指针 */}
+                                    <div
+                                        className={`st-top-ptr ${items.length === 0 ? 'st-empty-ptr' : ''}`}
+                                        style={{
+                                            bottom: items.length === 0
+                                                ? '0px'
+                                                : `${(items.length - 1) * (ST_CELL_H + ST_GAP)}px`
+                                        }}
+                                    >
+                                        <span className="st-top-ptr-text">TOP</span>
+                                        <span className="st-top-ptr-line" />
+                                    </div>
+
+                                    {/* 栈单元 */}
+                                    {items.map((it, idx) => (
+                                        <div
+                                            key={it.id}
+                                            className={`st-cell ${hl === idx ? 'hl' : ''} ${idx === items.length - 1 ? 'top-mark' : ''}`}
+                                            style={{ bottom: `${idx * (ST_CELL_H + ST_GAP)}px` }}
+                                        >
+                                            {it.value}
+                                        </div>
+                                    ))}
+
+                                    {/* 下标标签 */}
+                                    {items.map((it, idx) => (
+                                        <div
+                                            key={`idx-${it.id}`}
+                                            className="st-idx"
+                                            style={{ bottom: `${idx * (ST_CELL_H + ST_GAP)}px` }}
+                                        >
+                                            [{idx}]
+                                        </div>
+                                    ))}
+
+                                    <div className="st-base-label">§ BASE 栈底</div>
+
+                                    {/* 右侧元数据说明 */}
+                                    <div className="st-meta">
+                                        <div>§ STATE</div>
+                                        <div>TOP = [<span className="val accent">{topIdx >= 0 ? topIdx : '∅'}</span>]</div>
+                                        <div>PEAK = <span className="val">{topValue}</span></div>
+                                        <hr />
+                                        <div>§ CAPACITY</div>
+                                        <div>USED = <span className="val">{items.length}</span></div>
+                                        <div>FREE = <span className="val">{ST_CAPACITY - items.length}</span></div>
+                                        <hr />
+                                        <div>§ SYMBOL</div>
+                                        <div style={{ lineHeight: 1.8 }}>
+                                            <div>+ &nbsp;push</div>
+                                            <div>− &nbsp;pop</div>
+                                            <div>◎ &nbsp;peek</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="viz-caption">
+                            <span className="fig">FIG. 01</span>
+                            <span className="italic">单端开口的容器——一切进出只在栈顶发生。</span>
+                        </div>
+                    </section>
+
+                    <section className="controls-grid">
+                        <div className="control-block">
+                            <div className="control-block-title">
+                                <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+                                <span>INPUTS ↓</span>
+                            </div>
+
+                            <div className="input-row">
+                                <label>VALUE</label>
+                                <input
+                                    className="lab-input"
+                                    value={valIn}
+                                    onChange={e => setValIn(e.target.value)}
+                                    placeholder="留空则随机"
+                                />
+                            </div>
+
+                            <div style={{ height: 6 }} />
+
+                            <div className="btn-grid cols-3">
+                                <button className="lab-btn accent" onClick={push}>
+                                    <span>压栈 PUSH</span><span className="sym">＋</span>
+                                </button>
+                                <button className="lab-btn danger" onClick={pop}>
+                                    <span>弹栈 POP</span><span className="sym">−</span>
+                                </button>
+                                <button className="lab-btn" onClick={peek}>
+                                    <span>窥视 PEEK</span><span className="sym">◎</span>
+                                </button>
+                            </div>
+
+                            <div style={{ height: 16 }} />
+                            <div className="input-row">
+                                <label>SEARCH</label>
+                                <input
+                                    className="lab-input"
+                                    value={searchIn}
+                                    onChange={e => setSearchIn(e.target.value)}
+                                    placeholder="由栈顶向栈底扫描"
+                                />
+                                <button className="lab-btn" onClick={() => search(searchIn)} style={{ flex: '0 0 130px' }}>
+                                    <span>自顶而下</span><span className="sym">↓</span>
+                                </button>
+                            </div>
+
+                            <div style={{ height: 8 }} />
+                            <div className="btn-grid">
+                                <button className="lab-btn danger" onClick={clear}>
+                                    <span>清空 CLEAR</span><span className="sym">∅</span>
+                                </button>
+                                <button className="lab-btn" onClick={reset}>
+                                    <span>恢复初始 RESET</span><span className="sym">↺</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <LogPanel log={log} onClear={clearLog} num="§2" />
+                    </section>
+
+                    <section className="complexity-block">
+                        <div className="complexity-title">
+                            <h3>时间复杂度 <span className="flourish">summary</span></h3>
+                            <span className="num">§3 · COMPLEXITY</span>
+                        </div>
+                        <table className="complexity-table">
+                            <thead>
+                                <tr>
+                                    <th>操作 Operation</th>
+                                    <th>最好 Best</th>
+                                    <th>平均 Avg.</th>
+                                    <th>最坏 Worst</th>
+                                    <th>备注 Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>压栈 push</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>top 自增一位，填入新元素</td>
+                                </tr>
+                                <tr>
+                                    <td>弹栈 pop</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>top 自减，元素逻辑上废弃</td>
+                                </tr>
+                                <tr>
+                                    <td>取栈顶 peek</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>仅读取，不改动 top</td>
+                                </tr>
+                                <tr>
+                                    <td>按值查找</td>
+                                    <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+                                    <td>需破坏栈序或借助辅助栈</td>
+                                </tr>
+                                <tr>
+                                    <td>清空 clear</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>顺序栈令 top = −1 即可</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section className="traits-grid">
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 01</div>
+                            <div className="trait-title">后进先出</div>
+                            <div className="trait-desc">最后压入的元素最先被弹出，栈序永远与入栈顺序相反——此谓 LIFO 的契约。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 02</div>
+                            <div className="trait-title">单端开口</div>
+                            <div className="trait-desc">所有操作仅作用于栈顶一处，简化了并发控制与实现成本，却也限制了可达性。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 03</div>
+                            <div className="trait-title">递归之器</div>
+                            <div className="trait-desc">函数调用、表达式求值、DFS 回溯皆以栈为支撑。它天生用来记住"去过的路"。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 04</div>
+                            <div className="trait-title">容量约束</div>
+                            <div className="trait-desc">顺序栈受限于预分配空间。过深的递归会触发栈溢出（stack overflow）。</div>
+                        </div>
+                    </section>
+                </>
+            );
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           Specimen 02 · Circular Queue  (循环队列)
+           ═════════════════════════════════════════════════════════════════════ */
+        const QU_CAPACITY = 8;     // 实际存储空间
+        const QU_CELL_W = 62;
+        const QU_GAP = 4;
+
+        function QueueModule() {
+            // 以定长数组 + front/rear 指针 + 留一空位 的经典循环队列实现
+            const [cells, setCells] = useState(() => {
+                const arr = Array(QU_CAPACITY).fill(null);
+                arr[0] = 42; arr[1] = 17; arr[2] = 89; arr[3] = 3;
+                return arr;
+            });
+            const [front, setFront] = useState(0);
+            const [rear, setRear] = useState(4);
+            const [freshIdx, setFreshIdx] = useState(null);
+            const [hl, setHl] = useState(null);
+            const [log, pushLog, clearLog] = useLog();
+
+            const [valIn, setValIn] = useState('');
+            const [searchIn, setSearchIn] = useState('');
+
+            const parsedVal = () => {
+                const v = parseInt(valIn, 10);
+                return Number.isNaN(v) ? Math.floor(Math.random() * 99) + 1 : v;
+            };
+
+            const isEmpty = front === rear;
+            const isFull = (rear + 1) % QU_CAPACITY === front;
+            const size = (rear - front + QU_CAPACITY) % QU_CAPACITY;
+
+            const flashFresh = (idx) => {
+                setFreshIdx(idx);
+                setTimeout(() => setFreshIdx(null), 400);
+            };
+
+            const flashHl = (idx, ms = 1100) => {
+                setHl(idx);
+                setTimeout(() => setHl(null), ms);
+            };
+
+            const enqueue = () => {
+                if (isFull) {
+                    pushLog(`enqueue × 队列已满 · (rear+1) mod n == front`, '—', 'error');
+                    return;
+                }
+                const v = parsedVal();
+                const slot = rear;
+                setCells(prev => {
+                    const next = [...prev];
+                    next[slot] = v;
+                    return next;
+                });
+                setRear((rear + 1) % QU_CAPACITY);
+                pushLog(`enqueue · ${v} → slot [${slot}] · rear = (rear+1) mod ${QU_CAPACITY}`, 'O(1)', 'success');
+                flashFresh(slot);
+            };
+
+            const dequeue = () => {
+                if (isEmpty) {
+                    pushLog(`dequeue × 队列为空 · front == rear`, '—', 'error');
+                    return;
+                }
+                const slot = front;
+                const v = cells[slot];
+                setHl(slot);
+                setTimeout(() => {
+                    setCells(prev => {
+                        const next = [...prev];
+                        next[slot] = null;
+                        return next;
+                    });
+                    setFront((front + 1) % QU_CAPACITY);
+                    setHl(null);
+                }, 240);
+                pushLog(`dequeue · ${v} ← slot [${slot}] · front = (front+1) mod ${QU_CAPACITY}`, 'O(1)', 'success');
+            };
+
+            const peekFront = () => {
+                if (isEmpty) {
+                    pushLog(`peek-front × 队空`, '—', 'error');
+                    return;
+                }
+                pushLog(`peek-front · 队头 = ${cells[front]} · slot [${front}]`, 'O(1)', 'info');
+                flashHl(front);
+            };
+
+            const peekRear = () => {
+                if (isEmpty) {
+                    pushLog(`peek-rear × 队空`, '—', 'error');
+                    return;
+                }
+                const lastIdx = (rear - 1 + QU_CAPACITY) % QU_CAPACITY;
+                pushLog(`peek-rear · 队尾 = ${cells[lastIdx]} · slot [${lastIdx}]`, 'O(1)', 'info');
+                flashHl(lastIdx);
+            };
+
+            const search = (val) => {
+                const target = parseInt(val, 10);
+                if (Number.isNaN(target)) {
+                    pushLog(`search × 请输入数值`, '—', 'error');
+                    return;
+                }
+                if (isEmpty) {
+                    pushLog(`search × 队空`, '—', 'error');
+                    return;
+                }
+                let k = 0;
+                const step = () => {
+                    if (k >= size) {
+                        pushLog(`search ${target} × 未找到 · 扫描 ${size} 次`, 'O(n)', 'info');
+                        setHl(null);
+                        return;
+                    }
+                    const cur = (front + k) % QU_CAPACITY;
+                    setHl(cur);
+                    if (cells[cur] === target) {
+                        pushLog(`search ${target} ✓ 逻辑位置 ${k} · 物理 slot [${cur}]`, 'O(n)', 'success');
+                        setTimeout(() => setHl(null), 800);
+                        return;
+                    }
+                    k += 1;
+                    setTimeout(step, 240);
+                };
+                step();
+            };
+
+            const clear = () => {
+                setCells(Array(QU_CAPACITY).fill(null));
+                setFront(0);
+                setRear(0);
+                pushLog(`clear · 队列清空 · front = rear = 0`, 'O(1)', 'success');
+            };
+
+            const reset = () => {
+                const arr = Array(QU_CAPACITY).fill(null);
+                arr[0] = 42; arr[1] = 17; arr[2] = 89; arr[3] = 3;
+                setCells(arr);
+                setFront(0);
+                setRear(4);
+                pushLog(`reset · 恢复初始状态`, '—', 'info');
+            };
+
+            const totalWidth = QU_CAPACITY * (QU_CELL_W + QU_GAP) - QU_GAP;
+            const ptrLeft = (slot) => slot * (QU_CELL_W + QU_GAP);
+            const overlap = front === rear;
+
+            // 合成占据关系（用于渲染高亮的队列成员）
+            const inQueue = (idx) => {
+                if (isEmpty) return false;
+                if (front < rear) return idx >= front && idx < rear;
+                return idx >= front || idx < rear;
+            };
+
+            return (
+                <>
+                    <section className="module-intro">
+                        <aside className="module-intro-side">
+                            <div><strong>SPECIMEN</strong> 02 / 03</div>
+                            <div><strong>TYPE</strong> FIFO · Ring</div>
+                            <div><strong>CAPACITY</strong> {QU_CAPACITY}</div>
+                            <div><strong>USABLE</strong> {QU_CAPACITY - 1}</div>
+                            <div><strong>SIZE</strong> <span style={{ color: 'var(--accent)' }}>{size}</span></div>
+                        </aside>
+                        <div className="module-intro-body">
+                            <p>队列用两条规则镇守两端：一端进、一端出。进者在后，出者在前——任何元素都必须按到达的顺序依次离场，此谓"先进先出"（FIFO）的公平与耐心。</p>
+                            <p>为避免线性队列在反复出入后越过数组边界，工程上以取模的方式把两端连成环，这便是循环队列。一位槽被特意留作空位，用以区分"空"与"满"——前者 front == rear，后者 (rear+1) mod n == front。</p>
+                        </div>
+                        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+                            <div><strong>ENQUEUE</strong> O(1)</div>
+                            <div><strong>DEQUEUE</strong> O(1)</div>
+                            <div><strong>FRONT</strong> <span style={{ color: 'var(--accent)' }}>[{front}]</span></div>
+                            <div><strong>REAR</strong> <span style={{ color: 'var(--ink)' }}>[{rear}]</span></div>
+                            <div><strong>STATUS</strong> <span style={{ color: 'var(--accent)' }}>{isFull ? 'FULL' : isEmpty ? 'EMPTY' : '—'}</span></div>
+                        </aside>
+                    </section>
+
+                    <section className="viz-panel">
+                        <span className="viz-corner bl" />
+                        <span className="viz-corner br" />
+                        <span className="viz-label">FIG. 02 · RING TOPOLOGY</span>
+                        <span className="viz-label-right">
+                            SIZE {size} / {QU_CAPACITY - 1}
+                        </span>
+
+                        <div className="viz-canvas-wrap">
+                            <div className="qu-outer">
+                                <div className="qu-container" style={{ width: totalWidth }}>
+                                    {/* FRONT 指针 */}
+                                    {!overlap && (
+                                        <div className="qu-ptr" style={{ left: ptrLeft(front) }}>
+                                            <span className="qu-ptr-text">FRONT</span>
+                                            <span className="qu-ptr-arrow" />
+                                        </div>
+                                    )}
+                                    {/* REAR 指针 */}
+                                    {!overlap && (
+                                        <div className="qu-ptr rear" style={{ left: ptrLeft(rear) }}>
+                                            <span className="qu-ptr-text">REAR</span>
+                                            <span className="qu-ptr-arrow" />
+                                        </div>
+                                    )}
+                                    {/* 重叠状态：front == rear */}
+                                    {overlap && (
+                                        <div className="qu-ptr overlap" style={{ left: ptrLeft(front) }}>
+                                            <span className="qu-ptr-text">
+                                                <span>FRONT</span>
+                                                <span>REAR</span>
+                                            </span>
+                                            <span className="qu-ptr-arrow" />
+                                        </div>
+                                    )}
+
+                                    {/* 单元格 */}
+                                    <div className="qu-cells">
+                                        {cells.map((v, idx) => (
+                                            <div className="qu-cell-wrap" key={idx}>
+                                                <div
+                                                    className={[
+                                                        'qu-cell',
+                                                        v === null ? 'empty' : '',
+                                                        hl === idx ? 'hl' : '',
+                                                        freshIdx === idx ? 'fresh' : '',
+                                                        v !== null && inQueue(idx) ? 'in-queue' : ''
+                                                    ].filter(Boolean).join(' ')}
+                                                >
+                                                    {v !== null ? v : null}
+                                                </div>
+                                                <div className="qu-idx">[{idx}]</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* 环绕弧线 */}
+                                    <svg
+                                        className="qu-wrap-svg"
+                                        viewBox={`0 0 ${totalWidth} 46`}
+                                        preserveAspectRatio="none"
+                                    >
+                                        <path
+                                            d={`M ${totalWidth - QU_CELL_W / 2} 4
+                      C ${totalWidth - QU_CELL_W / 2} 40,
+                        ${totalWidth / 2} 44,
+                        ${QU_CELL_W / 2} 40
+                      L ${QU_CELL_W / 2} 4`}
+                                        />
+                                        {/* 箭头 */}
+                                        <path
+                                            d={`M ${QU_CELL_W / 2 - 4} 10
+                      L ${QU_CELL_W / 2} 4
+                      L ${QU_CELL_W / 2 + 4} 10`}
+                                            style={{ strokeDasharray: 'none', strokeWidth: 1.5 }}
+                                        />
+                                        <text x={totalWidth / 2} y="34" textAnchor="middle">
+                                            mod · wrap-around
+                                        </text>
+                                    </svg>
+                                </div>
+
+                                {/* 状态指示 */}
+                                <div className="qu-status">
+                                    <span className={`pill ${isEmpty ? 'active' : ''}`}>
+                                        EMPTY · front == rear
+                                    </span>
+                                    <span className={`pill ${isFull ? 'full' : ''}`}>
+                                        FULL · (rear+1) mod n == front
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="viz-caption">
+                            <span className="fig">FIG. 02</span>
+                            <span className="italic">首尾以取模相连——一段有限的数组被折叠为无尽之环。</span>
+                        </div>
+                    </section>
+
+                    <section className="controls-grid">
+                        <div className="control-block">
+                            <div className="control-block-title">
+                                <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+                                <span>INPUTS ↓</span>
+                            </div>
+
+                            <div className="input-row">
+                                <label>VALUE</label>
+                                <input
+                                    className="lab-input"
+                                    value={valIn}
+                                    onChange={e => setValIn(e.target.value)}
+                                    placeholder="留空则随机"
+                                />
+                            </div>
+
+                            <div style={{ height: 6 }} />
+
+                            <div className="btn-grid">
+                                <button className="lab-btn accent" onClick={enqueue}>
+                                    <span>入队 ENQUEUE</span><span className="sym">+→</span>
+                                </button>
+                                <button className="lab-btn danger" onClick={dequeue}>
+                                    <span>出队 DEQUEUE</span><span className="sym">→−</span>
+                                </button>
+                                <button className="lab-btn" onClick={peekFront}>
+                                    <span>查看队头</span><span className="sym">◎←</span>
+                                </button>
+                                <button className="lab-btn" onClick={peekRear}>
+                                    <span>查看队尾</span><span className="sym">◎→</span>
+                                </button>
+                            </div>
+
+                            <div style={{ height: 16 }} />
+                            <div className="input-row">
+                                <label>SEARCH</label>
+                                <input
+                                    className="lab-input"
+                                    value={searchIn}
+                                    onChange={e => setSearchIn(e.target.value)}
+                                    placeholder="从队头开始扫描"
+                                />
+                                <button className="lab-btn" onClick={() => search(searchIn)} style={{ flex: '0 0 130px' }}>
+                                    <span>顺序查找</span><span className="sym">◎</span>
+                                </button>
+                            </div>
+
+                            <div style={{ height: 8 }} />
+                            <div className="btn-grid">
+                                <button className="lab-btn danger" onClick={clear}>
+                                    <span>清空 CLEAR</span><span className="sym">∅</span>
+                                </button>
+                                <button className="lab-btn" onClick={reset}>
+                                    <span>恢复初始 RESET</span><span className="sym">↺</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <LogPanel log={log} onClear={clearLog} num="§2" />
+                    </section>
+
+                    <section className="complexity-block">
+                        <div className="complexity-title">
+                            <h3>时间复杂度 <span className="flourish">summary</span></h3>
+                            <span className="num">§3 · COMPLEXITY</span>
+                        </div>
+                        <table className="complexity-table">
+                            <thead>
+                                <tr>
+                                    <th>操作 Operation</th>
+                                    <th>最好 Best</th>
+                                    <th>平均 Avg.</th>
+                                    <th>最坏 Worst</th>
+                                    <th>备注 Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>入队 enqueue</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>rear 指针前移一位 (mod n)</td>
+                                </tr>
+                                <tr>
+                                    <td>出队 dequeue</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>front 指针前移一位 (mod n)</td>
+                                </tr>
+                                <tr>
+                                    <td>取队头 / 队尾</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>直接通过指针访问</td>
+                                </tr>
+                                <tr>
+                                    <td>判空 / 判满</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>front、rear 的代数比较</td>
+                                </tr>
+                                <tr>
+                                    <td>按值查找</td>
+                                    <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+                                    <td>自 front 顺时针线性扫描</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section className="traits-grid">
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 01</div>
+                            <div className="trait-title">先进先出</div>
+                            <div className="trait-desc">进场顺序即出场顺序——从不越位，从不插队。FIFO 契约用耐心换得公平。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 02</div>
+                            <div className="trait-title">双端异步</div>
+                            <div className="trait-desc">头尾两枚指针各管一端，互不干扰——这使得并发生产/消费成为可能。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 03</div>
+                            <div className="trait-title">循环复用</div>
+                            <div className="trait-desc">一段定长数组通过取模被折叠成环，空间得以反复利用，无须挪动已存元素。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 04</div>
+                            <div className="trait-title">一位留空</div>
+                            <div className="trait-desc">特意牺牲一个槽位，用 front、rear 的位置关系干净地区分"空"与"满"。</div>
+                        </div>
+                    </section>
+                </>
+            );
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           Specimen 03 · 2D Array  (二维数组)
+           ═════════════════════════════════════════════════════════════════════ */
+        const A2_ROWS = 3;
+        const A2_COLS = 4;
+        const A2_BASE = 0x1000;  // 起始地址（示意）
+        const A2_SIZEOF = 4;     // 每元素字节数（int）
+
+        function Array2DModule() {
+            const [grid, setGrid] = useState(() => [
+                [12, 45, 78, 23],
+                [56, 34, 91, 17],
+                [89, 4, 62, 50],
+            ]);
+            const [sel, setSel] = useState({ i: 0, j: 0 }); // 当前选中
+            const [hl, setHl] = useState(null);             // { i, j } 临时高亮
+            const [mode, setMode] = useState('row');        // row | col (优先)
+            const [tracedRow, setTracedRow] = useState(null);
+            const [tracedCol, setTracedCol] = useState(null);
+            const [log, pushLog, clearLog] = useLog();
+
+            const [iIn, setIIn] = useState('');
+            const [jIn, setJIn] = useState('');
+            const [valIn, setValIn] = useState('');
+            const [searchIn, setSearchIn] = useState('');
+
+            const parsedI = () => {
+                const v = parseInt(iIn, 10);
+                return Number.isNaN(v) ? sel.i : v;
+            };
+            const parsedJ = () => {
+                const v = parseInt(jIn, 10);
+                return Number.isNaN(v) ? sel.j : v;
+            };
+            const parsedVal = () => {
+                const v = parseInt(valIn, 10);
+                return Number.isNaN(v) ? Math.floor(Math.random() * 99) + 1 : v;
+            };
+
+            // 线性化：根据 mode 返回 (i, j) -> 一维下标 k
+            const lin = (i, j) => (mode === 'row' ? i * A2_COLS + j : j * A2_ROWS + i);
+
+            const flashHl = (i, j, ms = 1100) => {
+                setHl({ i, j });
+                setTimeout(() => setHl(null), ms);
+            };
+
+            const access = (i, j) => {
+                if (i < 0 || i >= A2_ROWS || j < 0 || j >= A2_COLS) {
+                    pushLog(`access × 下标越界 (${i}, ${j})`, '—', 'error');
+                    return;
+                }
+                const v = grid[i][j];
+                const k = lin(i, j);
+                const addr = A2_BASE + k * A2_SIZEOF;
+                setSel({ i, j });
+                setTracedRow(null);
+                setTracedCol(null);
+                pushLog(
+                    `access (${i},${j}) = ${v} · k=${k} · addr=0x${addr.toString(16).toUpperCase()}`,
+                    'O(1)',
+                    'success'
+                );
+                flashHl(i, j);
+            };
+
+            const setValueAt = (i, j) => {
+                if (i < 0 || i >= A2_ROWS || j < 0 || j >= A2_COLS) {
+                    pushLog(`assign × 下标越界 (${i}, ${j})`, '—', 'error');
+                    return;
+                }
+                const v = parsedVal();
+                setGrid(prev => prev.map((row, ri) =>
+                    ri === i ? row.map((old, ci) => (ci === j ? v : old)) : row
+                ));
+                setSel({ i, j });
+                pushLog(`assign (${i},${j}) ← ${v} · 原地写入`, 'O(1)', 'success');
+                flashHl(i, j);
+            };
+
+            const search = (val) => {
+                const target = parseInt(val, 10);
+                if (Number.isNaN(target)) {
+                    pushLog(`search × 请输入数值`, '—', 'error');
+                    return;
+                }
+                // 按 mode 的顺序进行线性扫描，动画展示
+                const total = A2_ROWS * A2_COLS;
+                let k = 0;
+                const step = () => {
+                    if (k >= total) {
+                        pushLog(`search ${target} × 未找到 · 扫描 ${total} 格`, 'O(n·m)', 'info');
+                        setHl(null);
+                        return;
+                    }
+                    const i = (mode === 'row') ? Math.floor(k / A2_COLS) : k % A2_ROWS;
+                    const j = (mode === 'row') ? k % A2_COLS : Math.floor(k / A2_ROWS);
+                    setHl({ i, j });
+                    if (grid[i][j] === target) {
+                        pushLog(
+                            `search ${target} ✓ (${i},${j}) · 步数 ${k + 1} · ${mode === 'row' ? '行优先' : '列优先'}`,
+                            'O(n·m)',
+                            'success'
+                        );
+                        setSel({ i, j });
+                        setTimeout(() => setHl(null), 800);
+                        return;
+                    }
+                    k += 1;
+                    setTimeout(step, 130);
+                };
+                step();
+            };
+
+            const traceRow = (i) => {
+                if (i < 0 || i >= A2_ROWS) {
+                    pushLog(`trace-row × 行越界 i=${i}`, '—', 'error');
+                    return;
+                }
+                setTracedRow(i);
+                setTracedCol(null);
+                pushLog(
+                    `trace · 行 [${i}] · ${mode === 'row' ? '内存连续' : '跨行跳跃 · 步长 ' + A2_ROWS}`,
+                    'O(m)',
+                    'info'
+                );
+            };
+
+            const traceCol = (j) => {
+                if (j < 0 || j >= A2_COLS) {
+                    pushLog(`trace-col × 列越界 j=${j}`, '—', 'error');
+                    return;
+                }
+                setTracedCol(j);
+                setTracedRow(null);
+                pushLog(
+                    `trace · 列 [${j}] · ${mode === 'col' ? '内存连续' : '跨列跳跃 · 步长 ' + A2_COLS}`,
+                    'O(n)',
+                    'info'
+                );
+            };
+
+            const reset = () => {
+                setGrid([
+                    [12, 45, 78, 23],
+                    [56, 34, 91, 17],
+                    [89, 4, 62, 50],
+                ]);
+                setSel({ i: 0, j: 0 });
+                setTracedRow(null);
+                setTracedCol(null);
+                pushLog(`reset · 恢复初始状态`, '—', 'info');
+            };
+
+            // 构造线性化视图
+            const linearView = useMemo(() => {
+                const out = [];
+                if (mode === 'row') {
+                    for (let i = 0; i < A2_ROWS; i += 1) {
+                        for (let j = 0; j < A2_COLS; j += 1) {
+                            out.push({ i, j, v: grid[i][j], k: i * A2_COLS + j });
+                        }
+                    }
+                } else {
+                    for (let j = 0; j < A2_COLS; j += 1) {
+                        for (let i = 0; i < A2_ROWS; i += 1) {
+                            out.push({ i, j, v: grid[i][j], k: j * A2_ROWS + i });
+                        }
+                    }
+                }
+                return out;
+            }, [grid, mode]);
+
+            const selK = lin(sel.i, sel.j);
+            const selAddr = A2_BASE + selK * A2_SIZEOF;
+
+            return (
+                <>
+                    <section className="module-intro">
+                        <aside className="module-intro-side">
+                            <div><strong>SPECIMEN</strong> 03 / 03</div>
+                            <div><strong>TYPE</strong> 2D · Contiguous</div>
+                            <div><strong>SHAPE</strong> {A2_ROWS} × {A2_COLS}</div>
+                            <div><strong>TOTAL</strong> {A2_ROWS * A2_COLS}</div>
+                            <div><strong>ORDER</strong> <span style={{ color: 'var(--accent)' }}>{mode === 'row' ? 'ROW-MAJOR' : 'COL-MAJOR'}</span></div>
+                        </aside>
+                        <div className="module-intro-body">
+                            <p>数组是最古老也最直接的结构——一组同类元素按顺序紧密排列。无论它对外呈现为几维，在存储器中它始终是一段连续的字节流，既无裂缝，也无指针。</p>
+                            <p>多维数组的每一个坐标都通过一次线性化运算被折叠进一维：以行优先为例，(i, j) 被映射到 i·cols + j。这使得任意位置的访问仍然只需一次偏移计算，保留了数组最珍贵的禀赋——常数时间的随机存取。</p>
+                        </div>
+                        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+                            <div><strong>ACCESS</strong> O(1)</div>
+                            <div><strong>ASSIGN</strong> O(1)</div>
+                            <div><strong>SEARCH</strong> O(n·m)</div>
+                            <div><strong>BASE</strong> 0x{A2_BASE.toString(16).toUpperCase()}</div>
+                            <div><strong>SIZEOF</strong> {A2_SIZEOF} B</div>
+                        </aside>
+                    </section>
+
+                    <section className="viz-panel">
+                        <span className="viz-corner bl" />
+                        <span className="viz-corner br" />
+                        <span className="viz-label">FIG. 03 · MATRIX & LINEARIZATION</span>
+                        <span className="viz-label-right">
+                            SEL (<span>{sel.i}</span>,<span>{sel.j}</span>) · k = {selK}
+                        </span>
+
+                        <div className="viz-canvas-wrap">
+                            <div className="a2-outer">
+                                {/* 二维网格 */}
+                                <div className="a2-grid-wrap">
+                                    <div style={{ width: 28 }} />
+                                    <div>
+                                        {/* 列标签 */}
+                                        <div
+                                            className="a2-col-labels"
+                                            style={{ gridTemplateColumns: `repeat(${A2_COLS}, 64px)` }}
+                                        >
+                                            {Array.from({ length: A2_COLS }).map((_, j) => (
+                                                <span key={j}>j = {j}</span>
+                                            ))}
+                                        </div>
+
+                                        {/* 行 */}
+                                        <div className="a2-grid-rowwise">
+                                            {grid.map((row, i) => (
+                                                <div className="a2-row-block" key={i}>
+                                                    <div className="a2-row-label">i = {i}</div>
+                                                    <div className="a2-row">
+                                                        {row.map((v, j) => {
+                                                            const isSel = sel.i === i && sel.j === j;
+                                                            const isHl = hl && hl.i === i && hl.j === j;
+                                                            const isTraced = tracedRow === i || tracedCol === j;
+                                                            return (
+                                                                <div
+                                                                    key={j}
+                                                                    className={[
+                                                                        'a2-cell',
+                                                                        isHl ? 'hl' : '',
+                                                                        !isHl && isSel ? 'hl' : '',
+                                                                        !isHl && !isSel && isTraced ? 'trace' : '',
+                                                                    ].filter(Boolean).join(' ')}
+                                                                    onClick={() => access(i, j)}
+                                                                >
+                                                                    <span className="a2-cell-idx">[{i},{j}]</span>
+                                                                    {v}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 线性化展示 */}
+                                <div className="a2-linear-block">
+                                    <div className="a2-linear-title">
+                                        <span>§ 线性化存储 · MEMORY ORDER</span>
+                                        <span className="mode-toggle">
+                                            <button
+                                                className={mode === 'row' ? 'active' : ''}
+                                                onClick={() => setMode('row')}
+                                            >Row · 行优先</button>
+                                            <button
+                                                className={mode === 'col' ? 'active' : ''}
+                                                onClick={() => setMode('col')}
+                                            >Col · 列优先</button>
+                                        </span>
+                                    </div>
+
+                                    <div className="a2-linear-strip">
+                                        {linearView.map(cell => {
+                                            const isSel = sel.i === cell.i && sel.j === cell.j;
+                                            const isHl = hl && hl.i === cell.i && hl.j === cell.j;
+                                            const isTraced = tracedRow === cell.i || tracedCol === cell.j;
+                                            return (
+                                                <div
+                                                    key={`${cell.i}-${cell.j}`}
+                                                    className={[
+                                                        'a2-linear-cell',
+                                                        isHl ? 'hl' : '',
+                                                        !isHl && isSel ? 'hl' : '',
+                                                        !isHl && !isSel && isTraced ? 'trace' : '',
+                                                    ].filter(Boolean).join(' ')}
+                                                >
+                                                    <span className="k">k = {cell.k}</span>
+                                                    {cell.v}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="a2-addr">
+                                        <span className="lbl">§ ADDRESS FORMULA · 地址计算</span>
+                                        <span className="formula">
+                                            {mode === 'row' ? (
+                                                <>addr(i, j) = base + (<span className="em">i</span> × cols + <span className="em">j</span>) × sizeof(T)</>
+                                            ) : (
+                                                <>addr(i, j) = base + (<span className="em">j</span> × rows + <span className="em">i</span>) × sizeof(T)</>
+                                            )}
+                                        </span>
+                                        <span className="result">
+                                            = 0x{A2_BASE.toString(16).toUpperCase()} + (
+                                            {mode === 'row'
+                                                ? <>{sel.i} × {A2_COLS} + {sel.j}</>
+                                                : <>{sel.j} × {A2_ROWS} + {sel.i}</>}
+                                            ) × {A2_SIZEOF}
+                                            &nbsp;=&nbsp;
+                                            <span className="em">0x{selAddr.toString(16).toUpperCase()}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="viz-caption">
+                            <span className="fig">FIG. 03</span>
+                            <span className="italic">点击上方单元，观察它在线性化存储中被折叠到第几个字节。</span>
+                        </div>
+                    </section>
+
+                    <section className="controls-grid">
+                        <div className="control-block">
+                            <div className="control-block-title">
+                                <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+                                <span>INPUTS ↓</span>
+                            </div>
+
+                            <div className="input-row">
+                                <label>ROW · i</label>
+                                <input
+                                    className="lab-input"
+                                    value={iIn}
+                                    onChange={e => setIIn(e.target.value)}
+                                    placeholder={`0 ~ ${A2_ROWS - 1}`}
+                                />
+                                <label style={{ width: 70 }}>COL · j</label>
+                                <input
+                                    className="lab-input"
+                                    value={jIn}
+                                    onChange={e => setJIn(e.target.value)}
+                                    placeholder={`0 ~ ${A2_COLS - 1}`}
+                                />
+                            </div>
+
+                            <div className="input-row">
+                                <label>VALUE</label>
+                                <input
+                                    className="lab-input"
+                                    value={valIn}
+                                    onChange={e => setValIn(e.target.value)}
+                                    placeholder="赋值时使用 · 留空随机"
+                                />
+                            </div>
+
+                            <div style={{ height: 6 }} />
+
+                            <div className="btn-grid cols-3">
+                                <button className="lab-btn accent" onClick={() => access(parsedI(), parsedJ())}>
+                                    <span>读取 ACCESS</span><span className="sym">→</span>
+                                </button>
+                                <button className="lab-btn" onClick={() => setValueAt(parsedI(), parsedJ())}>
+                                    <span>赋值 ASSIGN</span><span className="sym">＝</span>
+                                </button>
+                                <button className="lab-btn" onClick={() => { setHl(null); setTracedRow(null); setTracedCol(null); pushLog('clear-trace · 清除高亮', '—', 'info'); }}>
+                                    <span>清除高亮</span><span className="sym">∅</span>
+                                </button>
+                                <button className="lab-btn" onClick={() => traceRow(parsedI())}>
+                                    <span>追踪整行</span><span className="sym">→→</span>
+                                </button>
+                                <button className="lab-btn" onClick={() => traceCol(parsedJ())}>
+                                    <span>追踪整列</span><span className="sym">↓↓</span>
+                                </button>
+                                <button className="lab-btn" onClick={() => setMode(mode === 'row' ? 'col' : 'row')}>
+                                    <span>切换优先</span><span className="sym">↔</span>
+                                </button>
+                            </div>
+
+                            <div style={{ height: 16 }} />
+                            <div className="input-row">
+                                <label>SEARCH</label>
+                                <input
+                                    className="lab-input"
+                                    value={searchIn}
+                                    onChange={e => setSearchIn(e.target.value)}
+                                    placeholder="按当前优先顺序扫描"
+                                />
+                                <button className="lab-btn" onClick={() => search(searchIn)} style={{ flex: '0 0 130px' }}>
+                                    <span>顺序查找</span><span className="sym">◎</span>
+                                </button>
+                            </div>
+
+                            <div style={{ height: 8 }} />
+                            <button className="lab-btn" onClick={reset} style={{ width: '100%' }}>
+                                <span>恢复初始 RESET</span><span className="sym">↺</span>
+                            </button>
+                        </div>
+
+                        <LogPanel log={log} onClear={clearLog} num="§2" />
+                    </section>
+
+                    <section className="complexity-block">
+                        <div className="complexity-title">
+                            <h3>时间复杂度 <span className="flourish">summary</span></h3>
+                            <span className="num">§3 · COMPLEXITY</span>
+                        </div>
+                        <table className="complexity-table">
+                            <thead>
+                                <tr>
+                                    <th>操作 Operation</th>
+                                    <th>最好 Best</th>
+                                    <th>平均 Avg.</th>
+                                    <th>最坏 Worst</th>
+                                    <th>备注 Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>按下标访问 (i,j)</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>基址 + 偏移，一次加法一次乘法</td>
+                                </tr>
+                                <tr>
+                                    <td>按下标赋值</td>
+                                    <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+                                    <td>原地写入，无需位移</td>
+                                </tr>
+                                <tr>
+                                    <td>行遍历 (行优先)</td>
+                                    <td className="c-good">O(m)</td><td className="c-good">O(m)</td><td className="c-good">O(m)</td>
+                                    <td>内存连续，缓存命中良好</td>
+                                </tr>
+                                <tr>
+                                    <td>列遍历 (行优先)</td>
+                                    <td className="c-mid">O(n)</td><td className="c-mid">O(n)</td><td className="c-mid">O(n)</td>
+                                    <td>跨行跳跃，缓存不友好</td>
+                                </tr>
+                                <tr>
+                                    <td>按值查找</td>
+                                    <td className="c-good">O(1)</td><td className="c-bad">O(n·m)</td><td className="c-bad">O(n·m)</td>
+                                    <td>需扫描整个矩阵</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section className="traits-grid">
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 01</div>
+                            <div className="trait-title">多维索引</div>
+                            <div className="trait-desc">对外以 (i, j, ...) 多维坐标呈现，契合矩阵、图像、张量等天然多维数据的形状。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 02</div>
+                            <div className="trait-title">线性化存储</div>
+                            <div className="trait-desc">在内存中始终是一段连续字节，多维只是索引形式上的投影，并非真实排布。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 03</div>
+                            <div className="trait-title">行优先 / 列优先</div>
+                            <div className="trait-desc">C 与 Python 采用行优先，Fortran 与 MATLAB 采用列优先——同一矩阵，两种折叠方式。</div>
+                        </div>
+                        <div className="trait">
+                            <div className="trait-num">TRAIT · 04</div>
+                            <div className="trait-title">缓存局部性</div>
+                            <div className="trait-desc">顺着主序遍历效率最高；逆主序遍历会频繁触发缓存失效，代价在常数之外被悄悄放大。</div>
+                        </div>
+                    </section>
+                </>
+            );
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           Root
+           ═════════════════════════════════════════════════════════════════════ */
+        function StackQueueArrayLab() {
+            const [tab, setTab] = useState('stack');
+
+            const tabNameCN = tab === 'stack' ? '栈' : tab === 'queue' ? '队列' : '数组';
+
+            return (
+                <>
+                    <style>{STYLES}</style>
+                    <div className="lab-root">
+                        <header className="lab-header">
+                            <div className="lab-header-top">
+                                <div className="lab-volume">
+                                    <span className="caps">VOL. 02</span>
+                                    <span className="caps">栈 · 队列 · 数组 / STACK · QUEUE · ARRAY</span>
+                                </div>
+                                <div className="caps">A SPECIMEN STUDY / 2026</div>
+                            </div>
+
+                            <div className="lab-title-block">
+                                <h1 className="lab-title">
+                                    受限线性与 <span className="em">多维延展</span>
+                                </h1>
+                                <div className="lab-subtitle">
+                                    <span className="dot" />
+                                    <span>DATA STRUCTURE LABORATORY</span>
+                                    <span>·</span>
+                                    <span>INTERACTIVE SPECIMENS</span>
+                                    <span>·</span>
+                                    <span className="italic serif" style={{ fontSize: 14, color: 'var(--ink-soft)' }}>
+                                        in restricted &amp; dimensional forms
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="lab-header-bottom">
+                                <span>§ 本卷 · 栈 · 队列 · 数组</span>
+                                <span>三种约束 / 同一内存</span>
+                                <span>点击单元 · 观察变化</span>
+                            </div>
+                        </header>
+
+                        <main className="lab-container">
+                            <nav className="lab-tabs">
+                                <button
+                                    className={`lab-tab ${tab === 'stack' ? 'active' : ''}`}
+                                    onClick={() => setTab('stack')}
+                                >
+                                    <span className="lab-tab-num">SPECIMEN · 01</span>
+                                    <span className="lab-tab-name">
+                                        栈
+                                        <span className="lab-tab-name-en">Stack</span>
+                                    </span>
+                                </button>
+                                <button
+                                    className={`lab-tab ${tab === 'queue' ? 'active' : ''}`}
+                                    onClick={() => setTab('queue')}
+                                >
+                                    <span className="lab-tab-num">SPECIMEN · 02</span>
+                                    <span className="lab-tab-name">
+                                        队列
+                                        <span className="lab-tab-name-en">Circular Queue</span>
+                                    </span>
+                                </button>
+                                <button
+                                    className={`lab-tab ${tab === 'array' ? 'active' : ''}`}
+                                    onClick={() => setTab('array')}
+                                >
+                                    <span className="lab-tab-num">SPECIMEN · 03</span>
+                                    <span className="lab-tab-name">
+                                        数组
+                                        <span className="lab-tab-name-en">2D Array</span>
+                                    </span>
+                                </button>
+                            </nav>
+
+                            {tab === 'stack' && <StackModule />}
+                            {tab === 'queue' && <QueueModule />}
+                            {tab === 'array' && <Array2DModule />}
+
+                            <footer className="lab-footer">
+                                <span>© DATA STRUCTURE LAB</span>
+                                <span className="flourish serif italic" style={{ fontSize: 13, letterSpacing: 0, textTransform: 'none' }}>
+                                    fin · {tabNameCN}
+                                </span>
+                                <span>PLATE {tab === 'stack' ? '01' : tab === 'queue' ? '02' : '03'} / 03</span>
+                            </footer>
+                        </main>
+                    </div>
+                </>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<StackQueueArrayLab />);
+
+    </script>
+</body>
+
+</html>

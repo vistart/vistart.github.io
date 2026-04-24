@@ -1,0 +1,2563 @@
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+
+/* ────────────────────────────────────────────────────────────────────
+   数据结构实验室 · 第三卷 · 树 · 二叉树
+   VOL. 03 — Trees & Binary Trees
+   Specimen 01 — General Tree    (一般树 / 多叉树)
+   Specimen 02 — Binary Tree     (二叉树 · 四种遍历)
+   Specimen 03 — Huffman Tree    (哈夫曼树 · 构建动画)
+   ──────────────────────────────────────────────────────────────────── */
+
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+:root {
+  --cream:        #F1EADA;
+  --cream-light:  #F7F2E6;
+  --cream-dark:   #E4DBC4;
+  --ink:          #1F1B17;
+  --ink-soft:     #3A3530;
+  --ink-muted:    #7A6F5E;
+  --accent:       #C7381A;
+  --accent-soft:  #D66B4D;
+  --accent-faded: rgba(199, 56, 26, 0.10);
+  --line:         #B5A78C;
+  --line-soft:    #CEC3A8;
+  --paper-grain:  rgba(31, 27, 23, 0.018);
+}
+
+* { box-sizing: border-box; }
+
+.lab-root {
+  min-height: 100vh;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
+  position: relative;
+  padding-bottom: 80px;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 3px, var(--paper-grain) 3px, var(--paper-grain) 4px);
+}
+
+.lab-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(199, 56, 26, 0.04), transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(31, 27, 23, 0.04), transparent 40%);
+  z-index: 0;
+}
+
+.lab-container { max-width: 1160px; margin: 0 auto; padding: 0 48px; position: relative; z-index: 1; }
+
+/* ─── Typography ─── */
+.serif   { font-family: 'Fraunces', 'Noto Serif SC', Georgia, serif; }
+.mono    { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.italic  { font-style: italic; }
+
+.caps {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* ─── Header ─── */
+.lab-header {
+  padding: 48px 48px 0;
+  max-width: 1160px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.lab-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+}
+.lab-volume { display: flex; gap: 28px; align-items: baseline; }
+.lab-title-block { margin: 40px 0 12px; }
+.lab-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 400;
+  font-size: 88px;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.lab-title .em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144;
+}
+.lab-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 20px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  letter-spacing: 0.08em;
+  flex-wrap: wrap;
+}
+.lab-subtitle .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: inline-block; }
+.lab-header-bottom {
+  margin-top: 28px;
+  padding: 14px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ─── Tabs ─── */
+.lab-tabs { display: flex; gap: 0; margin: 48px 0 56px; border-bottom: 1px solid var(--line); }
+.lab-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 24px 28px;
+  cursor: pointer;
+  text-align: left;
+  border-left: 1px solid var(--line-soft);
+  position: relative;
+  transition: background 0.25s ease;
+  font-family: inherit;
+  color: var(--ink-muted);
+}
+.lab-tab:first-child { border-left: none; }
+.lab-tab:hover { background: var(--cream-light); color: var(--ink-soft); }
+.lab-tab-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  display: block;
+  margin-bottom: 8px;
+}
+.lab-tab-name {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.lab-tab-name-en {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--ink-muted);
+  margin-left: 10px;
+}
+.lab-tab.active {
+  color: var(--ink);
+  background: var(--cream-light);
+}
+.lab-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+}
+.lab-tab.active .lab-tab-num { color: var(--accent); }
+.lab-tab.active .lab-tab-name-en { color: var(--accent-soft); }
+
+/* ─── Module Intro ─── */
+.module-intro {
+  display: grid;
+  grid-template-columns: 180px 1fr 200px;
+  gap: 48px;
+  padding-bottom: 48px;
+  margin-bottom: 56px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.module-intro-side {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  line-height: 1.9;
+}
+.module-intro-side strong {
+  color: var(--ink);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 3px;
+}
+.module-intro-body p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+.module-intro-body p:first-child::first-letter {
+  font-family: 'Fraunces', serif;
+  font-size: 58px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  float: left;
+  line-height: 0.9;
+  padding: 6px 10px 0 0;
+}
+
+/* ─── Viz Panel ─── */
+.viz-panel {
+  position: relative;
+  padding: 64px 48px 56px;
+  background: var(--cream-light);
+  margin-bottom: 56px;
+}
+.viz-panel::before,
+.viz-panel::after,
+.viz-corner {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+.viz-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.viz-panel::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.viz-corner.bl { bottom: -1px; left: -1px; top: auto; border-right: none; border-top: none; }
+.viz-corner.br { bottom: -1px; right: -1px; top: auto; border-left: none; border-top: none; }
+
+.viz-label {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.viz-label-right {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.viz-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 160px;
+  overflow-x: auto;
+  padding: 24px 0;
+}
+.viz-caption {
+  text-align: center;
+  margin-top: 24px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.viz-caption .fig {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-right: 8px;
+}
+
+/* ═════ TREE VISUALIZATION ═════ */
+.tr-stage {
+  position: relative;
+  margin: 0 auto;
+}
+.tr-stage svg.tr-edges {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.tr-edge-line {
+  stroke: var(--ink);
+  stroke-width: 1.25;
+  fill: none;
+  transition: stroke 0.3s ease;
+}
+.tr-edge-line.hl { stroke: var(--accent); stroke-width: 1.8; }
+.tr-edge-line.ghost { stroke: var(--line); stroke-dasharray: 3 3; }
+
+.tr-edge-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  fill: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+.tr-node {
+  position: absolute;
+  transform-origin: center;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  margin-top: -22px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  cursor: pointer;
+  user-select: none;
+  animation: nodeEnter 0.4s ease;
+}
+.tr-node:hover {
+  background: var(--cream-dark);
+}
+.tr-node.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-faded);
+}
+.tr-node.hl {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.tr-node.visited {
+  background: var(--accent-faded);
+  border-color: var(--accent-soft);
+  color: var(--ink);
+}
+.tr-node.leaf {
+  border-style: solid;
+  border-width: 2px;
+}
+.tr-node.leaf-char {
+  width: 52px; height: 52px;
+  margin-left: -26px; margin-top: -26px;
+  border-radius: 4px;
+}
+.tr-node.leaf-char .leaf-ch {
+  font-size: 18px;
+  font-weight: 600;
+}
+.tr-node.leaf-char .leaf-freq {
+  position: absolute;
+  top: calc(100% + 4px);
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.tr-node.merged {
+  background: var(--ink);
+  color: var(--cream);
+  border-color: var(--ink);
+}
+.tr-node.merged.hl {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.tr-node.root-mark::after {
+  content: 'ROOT';
+  position: absolute;
+  bottom: calc(100% + 6px);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+@keyframes nodeEnter {
+  from { opacity: 0; transform: translate(var(--node-x, 0), var(--node-y, 0)) scale(0.6); }
+  to   { opacity: 1; transform: translate(var(--node-x, 0), var(--node-y, 0)) scale(1); }
+}
+
+.tr-node-ghost {
+  position: absolute;
+  transform-origin: center;
+  width: 44px; height: 44px;
+  margin-left: -22px; margin-top: -22px;
+  border: 1.5px dashed var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, color 0.25s;
+}
+.tr-node-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tr-node-ghost::before { content: '＋'; }
+
+.tr-empty {
+  padding: 80px 0;
+  text-align: center;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--ink-muted);
+  font-size: 16px;
+}
+
+.tr-level-label {
+  position: absolute;
+  left: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ─── Traversal Sequence Display ─── */
+.trav-display {
+  margin-top: 22px;
+  padding: 18px 20px;
+  background: var(--cream);
+  border: 1px solid var(--ink);
+  min-height: 56px;
+}
+.trav-display-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+.trav-display-title .hdr {
+  color: var(--ink);
+  font-weight: 500;
+}
+.trav-display-title .hdr .em { color: var(--accent); }
+.trav-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.trav-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--ink);
+  background: var(--cream-light);
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 13px;
+  animation: chipEnter 0.35s ease;
+}
+.trav-chip.cur {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 3px 0 var(--ink);
+}
+@keyframes chipEnter {
+  from { opacity: 0; transform: translateY(-6px) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.trav-sep {
+  color: var(--ink-muted);
+  align-self: center;
+  margin: 0 -4px;
+}
+.trav-placeholder {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+/* ─── Traversal mode pills (side panel) ─── */
+.trav-mode-pills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 8px;
+}
+.trav-mode-pills button {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 6px;
+  border: 1.5px solid var(--ink);
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+  margin-left: -1.5px;
+  transition: all 0.15s ease;
+}
+.trav-mode-pills button:first-child { margin-left: 0; }
+.trav-mode-pills button:hover { background: var(--cream-dark); }
+.trav-mode-pills button.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+.trav-mode-pills button.active .zh { color: var(--accent-soft); }
+.trav-mode-pills button .zh { display: block; font-size: 12px; font-family: 'Fraunces', 'Noto Serif SC', serif; font-style: italic; color: var(--accent); margin-bottom: 3px; letter-spacing: 0; text-transform: none; }
+.trav-mode-pills button.active .zh { color: var(--accent-soft); }
+
+/* ─── Huffman forest strip ─── */
+.hf-forest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--cream);
+  border: 1px solid var(--ink);
+  margin-bottom: 18px;
+  min-height: 52px;
+}
+.hf-forest-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.hf-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--ink);
+  background: var(--cream-light);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  animation: chipEnter 0.3s ease;
+}
+.hf-chip .ch { font-weight: 600; color: var(--accent); }
+.hf-chip .fq { color: var(--ink-muted); font-size: 11px; }
+.hf-chip.picked {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+.hf-chip.picked .ch { color: var(--cream); }
+.hf-chip.picked .fq { color: rgba(241,234,218,0.7); }
+.hf-chip.merged {
+  background: var(--ink);
+  color: var(--cream);
+  border-color: var(--ink);
+}
+.hf-chip.merged .ch { color: var(--accent-soft); }
+.hf-chip.merged .fq { color: rgba(241,234,218,0.7); }
+
+.hf-codetable {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: var(--cream);
+  border: 1px solid var(--ink);
+}
+.hf-codetable-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  justify-content: space-between;
+}
+.hf-codetable-title .num { color: var(--accent); }
+.hf-code-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.hf-code-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line-soft);
+}
+.hf-code-row .ch { color: var(--accent); font-weight: 600; }
+.hf-code-row .fq { color: var(--ink-muted); font-size: 11px; }
+.hf-code-row .cd { color: var(--ink); font-weight: 500; }
+
+/* ─── Controls ─── */
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 48px;
+  margin-bottom: 56px;
+}
+.control-block {
+  background: var(--cream-light);
+  padding: 32px 28px;
+  position: relative;
+}
+.control-block-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+}
+.control-block-title .num { color: var(--accent); }
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.input-row label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  width: 80px;
+}
+.input-row-hint {
+  width: 100%;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: -6px;
+  margin-bottom: 14px;
+}
+.lab-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.lab-input:focus {
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent-faded);
+}
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.btn-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.btn-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.lab-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 10px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.lab-btn:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+.lab-btn:active { transform: translate(1px, 1px); }
+.lab-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.lab-btn:disabled:hover { background: var(--cream); color: var(--ink); }
+.lab-btn .sym {
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1;
+}
+.lab-btn:hover .sym { color: var(--accent-soft); }
+.lab-btn.accent {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
+}
+.lab-btn.accent:hover { background: var(--ink); border-color: var(--ink); }
+.lab-btn.accent .sym { color: var(--cream); }
+.lab-btn.danger {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lab-btn.danger:hover { background: var(--accent); color: var(--cream); border-color: var(--accent); }
+.lab-btn.danger .sym { color: var(--accent); }
+.lab-btn.danger:hover .sym { color: var(--cream); }
+
+/* ─── Selected node display in control panel ─── */
+.sel-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 10px 14px;
+  border: 1px dashed var(--ink);
+  background: var(--cream);
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+.sel-display .val {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+.sel-display.none .val {
+  color: var(--ink-muted);
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ─── Log ─── */
+.log-block {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 28px 28px 20px;
+  position: relative;
+}
+.log-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(241, 234, 218, 0.2);
+  display: flex;
+  justify-content: space-between;
+}
+.log-title .num { color: var(--accent-soft); }
+.log-title .act { cursor: pointer; }
+.log-list {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 300px;
+  overflow-y: auto;
+  color: rgba(241, 234, 218, 0.7);
+}
+.log-item {
+  display: grid;
+  grid-template-columns: 62px 1fr 56px;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(241, 234, 218, 0.1);
+  animation: logEnter 0.25s ease;
+}
+.log-item .t { color: rgba(241, 234, 218, 0.4); font-size: 10px; }
+.log-item .msg { color: var(--cream); }
+.log-item.success .msg { color: var(--cream); }
+.log-item.error   .msg { color: var(--accent-soft); }
+.log-item.info    .msg { color: rgba(241, 234, 218, 0.7); }
+.log-item .c {
+  text-align: right;
+  color: var(--accent-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.log-empty {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: rgba(241, 234, 218, 0.4);
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+}
+@keyframes logEnter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.log-list::-webkit-scrollbar { width: 6px; }
+.log-list::-webkit-scrollbar-thumb { background: rgba(241, 234, 218, 0.2); }
+
+/* ─── Complexity Table ─── */
+.complexity-block { margin-bottom: 40px; }
+.complexity-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 14px;
+  margin-bottom: 0;
+  border-bottom: 1.5px solid var(--ink);
+}
+.complexity-title h3 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.complexity-title .num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+.complexity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+}
+.complexity-table th,
+.complexity-table td {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.complexity-table th {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--ink);
+}
+.complexity-table td:first-child {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.complexity-table .c-good { color: #2B7A4B; }
+.complexity-table .c-bad  { color: var(--accent); }
+.complexity-table .c-mid  { color: #B86F1F; }
+
+/* ─── Traits Grid ─── */
+.traits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line-soft);
+  margin-bottom: 56px;
+  border: 1px solid var(--line-soft);
+}
+.trait {
+  background: var(--cream);
+  padding: 24px 26px;
+}
+.trait-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.trait-title {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: 19px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.trait-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ─── Footer ─── */
+.lab-footer {
+  margin-top: 80px;
+  padding: 28px 0;
+  border-top: 3px double var(--ink);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.flourish {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .lab-container, .lab-header { padding: 0 24px; }
+  .lab-title { font-size: 56px; }
+  .module-intro { grid-template-columns: 1fr; gap: 24px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .traits-grid { grid-template-columns: 1fr; }
+  .lab-tab-name { font-size: 20px; }
+  .lab-tab-name-en { display: block; margin-left: 0; margin-top: 2px; font-size: 14px; }
+}
+`;
+
+/* ═════════════════════════════════════════════════════════════════════
+   Helpers · log, id generator, shared panels
+   ═════════════════════════════════════════════════════════════════════ */
+function useLog() {
+  const [log, setLog] = useState([]);
+  const idRef = useRef(0);
+  const push = useCallback((msg, complexity = '—', kind = 'success') => {
+    const now = new Date();
+    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    setLog(prev => [{ id: ++idRef.current, t, msg, complexity, kind }, ...prev].slice(0, 30));
+  }, []);
+  const clear = useCallback(() => setLog([]), []);
+  return [log, push, clear];
+}
+
+function LogPanel({ log, onClear, num }) {
+  return (
+    <div className="log-block">
+      <div className="log-title">
+        <span><span className="num">{num}</span> &nbsp;OPERATION · LOG</span>
+        <span className="act" onClick={onClear}>[ CLEAR ]</span>
+      </div>
+      <div className="log-list">
+        {log.length === 0 ? (
+          <div className="log-empty">— no entries yet —</div>
+        ) : log.map(e => (
+          <div key={e.id} className={`log-item ${e.kind}`}>
+            <span className="t">{e.t}</span>
+            <span className="msg">{e.msg}</span>
+            <span className="c">{e.complexity}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Tree layout utilities
+   ═════════════════════════════════════════════════════════════════════ */
+const NODE_SLOT_W = 64;
+const LEVEL_H = 78;
+const ROOT_OFFSET_Y = 36;
+const SIDE_PAD = 36;
+
+/* Layout for general tree with node.children : [Node, ...] */
+function layoutGeneralTree(node, level = 0, offsetX = 0) {
+  if (!node) return null;
+  if (!node.children || node.children.length === 0) {
+    return {
+      width: NODE_SLOT_W,
+      rootX: offsetX + NODE_SLOT_W / 2,
+      nodes: [{ id: node.id, value: node.value, x: offsetX + NODE_SLOT_W / 2, y: level * LEVEL_H + ROOT_OFFSET_Y, level }],
+      edges: [],
+    };
+  }
+  const childLayouts = [];
+  let cursor = offsetX;
+  for (const child of node.children) {
+    const cl = layoutGeneralTree(child, level + 1, cursor);
+    childLayouts.push(cl);
+    cursor += cl.width;
+  }
+  const width = cursor - offsetX;
+  const rootX = (childLayouts[0].rootX + childLayouts[childLayouts.length - 1].rootX) / 2;
+  const nodes = [{ id: node.id, value: node.value, x: rootX, y: level * LEVEL_H + ROOT_OFFSET_Y, level }];
+  const edges = [];
+  for (const cl of childLayouts) {
+    edges.push({ fromX: rootX, fromY: level * LEVEL_H + ROOT_OFFSET_Y, toX: cl.rootX, toY: (level + 1) * LEVEL_H + ROOT_OFFSET_Y, fromId: node.id, toId: cl.nodes[0].id });
+    nodes.push(...cl.nodes);
+    edges.push(...cl.edges);
+  }
+  return { width, rootX, nodes, edges };
+}
+
+/* Layout for binary tree with node.left / node.right */
+function layoutBinaryTree(node, level = 0, offsetX = 0) {
+  if (!node) return null;
+  const leftL = layoutBinaryTree(node.left, level + 1, offsetX);
+  const leftW = leftL ? leftL.width : 0;
+  const rightL = layoutBinaryTree(node.right, level + 1, offsetX + leftW);
+  const rightW = rightL ? rightL.width : 0;
+  const totalW = Math.max(leftW + rightW, NODE_SLOT_W);
+
+  let myX;
+  if (leftL && rightL)  myX = (leftL.rootX + rightL.rootX) / 2;
+  else if (leftL)       myX = leftL.rootX + NODE_SLOT_W / 2;
+  else if (rightL)      myX = rightL.rootX - NODE_SLOT_W / 2;
+  else                  myX = offsetX + totalW / 2;
+
+  const myY = level * LEVEL_H + ROOT_OFFSET_Y;
+  const nodes = [{ id: node.id, value: node.value, x: myX, y: myY, level }];
+  const edges = [];
+  if (leftL) {
+    edges.push({
+      fromX: myX, fromY: myY,
+      toX: leftL.rootX, toY: (level + 1) * LEVEL_H + ROOT_OFFSET_Y,
+      fromId: node.id, toId: leftL.nodes[0].id,
+      label: '0',
+    });
+    nodes.push(...leftL.nodes);
+    edges.push(...leftL.edges);
+  }
+  if (rightL) {
+    edges.push({
+      fromX: myX, fromY: myY,
+      toX: rightL.rootX, toY: (level + 1) * LEVEL_H + ROOT_OFFSET_Y,
+      fromId: node.id, toId: rightL.nodes[0].id,
+      label: '1',
+    });
+    nodes.push(...rightL.nodes);
+    edges.push(...rightL.edges);
+  }
+  return { width: totalW, rootX: myX, nodes, edges };
+}
+
+/* Layout for binary tree that also shows empty-child placeholders (ghosts) */
+function layoutBinaryWithGhosts(node, level = 0, offsetX = 0) {
+  if (!node) return null;
+  const leftL = node.left
+    ? layoutBinaryWithGhosts(node.left, level + 1, offsetX)
+    : null;
+  const leftGhostW = !node.left ? NODE_SLOT_W : 0;
+  const leftW = leftL ? leftL.width : leftGhostW;
+
+  const rightL = node.right
+    ? layoutBinaryWithGhosts(node.right, level + 1, offsetX + leftW)
+    : null;
+  const rightGhostW = !node.right ? NODE_SLOT_W : 0;
+  const rightW = rightL ? rightL.width : rightGhostW;
+
+  const totalW = Math.max(leftW + rightW, NODE_SLOT_W);
+  const myY = level * LEVEL_H + ROOT_OFFSET_Y;
+
+  let myX;
+  if (leftL && rightL)     myX = (leftL.rootX + rightL.rootX) / 2;
+  else if (leftL)          myX = leftL.rootX + NODE_SLOT_W / 2;
+  else if (rightL)         myX = rightL.rootX - NODE_SLOT_W / 2;
+  else if (!node.left && !node.right) myX = offsetX + totalW / 2;
+  else if (!node.left)     myX = offsetX + leftGhostW / 2 + (rightL ? (rightL.rootX - (offsetX + leftGhostW / 2)) / 2 : 0);
+  else                     myX = offsetX + leftW + rightGhostW / 2 - (leftL ? (offsetX + leftW + rightGhostW / 2 - leftL.rootX) / 2 : 0);
+
+  const nodes = [{ id: node.id, value: node.value, x: myX, y: myY, level }];
+  const ghosts = [];
+  const edges = [];
+
+  if (leftL) {
+    edges.push({ fromX: myX, fromY: myY, toX: leftL.rootX, toY: (level + 1) * LEVEL_H + ROOT_OFFSET_Y, fromId: node.id, toId: leftL.nodes[0].id });
+    nodes.push(...leftL.nodes);
+    ghosts.push(...(leftL.ghosts || []));
+    edges.push(...leftL.edges);
+  } else {
+    const gx = offsetX + leftGhostW / 2;
+    const gy = (level + 1) * LEVEL_H + ROOT_OFFSET_Y;
+    ghosts.push({ parentId: node.id, side: 'L', x: gx, y: gy });
+    edges.push({ fromX: myX, fromY: myY, toX: gx, toY: gy, ghost: true });
+  }
+
+  if (rightL) {
+    edges.push({ fromX: myX, fromY: myY, toX: rightL.rootX, toY: (level + 1) * LEVEL_H + ROOT_OFFSET_Y, fromId: node.id, toId: rightL.nodes[0].id });
+    nodes.push(...rightL.nodes);
+    ghosts.push(...(rightL.ghosts || []));
+    edges.push(...rightL.edges);
+  } else {
+    const gx = offsetX + leftW + rightGhostW / 2;
+    const gy = (level + 1) * LEVEL_H + ROOT_OFFSET_Y;
+    ghosts.push({ parentId: node.id, side: 'R', x: gx, y: gy });
+    edges.push({ fromX: myX, fromY: myY, toX: gx, toY: gy, ghost: true });
+  }
+
+  return { width: totalW, rootX: myX, nodes, ghosts, edges };
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 01 · General Tree  (一般树)
+   ═════════════════════════════════════════════════════════════════════ */
+function makeInitialGeneralTree(idRef) {
+  const n = (value, children = []) => ({ id: ++idRef.current, value, children });
+  return n('A', [
+    n('B', [ n('E'), n('F') ]),
+    n('C', [ n('G') ]),
+    n('D', [ n('H'), n('I'), n('J') ]),
+  ]);
+}
+
+function countNodes(node) {
+  if (!node) return 0;
+  return 1 + (node.children || []).reduce((a, c) => a + countNodes(c), 0);
+}
+function treeHeight(node) {
+  if (!node) return 0;
+  if (!node.children || node.children.length === 0) return 1;
+  return 1 + Math.max(...node.children.map(treeHeight));
+}
+function countLeaves(node) {
+  if (!node) return 0;
+  if (!node.children || node.children.length === 0) return 1;
+  return node.children.reduce((a, c) => a + countLeaves(c), 0);
+}
+function maxDegree(node) {
+  if (!node) return 0;
+  const here = (node.children || []).length;
+  const rest = (node.children || []).map(maxDegree);
+  return Math.max(here, ...(rest.length ? rest : [0]));
+}
+function findNodeAndParent(root, id, parent = null) {
+  if (!root) return null;
+  if (root.id === id) return { node: root, parent };
+  for (const c of root.children || []) {
+    const r = findNodeAndParent(c, id, root);
+    if (r) return r;
+  }
+  return null;
+}
+function findDepth(root, id, d = 1) {
+  if (!root) return -1;
+  if (root.id === id) return d;
+  for (const c of root.children || []) {
+    const r = findDepth(c, id, d + 1);
+    if (r > 0) return r;
+  }
+  return -1;
+}
+
+function GeneralTreeModule() {
+  const idRef = useRef(1000);
+  const [root, setRoot] = useState(() => makeInitialGeneralTree(idRef));
+  const [selId, setSelId] = useState(null);
+  const [hlId, setHlId] = useState(null);
+  const [log, pushLog, clearLog] = useLog();
+  const [valIn, setValIn] = useState('');
+
+  const layout = useMemo(() => layoutGeneralTree(root), [root]);
+  const stageW = (layout?.width || NODE_SLOT_W) + SIDE_PAD * 2;
+  const stageH = (treeHeight(root) * LEVEL_H) + 40;
+
+  const parsedVal = () => {
+    const t = valIn.trim();
+    if (t) return t;
+    return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  };
+
+  const findSel = () => selId ? findNodeAndParent(root, selId) : null;
+
+  const addChild = () => {
+    if (!selId) {
+      pushLog(`add-child × 请先点击选中一个节点`, '—', 'error');
+      return;
+    }
+    const info = findNodeAndParent(root, selId);
+    if (!info) return;
+    const v = parsedVal();
+    const newNode = { id: ++idRef.current, value: v, children: [] };
+    const deepAdd = (n) => {
+      if (n.id === selId) {
+        return { ...n, children: [...(n.children || []), newNode] };
+      }
+      return { ...n, children: (n.children || []).map(deepAdd) };
+    };
+    setRoot(deepAdd(root));
+    pushLog(`add-child · ${v} → 父 ${info.node.value}`, 'O(1)', 'success');
+    setHlId(newNode.id);
+    setTimeout(() => setHlId(null), 900);
+  };
+
+  const deleteSubtree = () => {
+    if (!selId) {
+      pushLog(`delete × 请先选中一个节点`, '—', 'error');
+      return;
+    }
+    if (selId === root.id) {
+      pushLog(`delete × 不能删除根节点`, '—', 'error');
+      return;
+    }
+    const info = findNodeAndParent(root, selId);
+    if (!info) return;
+    const removed = countNodes(info.node);
+    const deepRemove = (n) => ({
+      ...n,
+      children: (n.children || [])
+        .filter(c => c.id !== selId)
+        .map(deepRemove),
+    });
+    setRoot(deepRemove(root));
+    setSelId(null);
+    pushLog(`delete-subtree · "${info.node.value}" 及 ${removed - 1} 个后代`, 'O(n)', 'success');
+  };
+
+  const renameSelected = () => {
+    if (!selId) {
+      pushLog(`rename × 请先选中节点`, '—', 'error');
+      return;
+    }
+    const v = valIn.trim();
+    if (!v) {
+      pushLog(`rename × 请输入新值`, '—', 'error');
+      return;
+    }
+    const deepRename = (n) => {
+      if (n.id === selId) return { ...n, value: v };
+      return { ...n, children: (n.children || []).map(deepRename) };
+    };
+    setRoot(deepRename(root));
+    pushLog(`rename · → "${v}"`, 'O(1)', 'success');
+  };
+
+  const reset = () => {
+    idRef.current = 1000;
+    setRoot(makeInitialGeneralTree(idRef));
+    setSelId(null);
+    pushLog(`reset · 恢复初始状态`, '—', 'info');
+  };
+
+  const nodeCount = countNodes(root);
+  const height = treeHeight(root);
+  const leaves = countLeaves(root);
+  const degree = maxDegree(root);
+
+  const selInfo = findSel();
+  const selDepth = selId ? findDepth(root, selId) : -1;
+  const selChildren = selInfo ? (selInfo.node.children || []).length : 0;
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 01 / 03</div>
+          <div><strong>TYPE</strong> Multi-way</div>
+          <div><strong>NODES</strong> <span style={{color:'var(--accent)'}}>{nodeCount}</span></div>
+          <div><strong>HEIGHT</strong> {height}</div>
+          <div><strong>LEAVES</strong> {leaves}</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>树是一种递归结构——它要么为空，要么由一个根与若干棵互不相交的子树组成。每一个节点都可以拥有任意多个孩子，而每一个孩子又是一棵完整的树。如此，层层嵌套之下生出了深度、高度、度数、叶子这些古老而精确的术语。</p>
+          <p>相比线性结构的顺其自然，树用一条"父子"关系把数据组织成层级：文件系统、DOM、组织架构、语法分析，皆为此形。它不必整齐、不必对称，只要每个节点除根之外都恰有一个父亲，便已构成一棵树。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>SELECTED</strong> <span style={{color:'var(--accent)'}}>{selInfo ? selInfo.node.value : '∅'}</span></div>
+          <div><strong>DEPTH</strong> {selDepth > 0 ? selDepth : '—'}</div>
+          <div><strong>DEGREE</strong> {selInfo ? selChildren : '—'}</div>
+          <div><strong>MAX-DEG</strong> {degree}</div>
+          <div><strong>PARENT</strong> {selInfo && selInfo.parent ? selInfo.parent.value : (selInfo ? '—' : '∅')}</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 01 · MULTI-WAY TREE</span>
+        <span className="viz-label-right">
+          HEIGHT {height} · {nodeCount} NODES
+        </span>
+
+        <div className="viz-canvas-wrap">
+          {!root ? (
+            <div className="tr-empty">— 空树 · empty tree —</div>
+          ) : (
+            <div className="tr-stage" style={{ width: stageW, height: stageH, position: 'relative' }}>
+              <svg className="tr-edges" viewBox={`0 0 ${stageW} ${stageH}`}>
+                {layout.edges.map((e, i) => (
+                  <path
+                    key={`e-${e.fromId}-${e.toId}-${i}`}
+                    className="tr-edge-line"
+                    d={`M ${e.fromX + SIDE_PAD} ${e.fromY} L ${e.toX + SIDE_PAD} ${e.toY}`}
+                  />
+                ))}
+              </svg>
+              {layout.nodes.map(n => (
+                <div
+                  key={n.id}
+                  className={[
+                    'tr-node',
+                    selId === n.id ? 'selected' : '',
+                    hlId === n.id ? 'hl' : '',
+                    n.id === root.id ? 'root-mark' : '',
+                  ].filter(Boolean).join(' ')}
+                  style={{ transform: `translate(${n.x + SIDE_PAD}px, ${n.y}px)` }}
+                  onClick={() => setSelId(n.id)}
+                >
+                  {n.value}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 01</span>
+          <span className="italic">点击任一节点以选中；"＋ 添加子节点" 将其挂入选中节点之下。</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+            <span>INPUTS ↓</span>
+          </div>
+
+          <div className={`sel-display ${selInfo ? '' : 'none'}`}>
+            <span>SELECTED</span>
+            <span className="val">{selInfo ? `${selInfo.node.value} · id#${selInfo.node.id}` : '未选中 · click a node'}</span>
+          </div>
+
+          <div className="input-row">
+            <label>VALUE</label>
+            <input
+              className="lab-input"
+              value={valIn}
+              onChange={e => setValIn(e.target.value)}
+              placeholder="节点名 · 留空则随机字母"
+            />
+          </div>
+
+          <div className="btn-grid cols-3">
+            <button className="lab-btn accent" onClick={addChild}>
+              <span>添加子节点</span><span className="sym">＋</span>
+            </button>
+            <button className="lab-btn danger" onClick={deleteSubtree}>
+              <span>删除子树</span><span className="sym">−</span>
+            </button>
+            <button className="lab-btn" onClick={renameSelected}>
+              <span>重命名</span><span className="sym">✎</span>
+            </button>
+          </div>
+
+          <div style={{ height: 16 }} />
+          <div className="btn-grid">
+            <button className="lab-btn" onClick={() => setSelId(null)}>
+              <span>清除选中</span><span className="sym">∅</span>
+            </button>
+            <button className="lab-btn" onClick={reset}>
+              <span>恢复初始 RESET</span><span className="sym">↺</span>
+            </button>
+          </div>
+
+          <div style={{ height: 14 }} />
+          <div className="input-row-hint">
+            § "度" 指节点的孩子数；"高" 指根到最远叶的层数；
+            "深度" 指某节点自根数起的层数——根在第 1 层。
+          </div>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>时间复杂度 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · COMPLEXITY</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>操作 Operation</th>
+              <th>最好 Best</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>添加子节点</td>
+              <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+              <td>已知父节点引用时仅挂接一次</td>
+            </tr>
+            <tr>
+              <td>按值查找</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>需遍历整棵树</td>
+            </tr>
+            <tr>
+              <td>删除子树</td>
+              <td className="c-good">O(1)</td><td className="c-mid">O(k)</td><td className="c-bad">O(n)</td>
+              <td>k 为被删子树的节点数</td>
+            </tr>
+            <tr>
+              <td>求高 / 求节点数</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>必须递归访问所有节点</td>
+            </tr>
+            <tr>
+              <td>求深度 (按 id)</td>
+              <td className="c-good">O(1)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>最坏需搜遍整棵树</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">递归结构</div>
+          <div className="trait-desc">树要么为空，要么由一个根与若干不相交的子树组成——定义本身就是递归的。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">单一父亲</div>
+          <div className="trait-desc">除根外每个节点都恰有一个父亲，形成无环的层级关系，由此衍生出唯一的路径。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">度 · 高 · 深</div>
+          <div className="trait-desc">度是节点的孩子数，高是从根到叶的最大层数，深度是节点本身所处的层——三者各守其职。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">表示多样</div>
+          <div className="trait-desc">双亲表示、孩子链表、孩子-兄弟——同一棵树可以有多种存储方式，各自偏重不同操作。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 02 · Binary Tree  (二叉树 · 四种遍历)
+   ═════════════════════════════════════════════════════════════════════ */
+function makeInitialBinaryTree(idRef) {
+  const n = (value, left = null, right = null) => ({ id: ++idRef.current, value, left, right });
+  return n(1,
+    n(2,
+      n(4),
+      n(5, n(8), n(9))
+    ),
+    n(3,
+      n(6, null, n(10)),
+      n(7)
+    )
+  );
+}
+
+function bCount(node) { if (!node) return 0; return 1 + bCount(node.left) + bCount(node.right); }
+function bHeight(node) { if (!node) return 0; return 1 + Math.max(bHeight(node.left), bHeight(node.right)); }
+function bLeaves(node) {
+  if (!node) return 0;
+  if (!node.left && !node.right) return 1;
+  return bLeaves(node.left) + bLeaves(node.right);
+}
+function bIsFull(node) {
+  if (!node) return true;
+  if (!node.left && !node.right) return true;
+  if (node.left && node.right) return bIsFull(node.left) && bIsFull(node.right);
+  return false;
+}
+function bIsComplete(node) {
+  if (!node) return true;
+  const q = [node];
+  let seenNull = false;
+  while (q.length) {
+    const n = q.shift();
+    if (!n) { seenNull = true; continue; }
+    if (seenNull) return false;
+    q.push(n.left);
+    q.push(n.right);
+  }
+  return true;
+}
+function bFindAndParent(root, id, parent = null, side = null) {
+  if (!root) return null;
+  if (root.id === id) return { node: root, parent, side };
+  return bFindAndParent(root.left, id, root, 'L') || bFindAndParent(root.right, id, root, 'R');
+}
+function bPre(node, out) { if (!node) return; out.push(node); bPre(node.left, out); bPre(node.right, out); }
+function bIn(node, out)  { if (!node) return; bIn(node.left, out); out.push(node); bIn(node.right, out); }
+function bPost(node, out){ if (!node) return; bPost(node.left, out); bPost(node.right, out); out.push(node); }
+function bLevel(node) {
+  const out = [];
+  const q = node ? [node] : [];
+  while (q.length) {
+    const n = q.shift();
+    out.push(n);
+    if (n.left) q.push(n.left);
+    if (n.right) q.push(n.right);
+  }
+  return out;
+}
+
+const TRAV_MODES = [
+  { key: 'pre',   zh: '前序', en: 'Pre-order',   tag: 'NLR', fn: (r) => { const o = []; bPre(r, o);  return o; } },
+  { key: 'in',    zh: '中序', en: 'In-order',    tag: 'LNR', fn: (r) => { const o = []; bIn(r, o);   return o; } },
+  { key: 'post',  zh: '后序', en: 'Post-order',  tag: 'LRN', fn: (r) => { const o = []; bPost(r, o); return o; } },
+  { key: 'level', zh: '层序', en: 'Level-order', tag: 'BFS', fn: (r) => bLevel(r) },
+];
+
+function BinaryTreeModule() {
+  const idRef = useRef(2000);
+  const [root, setRoot] = useState(() => makeInitialBinaryTree(idRef));
+  const [selId, setSelId] = useState(null);
+  const [valIn, setValIn] = useState('');
+
+  // Traversal state
+  const [mode, setMode] = useState('pre');
+  const [sequence, setSequence] = useState([]);       // array of node objects
+  const [curIdx, setCurIdx] = useState(-1);           // index into sequence while animating
+  const [visited, setVisited] = useState(new Set());  // ids already highlighted as visited
+  const animRef = useRef({ timer: null, seq: [], i: 0 });
+
+  const [log, pushLog, clearLog] = useLog();
+
+  const layout = useMemo(() => root ? layoutBinaryTree(root) : null, [root]);
+  const stageW = (layout?.width || NODE_SLOT_W) + SIDE_PAD * 2;
+  const stageH = (bHeight(root) * LEVEL_H) + 40;
+
+  const stopAnim = () => {
+    if (animRef.current.timer) {
+      clearTimeout(animRef.current.timer);
+      animRef.current.timer = null;
+    }
+  };
+  useEffect(() => stopAnim, []);
+
+  const parsedVal = () => {
+    const t = valIn.trim();
+    if (t !== '') {
+      const n = parseInt(t, 10);
+      return Number.isNaN(n) ? t : n;
+    }
+    return Math.floor(Math.random() * 99) + 1;
+  };
+
+  const deepInsert = (n, parentId, side, child) => {
+    if (!n) return n;
+    if (n.id === parentId) {
+      if (side === 'L') return { ...n, left: child };
+      return { ...n, right: child };
+    }
+    return { ...n, left: deepInsert(n.left, parentId, side, child), right: deepInsert(n.right, parentId, side, child) };
+  };
+
+  const insertChild = (side) => {
+    if (!selId) {
+      pushLog(`insert × 请先选中一个节点作父`, '—', 'error');
+      return;
+    }
+    const info = bFindAndParent(root, selId);
+    if (!info) return;
+    if (side === 'L' && info.node.left) {
+      pushLog(`insert × 左子已占用 · "${info.node.left.value}"`, '—', 'error');
+      return;
+    }
+    if (side === 'R' && info.node.right) {
+      pushLog(`insert × 右子已占用 · "${info.node.right.value}"`, '—', 'error');
+      return;
+    }
+    const v = parsedVal();
+    const newNode = { id: ++idRef.current, value: v, left: null, right: null };
+    setRoot(deepInsert(root, selId, side, newNode));
+    pushLog(`insert-${side === 'L' ? 'left' : 'right'} · ${v} → 父 ${info.node.value}`, 'O(1)', 'success');
+  };
+
+  const deleteSubtree = () => {
+    if (!selId) {
+      pushLog(`delete × 请先选中节点`, '—', 'error');
+      return;
+    }
+    if (selId === root?.id) {
+      setRoot(null);
+      setSelId(null);
+      pushLog(`delete · 整树清空`, 'O(n)', 'success');
+      return;
+    }
+    const deep = (n) => {
+      if (!n) return null;
+      if (n.left && n.left.id === selId) return { ...n, left: null };
+      if (n.right && n.right.id === selId) return { ...n, right: null };
+      return { ...n, left: deep(n.left), right: deep(n.right) };
+    };
+    const info = bFindAndParent(root, selId);
+    const removed = info ? bCount(info.node) : 0;
+    setRoot(deep(root));
+    setSelId(null);
+    pushLog(`delete-subtree · 子树及 ${removed - 1} 后代`, 'O(n)', 'success');
+  };
+
+  const runTraversal = (key) => {
+    if (!root) {
+      pushLog(`traverse × 空树`, '—', 'error');
+      return;
+    }
+    stopAnim();
+    const def = TRAV_MODES.find(m => m.key === key);
+    const seq = def.fn(root);
+    setMode(key);
+    setSequence(seq);
+    setVisited(new Set());
+    setCurIdx(-1);
+    pushLog(`traverse · ${def.zh} ${def.en} · ${def.tag}`, `O(${seq.length})`, 'info');
+
+    animRef.current.seq = seq;
+    animRef.current.i = 0;
+    const step = () => {
+      const { seq, i } = animRef.current;
+      if (i >= seq.length) {
+        setCurIdx(-1);
+        animRef.current.timer = null;
+        pushLog(
+          `${def.zh}完毕 · [${seq.map(n => n.value).join(', ')}]`,
+          'O(n)',
+          'success'
+        );
+        return;
+      }
+      setCurIdx(i);
+      setVisited(prev => {
+        const nx = new Set(prev);
+        if (i > 0) nx.add(seq[i - 1].id);
+        return nx;
+      });
+      animRef.current.i = i + 1;
+      animRef.current.timer = setTimeout(step, 520);
+    };
+    animRef.current.timer = setTimeout(step, 40);
+  };
+
+  const clearTrav = () => {
+    stopAnim();
+    setSequence([]);
+    setCurIdx(-1);
+    setVisited(new Set());
+    pushLog(`clear-traversal · 清除遍历轨迹`, '—', 'info');
+  };
+
+  const reset = () => {
+    stopAnim();
+    idRef.current = 2000;
+    setRoot(makeInitialBinaryTree(idRef));
+    setSelId(null);
+    setSequence([]);
+    setVisited(new Set());
+    setCurIdx(-1);
+    pushLog(`reset · 恢复初始状态`, '—', 'info');
+  };
+
+  const modeDef = TRAV_MODES.find(m => m.key === mode);
+  const count = bCount(root);
+  const height = bHeight(root);
+  const leaves = bLeaves(root);
+  const isFull = root ? bIsFull(root) : true;
+  const isComplete = root ? bIsComplete(root) : true;
+
+  const selInfo = selId ? bFindAndParent(root, selId) : null;
+
+  const curId = curIdx >= 0 && curIdx < sequence.length ? sequence[curIdx].id : null;
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 02 / 03</div>
+          <div><strong>TYPE</strong> Binary</div>
+          <div><strong>NODES</strong> <span style={{color:'var(--accent)'}}>{count}</span></div>
+          <div><strong>HEIGHT</strong> {height}</div>
+          <div><strong>LEAVES</strong> {leaves}</div>
+        </aside>
+        <div className="module-intro-body">
+          <p>二叉树是一种特殊的树：每个节点至多有两个孩子，且严格区分左与右。这一看似微小的约束带来了深远的结果——它使递归定义与线性化存储都变得分外简洁，也催生了遍历的四种经典次序。</p>
+          <p>前序、中序、后序 三种皆属深度优先——区别仅在根节点何时被"访问"；层序则属广度优先，按层由近及远。任何一棵二叉树都可由其中两种遍历（必须含中序）唯一复原——它们是树的另一种坐标系。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>IS-FULL</strong> <span style={{color: isFull ? '#2B7A4B' : 'var(--ink-muted)'}}>{isFull ? 'YES' : 'NO'}</span></div>
+          <div><strong>IS-COMPLETE</strong> <span style={{color: isComplete ? '#2B7A4B' : 'var(--ink-muted)'}}>{isComplete ? 'YES' : 'NO'}</span></div>
+          <div><strong>MODE</strong> <span style={{color:'var(--accent)'}}>{modeDef.tag}</span></div>
+          <div><strong>SELECTED</strong> {selInfo ? selInfo.node.value : '∅'}</div>
+          <div><strong>SEQUENCE</strong> {sequence.length || '—'}</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 02 · BINARY TRAVERSAL</span>
+        <span className="viz-label-right">
+          {modeDef.zh.toUpperCase()} · {modeDef.tag} · {curIdx >= 0 ? `STEP ${curIdx + 1}/${sequence.length}` : 'IDLE'}
+        </span>
+
+        <div className="viz-canvas-wrap">
+          {!root ? (
+            <div className="tr-empty">— 空树 · empty tree —</div>
+          ) : (
+            <div className="tr-stage" style={{ width: stageW, height: stageH, position: 'relative' }}>
+              <svg className="tr-edges" viewBox={`0 0 ${stageW} ${stageH}`}>
+                {layout.edges.map((e, i) => (
+                  <path
+                    key={`e-${i}-${e.fromId || 'g'}-${e.toId || 'g'}`}
+                    className="tr-edge-line"
+                    d={`M ${e.fromX + SIDE_PAD} ${e.fromY} L ${e.toX + SIDE_PAD} ${e.toY}`}
+                  />
+                ))}
+              </svg>
+
+              {layout.nodes.map(n => (
+                <div
+                  key={n.id}
+                  className={[
+                    'tr-node',
+                    selId === n.id ? 'selected' : '',
+                    curId === n.id ? 'hl' : '',
+                    visited.has(n.id) && curId !== n.id ? 'visited' : '',
+                    n.id === root.id ? 'root-mark' : '',
+                  ].filter(Boolean).join(' ')}
+                  style={{ transform: `translate(${n.x + SIDE_PAD}px, ${n.y}px)` }}
+                  onClick={() => setSelId(n.id)}
+                >
+                  {n.value}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="trav-display">
+          <div className="trav-display-title">
+            <span className="hdr">§ 遍历序列 · <span className="em">{modeDef.zh}</span> · <span style={{color:'var(--ink-muted)', fontFamily:"'Fraunces',serif", fontStyle:'italic'}}>{modeDef.en}</span> · <span style={{color:'var(--accent)'}}>{modeDef.tag}</span></span>
+            <span>{sequence.length ? `${sequence.length} NODES` : '—'}</span>
+          </div>
+          {sequence.length === 0 ? (
+            <div className="trav-placeholder">— 选择一种遍历方式以开始 —</div>
+          ) : (
+            <div className="trav-sequence">
+              {sequence.map((n, i) => (
+                <React.Fragment key={n.id}>
+                  <span className={`trav-chip ${curIdx === i ? 'cur' : ''}`}>
+                    {n.value}
+                  </span>
+                  {i < sequence.length - 1 && <span className="trav-sep">→</span>}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 02</span>
+          <span className="italic">点选节点以选中；再按右侧控件插入左子或右子，并观察四种遍历次序。</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;OPERATIONS</span>
+            <span>INPUTS ↓</span>
+          </div>
+
+          <div className={`sel-display ${selInfo ? '' : 'none'}`}>
+            <span>SELECTED</span>
+            <span className="val">{selInfo ? `${selInfo.node.value} · id#${selInfo.node.id}` : '未选中 · click a node'}</span>
+          </div>
+
+          <div className="input-row">
+            <label>VALUE</label>
+            <input
+              className="lab-input"
+              value={valIn}
+              onChange={e => setValIn(e.target.value)}
+              placeholder="留空则随机数字"
+            />
+          </div>
+
+          <div className="btn-grid cols-3">
+            <button className="lab-btn accent" onClick={() => insertChild('L')}>
+              <span>插入左子</span><span className="sym">+←</span>
+            </button>
+            <button className="lab-btn accent" onClick={() => insertChild('R')}>
+              <span>插入右子</span><span className="sym">+→</span>
+            </button>
+            <button className="lab-btn danger" onClick={deleteSubtree}>
+              <span>删除子树</span><span className="sym">−</span>
+            </button>
+          </div>
+
+          <div style={{ height: 16 }} />
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.22em', color: 'var(--ink-muted)', textTransform: 'uppercase' }}>
+            § 遍历 · Traversal
+          </div>
+          <div className="trav-mode-pills">
+            {TRAV_MODES.map(m => (
+              <button
+                key={m.key}
+                className={mode === m.key ? 'active' : ''}
+                onClick={() => runTraversal(m.key)}
+              >
+                <span className="zh">{m.zh}</span>
+                {m.tag}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ height: 14 }} />
+          <div className="btn-grid">
+            <button className="lab-btn" onClick={clearTrav}>
+              <span>清除轨迹</span><span className="sym">∅</span>
+            </button>
+            <button className="lab-btn" onClick={reset}>
+              <span>恢复初始 RESET</span><span className="sym">↺</span>
+            </button>
+          </div>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>时间复杂度 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · COMPLEXITY</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>操作 Operation</th>
+              <th>最好 Best</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>插入子节点</td>
+              <td className="c-good">O(1)</td><td className="c-good">O(1)</td><td className="c-good">O(1)</td>
+              <td>已知父的情况下仅改一枚指针</td>
+            </tr>
+            <tr>
+              <td>前序 / 中序 / 后序</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>每个节点恰访问一次</td>
+            </tr>
+            <tr>
+              <td>层序遍历</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>辅助队列空间 O(w)，w 为最大宽</td>
+            </tr>
+            <tr>
+              <td>求高度</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>等价于后序遍历一次</td>
+            </tr>
+            <tr>
+              <td>判断完全 / 满</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>通常由层序或递归一遍完成</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">左右有别</div>
+          <div className="trait-desc">二叉树严格区分左右两子，即使只有一个孩子也不能混淆——这是它与一般树的本质差别。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">四种遍历</div>
+          <div className="trait-desc">前、中、后三序仅相差"根"在何时被访问；层序则换深度优先为广度优先。各自服务不同目的。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">形态谱系</div>
+          <div className="trait-desc">普通、满、完全、平衡——同一种"二叉"之名下暗藏不同形态，各自有独特的性质与用途。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">顺序可存</div>
+          <div className="trait-desc">完全二叉树可无指针地存于数组：parent=⌊i/2⌋，children=2i 与 2i+1——堆结构的基石。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Specimen 03 · Huffman Tree  (哈夫曼树)
+   ═════════════════════════════════════════════════════════════════════ */
+const INITIAL_HUFFMAN_DATA = [
+  { ch: 'A', freq: 5 },
+  { ch: 'B', freq: 9 },
+  { ch: 'C', freq: 12 },
+  { ch: 'D', freq: 13 },
+  { ch: 'E', freq: 16 },
+  { ch: 'F', freq: 45 },
+];
+
+// each tree node: { id, freq, ch? (leaf only), left, right, isLeaf }
+function makeLeafForest(data, idRef) {
+  return data.map(d => ({
+    id: ++idRef.current,
+    freq: d.freq,
+    ch: d.ch,
+    left: null,
+    right: null,
+    isLeaf: true,
+  }));
+}
+
+function pickTwoSmallest(forest) {
+  if (forest.length < 2) return null;
+  const sorted = [...forest]
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => a.t.freq - b.t.freq || a.i - b.i);
+  const [a, b] = [sorted[0], sorted[1]];
+  return { a: a.t, aIdx: a.i, b: b.t, bIdx: b.i };
+}
+
+function mergeTwo(a, b, idRef) {
+  // convention: smaller-freq child goes left
+  const [L, R] = a.freq <= b.freq ? [a, b] : [b, a];
+  return {
+    id: ++idRef.current,
+    freq: L.freq + R.freq,
+    ch: null,
+    left: L,
+    right: R,
+    isLeaf: false,
+  };
+}
+
+/* Build code table from huffman tree */
+function buildCodes(tree) {
+  const codes = [];
+  const walk = (n, code) => {
+    if (!n) return;
+    if (n.isLeaf) {
+      codes.push({ ch: n.ch, freq: n.freq, code: code || '0' });
+      return;
+    }
+    walk(n.left, code + '0');
+    walk(n.right, code + '1');
+  };
+  walk(tree, '');
+  return codes.sort((a, b) => a.ch.localeCompare(b.ch));
+}
+
+function HuffmanTreeModule() {
+  const idRef = useRef(3000);
+  const [forest, setForest] = useState(() => makeLeafForest(INITIAL_HUFFMAN_DATA, idRef));
+  const [history, setHistory] = useState([]); // array of forests for back step
+  const [picked, setPicked] = useState({ a: null, b: null }); // ids of currently picked pair
+  const [log, pushLog, clearLog] = useLog();
+  const autoRef = useRef(null);
+
+  const stopAuto = () => {
+    if (autoRef.current) { clearInterval(autoRef.current); autoRef.current = null; }
+  };
+  useEffect(() => stopAuto, []);
+
+  const finished = forest.length === 1;
+  const tree = finished ? forest[0] : null;
+
+  const layout = useMemo(() => tree ? layoutBinaryTree(tree) : null, [tree]);
+  const stageW = layout ? layout.width + SIDE_PAD * 2 : 520;
+  const stageH = tree ? (bHeight(tree) * LEVEL_H) + 40 : 220;
+
+  const forestRendered = useMemo(() => {
+    // When not finished, lay out each subtree horizontally side by side (sorted by freq asc)
+    if (finished) return null;
+    const sorted = [...forest].sort((a, b) => a.freq - b.freq);
+    const results = [];
+    let offset = 0;
+    let maxH = 0;
+    for (const t of sorted) {
+      const lay = layoutBinaryTree(t, 0, offset);
+      results.push({ tree: t, layout: lay });
+      offset = lay ? (offset + lay.width + 20) : offset + NODE_SLOT_W + 20;
+      const h = bHeight(t);
+      if (h > maxH) maxH = h;
+    }
+    return { items: results, width: Math.max(offset - 20, 120), height: maxH * LEVEL_H + 40 };
+  }, [forest, finished]);
+
+  const stepOnce = () => {
+    if (forest.length < 2) {
+      pushLog(`step × 森林已合并为单棵树`, '—', 'info');
+      stopAuto();
+      return;
+    }
+    const pick = pickTwoSmallest(forest);
+    if (!pick) return;
+    const merged = mergeTwo(pick.a, pick.b, idRef);
+    // record history for "back"
+    setHistory(h => [...h, forest]);
+    // mark as picked briefly (visual highlight)
+    setPicked({ a: pick.a.id, b: pick.b.id });
+    setTimeout(() => setPicked({ a: null, b: null }), 260);
+
+    // remove a & b, append merged
+    const next = forest.filter(t => t.id !== pick.a.id && t.id !== pick.b.id);
+    next.push(merged);
+    setForest(next);
+    pushLog(
+      `merge · ${pick.a.isLeaf ? pick.a.ch : '['+pick.a.freq+']'}(${pick.a.freq}) + ${pick.b.isLeaf ? pick.b.ch : '['+pick.b.freq+']'}(${pick.b.freq}) = ${merged.freq}`,
+      'O(log n)',
+      'success'
+    );
+  };
+
+  const backStep = () => {
+    if (history.length === 0) {
+      pushLog(`back × 已在初始状态`, '—', 'info');
+      return;
+    }
+    stopAuto();
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setForest(prev);
+    pushLog(`back · 撤销上一次合并`, '—', 'info');
+  };
+
+  const autoBuild = () => {
+    stopAuto();
+    if (forest.length < 2) return;
+    pushLog(`auto · 自动合并直至形成哈夫曼树`, '—', 'info');
+    autoRef.current = setInterval(() => {
+      setForest(cur => {
+        if (cur.length < 2) {
+          stopAuto();
+          return cur;
+        }
+        const pick = pickTwoSmallest(cur);
+        if (!pick) { stopAuto(); return cur; }
+        const merged = mergeTwo(pick.a, pick.b, idRef);
+        setHistory(h => [...h, cur]);
+        setPicked({ a: pick.a.id, b: pick.b.id });
+        setTimeout(() => setPicked({ a: null, b: null }), 260);
+        const next = cur.filter(t => t.id !== pick.a.id && t.id !== pick.b.id);
+        next.push(merged);
+        return next;
+      });
+    }, 700);
+  };
+
+  const reset = () => {
+    stopAuto();
+    idRef.current = 3000;
+    setForest(makeLeafForest(INITIAL_HUFFMAN_DATA, idRef));
+    setHistory([]);
+    setPicked({ a: null, b: null });
+    pushLog(`reset · 恢复初始字符频次`, '—', 'info');
+  };
+
+  // Compute weighted path length (WPL) on finished tree
+  const wpl = useMemo(() => {
+    if (!tree) return 0;
+    let total = 0;
+    const walk = (n, d) => {
+      if (!n) return;
+      if (n.isLeaf) { total += n.freq * d; return; }
+      walk(n.left, d + 1);
+      walk(n.right, d + 1);
+    };
+    walk(tree, 0);
+    return total;
+  }, [tree]);
+
+  const codes = useMemo(() => finished ? buildCodes(tree) : [], [tree, finished]);
+  const avgLen = codes.length && finished ? (
+    codes.reduce((s, c) => s + c.freq * c.code.length, 0) /
+    codes.reduce((s, c) => s + c.freq, 0)
+  ).toFixed(3) : '—';
+
+  // Find which forest trees are the two smallest (for pre-highlight display)
+  const nextPick = !finished ? pickTwoSmallest(forest) : null;
+
+  const totalFreq = forest.reduce((s, t) => s + t.freq, 0);
+
+  return (
+    <>
+      <section className="module-intro">
+        <aside className="module-intro-side">
+          <div><strong>SPECIMEN</strong> 03 / 03</div>
+          <div><strong>TYPE</strong> Optimal Binary</div>
+          <div><strong>LEAVES</strong> {INITIAL_HUFFMAN_DATA.length}</div>
+          <div><strong>TOTAL-FQ</strong> {totalFreq}</div>
+          <div><strong>STATUS</strong> <span style={{color:'var(--accent)'}}>{finished ? 'FINISHED' : 'BUILDING'}</span></div>
+        </aside>
+        <div className="module-intro-body">
+          <p>哈夫曼树是为一组带权叶子构造的"最优二叉树"——使得带权路径长度 WPL = Σ wᵢ · lᵢ 最小。它以一种朴素的贪心规则被构造出来：每次从森林中取出权值最小的两棵，合并为新的子树，其根的权值为两者之和；重复至森林仅存一棵。</p>
+          <p>所得之树，常被用于构造前缀编码——字符出现越频繁，其编码越短；反之则长。如此便诞生了最经典的数据压缩方案之一，以不等长替代等长，以统计偏好兑换比特。</p>
+        </div>
+        <aside className="module-intro-side" style={{ textAlign: 'right' }}>
+          <div><strong>FOREST</strong> {forest.length}</div>
+          <div><strong>MERGED</strong> {history.length}</div>
+          <div><strong>STEPS-TO-GO</strong> <span style={{color:'var(--accent)'}}>{Math.max(0, forest.length - 1)}</span></div>
+          <div><strong>WPL</strong> {finished ? wpl : '—'}</div>
+          <div><strong>AVG-LEN</strong> {avgLen}</div>
+        </aside>
+      </section>
+
+      <section className="viz-panel">
+        <span className="viz-corner bl" />
+        <span className="viz-corner br" />
+        <span className="viz-label">FIG. 03 · HUFFMAN CONSTRUCTION</span>
+        <span className="viz-label-right">
+          {finished ? `WPL ${wpl} · OPTIMAL` : `NEXT: ${nextPick ? `[${nextPick.a.freq}] + [${nextPick.b.freq}]` : '—'}`}
+        </span>
+
+        {/* 森林视图（当未完成时） */}
+        {!finished && forestRendered && (
+          <div style={{ marginTop: 20 }}>
+            <div className="hf-forest-title">
+              <span>§ 当前森林 · FOREST ({forest.length})</span>
+              <span>{nextPick ? `待合并：${nextPick.a.freq} + ${nextPick.b.freq}` : '—'}</span>
+            </div>
+            <div className="hf-forest">
+              {forest
+                .map((t, i) => ({ t, i }))
+                .sort((a, b) => a.t.freq - b.t.freq)
+                .map(({ t, i }) => {
+                  const isPicked = picked.a === t.id || picked.b === t.id;
+                  const isNext = !picked.a && !picked.b && nextPick && (nextPick.a.id === t.id || nextPick.b.id === t.id);
+                  return (
+                    <span
+                      key={t.id}
+                      className={[
+                        'hf-chip',
+                        t.isLeaf ? '' : 'merged',
+                        isPicked ? 'picked' : '',
+                        isNext ? 'picked' : '',
+                      ].filter(Boolean).join(' ')}
+                    >
+                      <span className="ch">{t.isLeaf ? t.ch : `T${i}`}</span>
+                      <span className="fq">· {t.freq}</span>
+                    </span>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        <div className="viz-canvas-wrap" style={{ minHeight: 260 }}>
+          {finished ? (
+            /* 完成后的哈夫曼树 */
+            <div className="tr-stage" style={{ width: stageW, height: stageH, position: 'relative' }}>
+              <svg className="tr-edges" viewBox={`0 0 ${stageW} ${stageH}`}>
+                {layout.edges.map((e, i) => (
+                  <g key={`g-${i}-${e.fromId}-${e.toId}`}>
+                    <path
+                      className="tr-edge-line"
+                      d={`M ${e.fromX + SIDE_PAD} ${e.fromY} L ${e.toX + SIDE_PAD} ${e.toY}`}
+                    />
+                    <text
+                      className="tr-edge-label"
+                      x={(e.fromX + e.toX) / 2 + SIDE_PAD + (e.label === '0' ? -10 : 8)}
+                      y={(e.fromY + e.toY) / 2}
+                    >
+                      {e.label}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+              {layout.nodes.map(n => {
+                const isLeaf = !n.value; // placeholder—see below for proper leaf detection
+                return null;
+              })}
+              {/* 自己遍历树取得更丰富的信息 */}
+              {(() => {
+                const collectWithMeta = (t, out = [], level = 0, x = 0) => {
+                  // not used — we use layout.nodes plus a map-lookup for meta
+                };
+                const metaById = new Map();
+                const walk = (n) => {
+                  if (!n) return;
+                  metaById.set(n.id, n);
+                  walk(n.left); walk(n.right);
+                };
+                walk(tree);
+                return layout.nodes.map(n => {
+                  const m = metaById.get(n.id);
+                  if (!m) return null;
+                  if (m.isLeaf) {
+                    return (
+                      <div
+                        key={n.id}
+                        className="tr-node leaf-char"
+                        style={{ transform: `translate(${n.x + SIDE_PAD}px, ${n.y}px)` }}
+                      >
+                        <span className="leaf-ch">{m.ch}</span>
+                        <span className="leaf-freq">freq {m.freq}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={n.id}
+                      className={[
+                        'tr-node merged',
+                        n.id === tree.id ? 'root-mark' : '',
+                      ].filter(Boolean).join(' ')}
+                      style={{ transform: `translate(${n.x + SIDE_PAD}px, ${n.y}px)` }}
+                    >
+                      {m.freq}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          ) : forestRendered ? (
+            /* 构建中 · 多棵树并排展示 */
+            <div
+              className="tr-stage"
+              style={{
+                width: Math.max(forestRendered.width + SIDE_PAD * 2, 520),
+                height: forestRendered.height + 20,
+                position: 'relative'
+              }}
+            >
+              <svg className="tr-edges" viewBox={`0 0 ${Math.max(forestRendered.width + SIDE_PAD * 2, 520)} ${forestRendered.height + 20}`}>
+                {forestRendered.items.flatMap((item, ti) =>
+                  item.layout.edges.map((e, ei) => (
+                    <path
+                      key={`fe-${ti}-${ei}`}
+                      className="tr-edge-line"
+                      d={`M ${e.fromX + SIDE_PAD} ${e.fromY} L ${e.toX + SIDE_PAD} ${e.toY}`}
+                    />
+                  ))
+                )}
+              </svg>
+              {forestRendered.items.flatMap((item) => {
+                const metaById = new Map();
+                const walk = (n) => {
+                  if (!n) return;
+                  metaById.set(n.id, n);
+                  walk(n.left); walk(n.right);
+                };
+                walk(item.tree);
+                return item.layout.nodes.map(n => {
+                  const m = metaById.get(n.id);
+                  if (!m) return null;
+                  const isPicked = picked.a === m.id || picked.b === m.id;
+                  const isNext = !picked.a && !picked.b && nextPick && (nextPick.a.id === m.id || nextPick.b.id === m.id);
+                  if (m.isLeaf) {
+                    return (
+                      <div
+                        key={m.id}
+                        className={[
+                          'tr-node leaf-char',
+                          isPicked ? 'hl' : '',
+                          isNext ? 'hl' : '',
+                        ].filter(Boolean).join(' ')}
+                        style={{ transform: `translate(${n.x + SIDE_PAD}px, ${n.y}px)` }}
+                      >
+                        <span className="leaf-ch">{m.ch}</span>
+                        <span className="leaf-freq">freq {m.freq}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={m.id}
+                      className={[
+                        'tr-node merged',
+                        isPicked ? 'hl' : '',
+                        isNext ? 'hl' : '',
+                      ].filter(Boolean).join(' ')}
+                      style={{ transform: `translate(${n.x + SIDE_PAD}px, ${n.y}px)` }}
+                    >
+                      {m.freq}
+                    </div>
+                  );
+                });
+              })}
+            </div>
+          ) : null}
+        </div>
+
+        {/* 编码表 */}
+        {finished && (
+          <div className="hf-codetable">
+            <div className="hf-codetable-title">
+              <span><span className="num">§</span> 编码表 · HUFFMAN CODES</span>
+              <span>WPL = {wpl} · AVG = {avgLen} bits</span>
+            </div>
+            <div className="hf-code-grid">
+              {codes.map(c => (
+                <div className="hf-code-row" key={c.ch}>
+                  <span><span className="ch">{c.ch}</span> <span className="fq">· {c.freq}</span></span>
+                  <span className="cd">{c.code}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="viz-caption">
+          <span className="fig">FIG. 03</span>
+          <span className="italic">{finished
+            ? '每条左边标 0，右边标 1；从根到叶的路径即字符编码。'
+            : '每一步从森林中挑出权值最小的两棵，合并为新子树。'}</span>
+        </div>
+      </section>
+
+      <section className="controls-grid">
+        <div className="control-block">
+          <div className="control-block-title">
+            <span><span className="num">§1</span> &nbsp;CONSTRUCTION</span>
+            <span>{finished ? 'DONE' : 'IN PROGRESS'}</span>
+          </div>
+
+          <div style={{ fontFamily: "'Fraunces','Noto Serif SC',serif", fontSize: 14, color: 'var(--ink-soft)', marginBottom: 14, lineHeight: 1.6 }}>
+            初始字符与频次：
+            <div style={{ marginTop: 8, fontFamily: "'JetBrains Mono',monospace", fontSize: 12, letterSpacing: '0.05em' }}>
+              {INITIAL_HUFFMAN_DATA.map(d => (
+                <span key={d.ch} style={{ marginRight: 14 }}>
+                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{d.ch}</span>
+                  <span style={{ color: 'var(--ink-muted)' }}>:{d.freq}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="btn-grid cols-3">
+            <button className="lab-btn accent" onClick={stepOnce} disabled={finished}>
+              <span>单步合并</span><span className="sym">→</span>
+            </button>
+            <button className="lab-btn" onClick={autoBuild} disabled={finished}>
+              <span>自动构建</span><span className="sym">▷▷</span>
+            </button>
+            <button className="lab-btn" onClick={backStep} disabled={history.length === 0}>
+              <span>回退一步</span><span className="sym">←</span>
+            </button>
+          </div>
+
+          <div style={{ height: 14 }} />
+          <div className="btn-grid">
+            <button className="lab-btn" onClick={() => { stopAuto(); pushLog('pause · 暂停自动构建', '—', 'info'); }} disabled={!autoRef.current}>
+              <span>暂停 PAUSE</span><span className="sym">‖</span>
+            </button>
+            <button className="lab-btn" onClick={reset}>
+              <span>恢复初始 RESET</span><span className="sym">↺</span>
+            </button>
+          </div>
+
+          <div style={{ height: 14 }} />
+          <div className="input-row-hint">
+            § 贪心策略：每轮取频次最小的两棵树合并。频次相同时顺序不唯一，所得哈夫曼树可能多样，但 WPL 恒为最优。
+          </div>
+        </div>
+
+        <LogPanel log={log} onClear={clearLog} num="§2" />
+      </section>
+
+      <section className="complexity-block">
+        <div className="complexity-title">
+          <h3>时间复杂度 <span className="flourish">summary</span></h3>
+          <span className="num">§3 · COMPLEXITY</span>
+        </div>
+        <table className="complexity-table">
+          <thead>
+            <tr>
+              <th>操作 Operation</th>
+              <th>最好 Best</th>
+              <th>平均 Avg.</th>
+              <th>最坏 Worst</th>
+              <th>备注 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>单次取两最小</td>
+              <td className="c-good">O(log n)</td><td className="c-good">O(log n)</td><td className="c-good">O(log n)</td>
+              <td>使用小顶堆作优先队列</td>
+            </tr>
+            <tr>
+              <td>完整构建</td>
+              <td className="c-mid">O(n log n)</td><td className="c-mid">O(n log n)</td><td className="c-mid">O(n log n)</td>
+              <td>共需 n − 1 次合并</td>
+            </tr>
+            <tr>
+              <td>生成编码表</td>
+              <td className="c-bad">O(n)</td><td className="c-bad">O(n)</td><td className="c-bad">O(n)</td>
+              <td>一次 DFS 即可</td>
+            </tr>
+            <tr>
+              <td>编码一段文本</td>
+              <td className="c-bad">O(m)</td><td className="c-bad">O(m)</td><td className="c-bad">O(m)</td>
+              <td>m 为文本字符数</td>
+            </tr>
+            <tr>
+              <td>解码一串比特</td>
+              <td className="c-bad">O(b)</td><td className="c-bad">O(b)</td><td className="c-bad">O(b)</td>
+              <td>b 为比特数；沿树根下行匹配</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="traits-grid">
+        <div className="trait">
+          <div className="trait-num">TRAIT · 01</div>
+          <div className="trait-title">最优带权</div>
+          <div className="trait-desc">在给定叶权集合下，哈夫曼树使 WPL = Σ wᵢ · lᵢ 最小——它是"最优二叉树"的典范。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 02</div>
+          <div className="trait-title">贪心构造</div>
+          <div className="trait-desc">构造过程极简：每次从森林取最小两棵合并，如此重复直至成单。贪心足以达到全局最优。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 03</div>
+          <div className="trait-title">前缀码性质</div>
+          <div className="trait-desc">因所有字符皆为叶子，任一编码都不是另一编码的前缀——解码无歧义，无需分隔符。</div>
+        </div>
+        <div className="trait">
+          <div className="trait-num">TRAIT · 04</div>
+          <div className="trait-title">频次换长度</div>
+          <div className="trait-desc">高频字符获得短码，低频字符分得长码——以统计分布为燃料，以不等长编码为回报。</div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Root
+   ═════════════════════════════════════════════════════════════════════ */
+export default function TreeStructuresLab() {
+  const [tab, setTab] = useState('general');
+
+  const tabNameCN = tab === 'general' ? '树' : tab === 'binary' ? '二叉树' : '哈夫曼树';
+
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div className="lab-root">
+        <header className="lab-header">
+          <div className="lab-header-top">
+            <div className="lab-volume">
+              <span className="caps">VOL. 03</span>
+              <span className="caps">树 · 二叉树 / TREES &amp; BINARY TREES</span>
+            </div>
+            <div className="caps">A SPECIMEN STUDY / 2026</div>
+          </div>
+
+          <div className="lab-title-block">
+            <h1 className="lab-title">
+              层级之形与 <span className="em">递归之义</span>
+            </h1>
+            <div className="lab-subtitle">
+              <span className="dot" />
+              <span>DATA STRUCTURE LABORATORY</span>
+              <span>·</span>
+              <span>INTERACTIVE SPECIMENS</span>
+              <span>·</span>
+              <span className="italic serif" style={{ fontSize: 14, color: 'var(--ink-soft)' }}>
+                in hierarchies &amp; recursions
+              </span>
+            </div>
+          </div>
+
+          <div className="lab-header-bottom">
+            <span>§ 本卷 · 树 · 二叉树 · 哈夫曼树</span>
+            <span>三层递归 / 同一根脉</span>
+            <span>点选节点 · 观察遍历</span>
+          </div>
+        </header>
+
+        <main className="lab-container">
+          <nav className="lab-tabs">
+            <button
+              className={`lab-tab ${tab === 'general' ? 'active' : ''}`}
+              onClick={() => setTab('general')}
+            >
+              <span className="lab-tab-num">SPECIMEN · 01</span>
+              <span className="lab-tab-name">
+                树
+                <span className="lab-tab-name-en">General Tree</span>
+              </span>
+            </button>
+            <button
+              className={`lab-tab ${tab === 'binary' ? 'active' : ''}`}
+              onClick={() => setTab('binary')}
+            >
+              <span className="lab-tab-num">SPECIMEN · 02</span>
+              <span className="lab-tab-name">
+                二叉树
+                <span className="lab-tab-name-en">Binary Tree</span>
+              </span>
+            </button>
+            <button
+              className={`lab-tab ${tab === 'huffman' ? 'active' : ''}`}
+              onClick={() => setTab('huffman')}
+            >
+              <span className="lab-tab-num">SPECIMEN · 03</span>
+              <span className="lab-tab-name">
+                哈夫曼树
+                <span className="lab-tab-name-en">Huffman Tree</span>
+              </span>
+            </button>
+          </nav>
+
+          {tab === 'general' && <GeneralTreeModule />}
+          {tab === 'binary'  && <BinaryTreeModule />}
+          {tab === 'huffman' && <HuffmanTreeModule />}
+
+          <footer className="lab-footer">
+            <span>© DATA STRUCTURE LAB</span>
+            <span className="flourish serif italic" style={{ fontSize: 13, letterSpacing: 0, textTransform: 'none' }}>
+              fin · {tabNameCN}
+            </span>
+            <span>PLATE {tab === 'general' ? '01' : tab === 'binary' ? '02' : '03'} / 03</span>
+          </footer>
+        </main>
+      </div>
+    </>
+  );
+}
