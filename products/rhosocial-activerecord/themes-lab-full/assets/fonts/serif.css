@@ -1,0 +1,12 @@
+/**
+ * Font pack · Editorial Serif (Fraunces display + Inter Tight body)
+ * Identifier: data-font="serif"
+ */
+html[data-font="serif"] {
+  --font-display:     'Fraunces', 'Times New Roman', serif;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.025em;
+  --display-leading:  0.98;
+}

@@ -1,0 +1,188 @@
+/**
+ * Theme · Frutiger
+ * ═══════════════════════════════════════════════════════════════════════
+ * Frutiger Aero / early-2000s Y2K web aesthetic. Sky gradient, glossy
+ * buttons with mid-highlight, bokeh circles in the background, very
+ * rounded everything. Feels like Windows Vista / early Apple OS X.
+ * Identifier: data-theme="frutiger"
+ *
+ * Google Fonts needed (already loaded): Inter Tight
+ */
+
+[data-theme="frutiger"] {
+  --bg:           #EAF5FB;
+  --bg-2:         #D6E8F4;
+  --bg-elevated:  #FFFFFF;
+
+  --fg:           #0F2B48;
+  --fg-muted:     #4A6D8F;
+  --fg-faint:     #8CA8C1;
+
+  --accent:       #00A8E1;              /* aqua blue */
+  --accent-2:     #7FC5D8;              /* glossy teal */
+  --accent-3:     #FFB3D1;              /* bokeh pink */
+
+  --border:        rgba(15, 43, 72, 0.12);
+  --border-strong: rgba(15, 43, 72, 0.25);
+  --radius:        20px;
+  --radius-sm:     12px;
+
+  --font-display: 'Inter Tight', system-ui, sans-serif;
+  --font-body:    'Inter Tight', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.02em;
+  --display-leading:  1.02;
+
+  --code-bg:       #0F2B48;
+  --code-fg:       #EAF5FB;
+  --code-fg-muted: #8CA8C1;
+  --code-border:   rgba(234,245,251,0.12);
+  --tok-keyword:   #7FDAFF;
+  --tok-string:    #B5E8C6;
+  --tok-func:      #FFB3D1;
+  --tok-comment:   #4A6D8F;
+  --tok-num:       #FFC66B;
+  --tok-class:     #B8E0FF;
+  --tok-self:      #A8BBCE;
+  --tok-dec:       #FFB3D1;
+  --tok-attr:      #A8BBCE;
+}
+
+/* Sky gradient + bokeh circles */
+[data-theme="frutiger"] body {
+  background:
+    radial-gradient(circle 160px at 18% 20%,  rgba(255, 255, 255, 0.6), transparent 70%),
+    radial-gradient(circle 120px at 82% 10%,  rgba(255, 179, 209, 0.5), transparent 70%),
+    radial-gradient(circle 200px at 90% 60%,  rgba(127, 197, 216, 0.4), transparent 70%),
+    radial-gradient(circle 140px at 10% 85%,  rgba(255, 255, 255, 0.5), transparent 70%),
+    linear-gradient(180deg, #D9EEF8 0%, #EAF5FB 40%, #C9E2F0 100%);
+  background-attachment: fixed;
+}
+
+[data-theme="frutiger"] .hero-title em {
+  font-style: normal;
+  background: linear-gradient(180deg, #0094C9 0%, #00A8E1 60%, #7FC5D8 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+[data-theme="frutiger"] .hero-eyebrow {
+  background: linear-gradient(180deg, #fff 0%, #D6ECF5 100%);
+  border: 1px solid var(--accent); color: var(--accent);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 4px rgba(0,168,225,0.12);
+}
+
+/* Buttons — glossy aqua pills */
+[data-theme="frutiger"] .btn {
+  border-radius: 999px; padding: 12px 26px; font-weight: 600;
+}
+[data-theme="frutiger"] .btn-primary {
+  background: linear-gradient(180deg, #3BC6F5 0%, #00A8E1 45%, #0094C9 55%, #0083B5 100%);
+  color: #fff;
+  border: 1px solid rgba(0, 117, 160, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -8px 12px rgba(0,117,160,0.15),
+    0 4px 12px rgba(0, 168, 225, 0.35);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+[data-theme="frutiger"] .btn-primary:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 6px 20px rgba(0, 168, 225, 0.45); }
+[data-theme="frutiger"] .btn-ghost {
+  background: linear-gradient(180deg, #fff 0%, #EAF5FB 100%);
+  border: 1px solid var(--border-strong);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(15, 43, 72, 0.06);
+}
+
+/* Features — glassy rounded cards */
+[data-theme="frutiger"] .feature {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(234,245,251,0.8) 100%);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 8px 24px rgba(15, 43, 72, 0.06);
+  backdrop-filter: blur(8px);
+}
+[data-theme="frutiger"] .feature:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 12px 32px rgba(0, 168, 225, 0.18); border-color: rgba(0,168,225,0.3); }
+[data-theme="frutiger"] .feature-num { color: var(--accent); font-weight: 700; }
+[data-theme="frutiger"] .feature-icon { color: var(--accent); filter: drop-shadow(0 2px 4px rgba(0,168,225,0.3)); }
+[data-theme="frutiger"] .feature-title em { color: var(--accent); font-style: italic; }
+[data-theme="frutiger"] .feature-tag {
+  background: linear-gradient(180deg, rgba(127, 197, 216, 0.25), rgba(127, 197, 216, 0.1));
+  color: var(--fg); border: 1px solid rgba(0, 168, 225, 0.25);
+  border-radius: 999px;
+}
+
+[data-theme="frutiger"] .section-title em { color: var(--accent); font-style: italic; }
+
+[data-theme="frutiger"] .stats-grid {
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(234,245,251,0.85));
+  border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 24px rgba(15, 43, 72, 0.06);
+  gap: 0;
+}
+[data-theme="frutiger"] .stat { background: transparent; border-right: 1px solid var(--border); }
+[data-theme="frutiger"] .stat:last-child { border-right: none; }
+[data-theme="frutiger"] .stat-num {
+  background: linear-gradient(180deg, #0094C9 0%, #00A8E1 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="frutiger"] .install-wrap {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(234,245,251,0.9));
+  border: 1px solid rgba(255,255,255,0.9); border-radius: 28px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 12px 32px rgba(0, 168, 225, 0.12);
+}
+[data-theme="frutiger"] .install-cmd {
+  background: #0F2B48; color: #EAF5FB; border-radius: 12px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+}
+
+[data-theme="frutiger"] .code-block { border-radius: 20px; box-shadow: 0 8px 24px rgba(15, 43, 72, 0.10); }
+[data-theme="frutiger"] .control-bar {
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(234,245,251,0.75));
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.6);
+}
+[data-theme="frutiger"] .chip {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(234,245,251,0.8));
+  border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+  border-radius: 999px;
+}
+[data-theme="frutiger"] .chip.is-active {
+  background: linear-gradient(180deg, #3BC6F5 0%, #00A8E1 100%);
+  color: #fff; border-color: rgba(0, 117, 160, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px rgba(0, 168, 225, 0.25);
+}
+[data-theme="frutiger"] .brand-mark { color: var(--accent); }
+
+/* Tabs */
+[data-theme="frutiger"] .tabs-list {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(234,245,251,0.6));
+  border: 1px solid rgba(255,255,255,0.8);
+  padding: 4px; box-shadow: inset 0 1px 2px rgba(15, 43, 72, 0.05);
+}
+[data-theme="frutiger"] .tab { border-radius: 999px; }
+[data-theme="frutiger"] .tab.is-active {
+  background: linear-gradient(180deg, #3BC6F5 0%, #00A8E1 100%);
+  color: #fff; border: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px rgba(0, 168, 225, 0.25);
+}
+
+/* Gallery */
+[data-theme="frutiger"] .gallery-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(234,245,251,0.8));
+  border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 12px rgba(15, 43, 72, 0.05);
+}
+[data-theme="frutiger"] .input, [data-theme="frutiger"] .select, [data-theme="frutiger"] textarea.input {
+  border-radius: 999px; background: rgba(255,255,255,0.9);
+  border: 1px solid var(--border-strong);
+  box-shadow: inset 0 1px 2px rgba(15, 43, 72, 0.05);
+}
+[data-theme="frutiger"] textarea.input { border-radius: 16px; }
+[data-theme="frutiger"] .alert { border-radius: 14px; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); }
+[data-theme="frutiger"] .badge { border-radius: 999px; }

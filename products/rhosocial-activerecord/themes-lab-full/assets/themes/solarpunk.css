@@ -1,0 +1,124 @@
+/**
+ * Theme · Solarpunk
+ * ═══════════════════════════════════════════════════════════════════════
+ * Optimistic, botanical, earthy-tech. Wheat cream + sage + marigold + terracotta.
+ * Organic curves, warm palette, hopeful tone.
+ * Identifier used in HTML: data-theme="solarpunk"
+ *
+ * Google Fonts needed (already in default themes.html): Space Grotesk, Fraunces
+ */
+
+[data-theme="solarpunk"] {
+  --bg:           #F4EDD9;          /* wheat */
+  --bg-2:         #E8DEBE;
+  --bg-elevated:  #FAF5E4;
+
+  --fg:           #1F3020;          /* forest */
+  --fg-muted:     #5C6B4F;          /* olive */
+  --fg-faint:     #8E9876;
+
+  --accent:       #3F6745;          /* deep sage */
+  --accent-2:     #D4934E;          /* marigold */
+  --accent-3:     #BF5F4B;          /* terracotta */
+
+  --border:        rgba(31, 48, 32, 0.14);
+  --border-strong: rgba(31, 48, 32, 0.32);
+  --radius:        18px;
+  --radius-sm:     12px;
+
+  --font-display: 'Fraunces', serif;
+  --font-body:    'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.02em;
+  --display-leading:  1.0;
+
+  --code-bg:       #1F3020;
+  --code-fg:       #F4EDD9;
+  --code-fg-muted: #9AAB88;
+  --code-border:   rgba(244,237,217,0.12);
+  --tok-keyword:   #E8AE6E;
+  --tok-string:    #C2D4A1;
+  --tok-func:      #E8A08C;
+  --tok-comment:   #6F7F66;
+  --tok-num:       #E8AE6E;
+  --tok-class:     #F0C890;
+  --tok-self:      #C8D0B6;
+  --tok-dec:       #E8A08C;
+  --tok-attr:      #C8D0B6;
+}
+
+/* Soft warm gradient glow in background */
+[data-theme="solarpunk"] body {
+  background-image:
+    radial-gradient(ellipse 1200px 600px at 15% 0%, rgba(212, 147, 78, 0.16), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 85% 100%, rgba(63, 103, 69, 0.10), transparent 60%);
+  background-attachment: fixed;
+}
+
+[data-theme="solarpunk"] .hero-title { font-variation-settings: "opsz" 144; }
+[data-theme="solarpunk"] .hero-title em { font-style: italic; color: var(--accent-3); font-weight: 400; font-variation-settings: "opsz" 144; }
+[data-theme="solarpunk"] .hero-eyebrow {
+  background: var(--accent-2); color: var(--bg-elevated);
+  border-color: var(--accent-2); border-radius: 999px;
+  padding: 6px 14px;
+}
+[data-theme="solarpunk"] .hero-eyebrow::before { background: var(--bg-elevated); }
+
+[data-theme="solarpunk"] .btn { border-radius: 999px; padding: 14px 26px; font-weight: 600; }
+[data-theme="solarpunk"] .btn-primary { background: var(--accent); color: var(--bg-elevated); }
+[data-theme="solarpunk"] .btn-ghost { border-color: var(--accent); color: var(--accent); background: transparent; }
+[data-theme="solarpunk"] .btn-ghost:hover { background: rgba(63, 103, 69, 0.08); }
+
+/* Feature cards — soft blobs with warm tinted hover */
+[data-theme="solarpunk"] .feature { border-radius: 18px; border: 1px solid var(--border); }
+[data-theme="solarpunk"] .feature:hover { border-color: var(--accent); background: var(--bg-2); }
+[data-theme="solarpunk"] .feature-num { color: var(--accent-3); font-style: italic; font-family: var(--font-display); font-size: 13px; }
+[data-theme="solarpunk"] .feature-icon { color: var(--accent); }
+[data-theme="solarpunk"] .feature-title { font-family: var(--font-display); font-weight: 600; font-size: 24px; letter-spacing: -0.015em; }
+[data-theme="solarpunk"] .feature-title em { font-weight: 400; font-style: italic; color: var(--accent-3); }
+[data-theme="solarpunk"] .feature-tag { background: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; }
+
+[data-theme="solarpunk"] .section-label { color: var(--accent-3); letter-spacing: 0.2em; }
+[data-theme="solarpunk"] .section-title em { font-style: italic; color: var(--accent-3); }
+
+[data-theme="solarpunk"] .stats-grid { border-radius: 20px; background: var(--border); }
+[data-theme="solarpunk"] .stat-num { color: var(--accent); font-family: var(--font-display); font-weight: 600; }
+[data-theme="solarpunk"] .stat-num .unit { color: var(--accent-2); font-style: italic; }
+
+/* Install — terracotta block */
+[data-theme="solarpunk"] .install-wrap {
+  background: var(--accent-3); color: var(--bg-elevated);
+  border-radius: 24px; border: none;
+  box-shadow: 0 16px 48px rgba(191, 95, 75, 0.25);
+}
+[data-theme="solarpunk"] .install-title { color: var(--bg-elevated); }
+[data-theme="solarpunk"] .install-title em { color: var(--accent-2); }
+[data-theme="solarpunk"] .install-sub { color: rgba(250, 245, 228, 0.85); }
+[data-theme="solarpunk"] .install-wrap .section-label { color: rgba(250, 245, 228, 0.65); }
+[data-theme="solarpunk"] .install-cmd { background: #1F3020; border-radius: 12px; }
+[data-theme="solarpunk"] .install-cmd .prompt { color: var(--accent-2); }
+
+[data-theme="solarpunk"] .code-block { border-radius: 18px; }
+[data-theme="solarpunk"] .control-bar { background: rgba(244, 237, 217, 0.85); }
+[data-theme="solarpunk"] .chip { border-radius: 999px; border-color: var(--border); }
+[data-theme="solarpunk"] .chip.is-active { background: var(--accent); color: var(--bg-elevated); border-color: var(--accent); }
+[data-theme="solarpunk"] .brand-mark { color: var(--accent-3); }
+[data-theme="solarpunk"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs */
+[data-theme="solarpunk"] .tabs-list { border-radius: 999px; background: var(--bg-2); border: none; padding: 5px; }
+[data-theme="solarpunk"] .tab { border-radius: 999px; font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-weight: 500; padding: 9px 18px; }
+[data-theme="solarpunk"] .tab.is-active { background: var(--accent); color: var(--bg-elevated); border: none; }
+
+/* Gallery */
+[data-theme="solarpunk"] .gallery-card { border-radius: 18px; }
+[data-theme="solarpunk"] .input, [data-theme="solarpunk"] .select, [data-theme="solarpunk"] textarea.input {
+  border-radius: 12px; background: var(--bg); padding: 11px 15px;
+  border-color: var(--border);
+}
+[data-theme="solarpunk"] .input:focus { border-color: var(--accent); }
+[data-theme="solarpunk"] .alert { border-radius: 14px; background: var(--bg); }
+[data-theme="solarpunk"] .badge { border-radius: 999px; font-weight: 600; letter-spacing: 0.05em; }
+[data-theme="solarpunk"] .progress { background: var(--bg-2); }
+[data-theme="solarpunk"] .data-table th { color: var(--accent-3); font-family: var(--font-display); font-style: italic; font-weight: 600; text-transform: none; letter-spacing: 0.02em; font-size: 12px; }

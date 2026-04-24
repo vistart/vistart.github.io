@@ -1,0 +1,173 @@
+/**
+ * Theme · Newsprint
+ * ═══════════════════════════════════════════════════════════════════════
+ * High-contrast tabloid newsprint. Pale off-white paper + stark black +
+ * one breaking-news red. Heavy horizontal rules, dense columns, dateline
+ * labels. Bolder and blunter than Editorial (which is the Sunday Times).
+ * Identifier: data-theme="newsprint"
+ *
+ * Google Fonts needed (already loaded): Archivo Black, Fraunces, JetBrains Mono
+ */
+
+[data-theme="newsprint"] {
+  --bg:           #F2EEE5;
+  --bg-2:         #E5E1D8;
+  --bg-elevated:  #F9F5EC;
+
+  --fg:           #0A0A0A;
+  --fg-muted:     #333333;
+  --fg-faint:     #777777;
+
+  --accent:       #D62828;              /* breaking-news red */
+  --accent-2:     #0A0A0A;
+  --accent-3:     #6B6B6B;
+
+  --border:        #0A0A0A;
+  --border-strong: #0A0A0A;
+  --radius:        0px;
+  --radius-sm:     0px;
+
+  --font-display: 'Archivo Black', 'Fraunces', serif;
+  --font-body:    'Fraunces', Georgia, serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   900;
+  --display-tracking: -0.02em;
+  --display-leading:  0.95;
+
+  --code-bg:       #0A0A0A;
+  --code-fg:       #F2EEE5;
+  --code-fg-muted: #999999;
+  --code-border:   rgba(242, 238, 229, 0.12);
+  --tok-keyword:   #FF6B6B;
+  --tok-string:    #C8E88A;
+  --tok-func:      #FFD166;
+  --tok-comment:   #888888;
+  --tok-num:       #FFD166;
+  --tok-class:     #FFB4A7;
+  --tok-self:      #B8B0A0;
+  --tok-dec:       #FFD166;
+  --tok-attr:      #B8B0A0;
+}
+
+/* Light halftone background for newsprint texture */
+[data-theme="newsprint"] body {
+  background-image: radial-gradient(circle at 50% 50%, rgba(10, 10, 10, 0.05) 0.4px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+/* Hero — shouty ALL-CAPS tabloid headline */
+[data-theme="newsprint"] .hero-title { text-transform: uppercase; font-family: 'Archivo Black', sans-serif; }
+[data-theme="newsprint"] .hero-title em {
+  font-style: normal;
+  background: var(--accent); color: var(--bg-elevated);
+  padding: 0 0.1em;
+}
+[data-theme="newsprint"] .hero-eyebrow {
+  background: var(--accent); color: var(--bg-elevated);
+  border: none; border-radius: 0;
+  font-family: var(--font-mono); text-transform: uppercase;
+  letter-spacing: 0.2em; font-weight: 700;
+  padding: 6px 14px;
+}
+[data-theme="newsprint"] .hero-eyebrow::before { background: var(--bg-elevated); animation: none; }
+[data-theme="newsprint"] .hero-sub { font-family: var(--font-body); font-size: 19px; line-height: 1.6; }
+[data-theme="newsprint"] .hero-sub::first-line { font-weight: 600; }
+
+/* Horizontal rules between sections */
+[data-theme="newsprint"] .section { border-top: 4px double var(--fg); }
+[data-theme="newsprint"] .hero { border-top: none; }
+
+[data-theme="newsprint"] .btn {
+  border-radius: 0; font-family: 'Archivo Black', sans-serif;
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 900;
+  border: 2px solid var(--fg); padding: 12px 22px;
+}
+[data-theme="newsprint"] .btn-primary { background: var(--fg); color: var(--bg-elevated); }
+[data-theme="newsprint"] .btn-ghost { background: var(--bg-elevated); }
+[data-theme="newsprint"] .btn-danger { background: var(--accent); color: var(--bg-elevated); border-color: var(--accent); }
+
+[data-theme="newsprint"] .section-label {
+  background: var(--accent); color: var(--bg-elevated);
+  display: inline-block; padding: 3px 8px;
+  font-family: var(--font-mono); font-weight: 700;
+  letter-spacing: 0.15em;
+}
+[data-theme="newsprint"] .section-title { text-transform: uppercase; font-family: 'Archivo Black', sans-serif; }
+[data-theme="newsprint"] .section-title em { font-style: normal; color: var(--accent); }
+
+/* Feature cards — like article cards with rule dividers */
+[data-theme="newsprint"] .feature {
+  border-radius: 0; border: none;
+  border-top: 3px solid var(--fg);
+  background: transparent; padding: 22px 0 28px;
+}
+[data-theme="newsprint"] .feature:hover { transform: none; border-top-color: var(--accent); }
+[data-theme="newsprint"] .feature-num {
+  font-family: var(--font-mono); color: var(--accent);
+  font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+[data-theme="newsprint"] .feature-icon { color: var(--accent); }
+[data-theme="newsprint"] .feature-title {
+  font-family: 'Archivo Black', sans-serif;
+  text-transform: uppercase; font-size: 24px;
+}
+[data-theme="newsprint"] .feature-title em { font-style: normal; color: var(--accent); }
+[data-theme="newsprint"] .feature-desc { font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+[data-theme="newsprint"] .feature-tag {
+  background: var(--fg); color: var(--bg-elevated); border-radius: 0;
+  font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.08em;
+}
+
+/* Stats — newspaper rule bar */
+[data-theme="newsprint"] .stats-grid {
+  border-radius: 0; gap: 0;
+  border-top: 5px solid var(--fg); border-bottom: 5px solid var(--fg);
+  border-left: none; border-right: none; background: transparent;
+}
+[data-theme="newsprint"] .stat { background: transparent; border-right: 2px solid var(--fg); padding: 32px 24px; }
+[data-theme="newsprint"] .stat:last-child { border-right: none; }
+[data-theme="newsprint"] .stat-num { font-family: 'Archivo Black', sans-serif; color: var(--fg); }
+[data-theme="newsprint"] .stat:nth-child(2) .stat-num { color: var(--accent); }
+[data-theme="newsprint"] .stat-label { font-family: var(--font-mono); font-weight: 700; }
+
+/* Install — BREAKING NEWS banner */
+[data-theme="newsprint"] .install-wrap {
+  border: 4px solid var(--fg); border-radius: 0;
+  background: var(--bg-elevated);
+}
+[data-theme="newsprint"] .install-wrap::before {
+  content: 'BREAKING'; position: absolute;
+  top: -14px; left: 24px;
+  background: var(--accent); color: var(--bg-elevated);
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 12px; letter-spacing: 0.18em;
+  padding: 4px 12px;
+}
+[data-theme="newsprint"] .install-title { font-family: 'Archivo Black', sans-serif; text-transform: uppercase; }
+[data-theme="newsprint"] .install-title em { font-style: normal; color: var(--accent); }
+[data-theme="newsprint"] .install-cmd { border-radius: 0; }
+
+[data-theme="newsprint"] .code-block { border: 2px solid var(--fg); border-radius: 0; }
+[data-theme="newsprint"] .control-bar { border-bottom: 3px solid var(--fg); background: rgba(242, 238, 229, 0.92); }
+[data-theme="newsprint"] .chip { border-radius: 0; border: 1.5px solid var(--fg); font-family: var(--font-mono); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+[data-theme="newsprint"] .chip.is-active { background: var(--accent); color: var(--bg-elevated); border-color: var(--fg); }
+[data-theme="newsprint"] .brand-mark { color: var(--accent); }
+[data-theme="newsprint"] .brand-mark sub { color: var(--fg); }
+
+/* Tabs — section heads like newspaper pages */
+[data-theme="newsprint"] .tabs-list { border: 3px solid var(--fg); border-radius: 0; background: var(--bg-elevated); padding: 0; gap: 0; }
+[data-theme="newsprint"] .tab { border-radius: 0; border-right: 1.5px solid var(--fg); font-family: 'Archivo Black', sans-serif; text-transform: uppercase; }
+[data-theme="newsprint"] .tab:last-child { border-right: none; }
+[data-theme="newsprint"] .tab.is-active { background: var(--fg); color: var(--bg-elevated); border: none; }
+
+/* Gallery */
+[data-theme="newsprint"] .gallery-card { border: 3px solid var(--fg); border-radius: 0; background: var(--bg-elevated); }
+[data-theme="newsprint"] .input, [data-theme="newsprint"] .select, [data-theme="newsprint"] textarea.input {
+  border: 2px solid var(--fg); border-radius: 0; background: var(--bg-elevated); font-family: var(--font-body);
+}
+[data-theme="newsprint"] .input:focus { border-color: var(--accent); }
+[data-theme="newsprint"] .alert { border: 2px solid var(--fg); border-left-width: 8px; border-radius: 0; }
+[data-theme="newsprint"] .badge { border-radius: 0; border-width: 2px; font-family: var(--font-mono); font-weight: 700; }
+[data-theme="newsprint"] .data-table th { background: var(--fg); color: var(--bg-elevated); font-family: 'Archivo Black', sans-serif; letter-spacing: 0.08em; }
+[data-theme="newsprint"] .data-table td { border-color: var(--fg); border-bottom-width: 1.5px; }

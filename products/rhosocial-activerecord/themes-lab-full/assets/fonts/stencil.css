@@ -1,0 +1,20 @@
+/**
+ * Font pack · Stencil
+ * ═══════════════════════════════════════════════════════════════════════
+ * Major Mono Display everywhere — the stencil-cut monospace you see on
+ * crates and industrial signage. Austere, very small x-height.
+ * Best on light themes; pair with Riso / Blueprint / Brutalist.
+ * Identifier: data-font="stencil"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Major+Mono+Display
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="stencil"] {
+  --font-display:     'Major Mono Display', 'JetBrains Mono', monospace;
+  --font-body:        'JetBrains Mono', monospace;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   400;
+  --display-tracking: -0.02em;
+  --display-leading:  1.0;
+}

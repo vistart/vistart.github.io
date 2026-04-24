@@ -1,0 +1,20 @@
+/**
+ * Font pack · Slab
+ * ═══════════════════════════════════════════════════════════════════════
+ * Roboto Slab display + Inter Tight body. Friendly slab-serif heft,
+ * common in modern tech/developer docs. Warmer than Heavy, clearer
+ * than display-serif.
+ * Identifier: data-font="slab"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Roboto+Slab:wght@400;500;700;900
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="slab"] {
+  --font-display:     'Roboto Slab', Georgia, serif;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   800;
+  --display-tracking: -0.02em;
+  --display-leading:  1.02;
+}

@@ -1,0 +1,20 @@
+/**
+ * Font pack · Rubik
+ * ═══════════════════════════════════════════════════════════════════════
+ * Rounded-corner geometric sans. Friendlier than Space Grotesk, less
+ * corporate than Inter. Pairs beautifully with light themes (Candy,
+ * Anderson) and adds warmth to dark ones.
+ * Identifier: data-font="rubik"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Rubik:wght@400;500;600;700;800
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="rubik"] {
+  --font-display:     'Rubik', sans-serif;
+  --font-body:        'Rubik', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.02em;
+  --display-leading:  1.02;
+}

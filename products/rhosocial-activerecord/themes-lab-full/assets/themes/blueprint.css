@@ -1,0 +1,143 @@
+/**
+ * Theme · Blueprint
+ * ═══════════════════════════════════════════════════════════════════════
+ * Navy blueprint paper + cyan drafting lines + dimension marks.
+ * Identifier used in HTML: data-theme="blueprint"
+ */
+
+[data-theme="blueprint"] {
+  --bg:           #0E2340;
+  --bg-2:         #133055;
+  --bg-elevated:  #122B4A;
+
+  --fg:           #E6F4FF;
+  --fg-muted:     #8BB0D4;
+  --fg-faint:     #5A7FA3;
+
+  --accent:       #4FD5FF;
+  --accent-2:     #FFB84D;
+  --accent-3:     #7FFF9C;
+
+  --border:        rgba(79, 213, 255, 0.18);
+  --border-strong: rgba(79, 213, 255, 0.45);
+  --radius:        0px;
+  --radius-sm:     0px;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   500;
+  --display-tracking: -0.01em;
+  --display-leading:  1.0;
+
+  --code-bg:       #081827;
+  --code-fg:       #E6F4FF;
+  --code-fg-muted: #7998BA;
+  --code-border:   rgba(79, 213, 255, 0.25);
+  --tok-keyword:   #4FD5FF;
+  --tok-string:    #FFB84D;
+  --tok-func:      #7FFF9C;
+  --tok-comment:   #5A7FA3;
+  --tok-num:       #FFB84D;
+  --tok-class:     #A6DEFF;
+  --tok-self:      #8BB0D4;
+  --tok-dec:       #7FFF9C;
+  --tok-attr:      #A6DEFF;
+}
+
+/* Grid paper (two layers: minor + major) */
+[data-theme="blueprint"] body {
+  background-image:
+    repeating-linear-gradient(0deg,  transparent 0 39px,  rgba(79,213,255,0.07) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px,  rgba(79,213,255,0.07) 39px 40px),
+    repeating-linear-gradient(0deg,  transparent 0 199px, rgba(79,213,255,0.14) 199px 200px),
+    repeating-linear-gradient(90deg, transparent 0 199px, rgba(79,213,255,0.14) 199px 200px);
+  background-attachment: fixed;
+}
+
+[data-theme="blueprint"] .hero-title { text-transform: uppercase; letter-spacing: -0.005em; }
+[data-theme="blueprint"] .hero-title em { font-style: normal; color: var(--accent-2); }
+[data-theme="blueprint"] .hero-eyebrow { background: transparent; border: 1px dashed var(--accent); border-radius: 0; }
+
+[data-theme="blueprint"] .btn { border-radius: 0; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+[data-theme="blueprint"] .btn-primary { background: var(--accent); color: #081827; border: 1px solid var(--accent); }
+[data-theme="blueprint"] .btn-ghost { border: 1px dashed var(--border-strong); color: var(--fg); }
+
+/* Feature cards — drafting marks at corners */
+[data-theme="blueprint"] .feature {
+  border: 1px solid var(--border-strong); border-radius: 0;
+  background: rgba(8, 24, 39, 0.55);
+  backdrop-filter: blur(6px);
+  position: relative;
+}
+[data-theme="blueprint"] .feature::before,
+[data-theme="blueprint"] .feature::after {
+  content: ''; position: absolute;
+  width: 12px; height: 12px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+}
+[data-theme="blueprint"] .feature::before { top: -7px; left: -7px; }
+[data-theme="blueprint"] .feature::after  { bottom: -7px; right: -7px; }
+[data-theme="blueprint"] .feature:hover { border-color: var(--accent); }
+[data-theme="blueprint"] .feature-num { color: var(--accent-2); }
+[data-theme="blueprint"] .feature-num::before { content: '▸ '; }
+[data-theme="blueprint"] .feature-title { text-transform: uppercase; font-weight: 500; font-size: 18px; letter-spacing: 0.01em; }
+[data-theme="blueprint"] .feature-title em {
+  font-style: normal; color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 4px;
+}
+[data-theme="blueprint"] .feature-tag { background: rgba(79,213,255,0.08); color: var(--accent); border: 1px solid var(--border-strong); }
+
+[data-theme="blueprint"] .section-title { text-transform: uppercase; }
+[data-theme="blueprint"] .section-label::before { content: 'REV ▸ '; }
+
+[data-theme="blueprint"] .stats-grid { border: 1px solid var(--border-strong); border-radius: 0; background: var(--border-strong); gap: 1px; }
+[data-theme="blueprint"] .stat { background: rgba(8, 24, 39, 0.6); backdrop-filter: blur(6px); position: relative; }
+[data-theme="blueprint"] .stat::before {
+  content: ''; position: absolute;
+  top: 12px; right: 12px;
+  width: 8px; height: 8px;
+  border: 1px solid var(--accent);
+}
+[data-theme="blueprint"] .stat-num { color: var(--accent); }
+[data-theme="blueprint"] .stat-num .unit { color: var(--accent-2); }
+
+[data-theme="blueprint"] .install-wrap { border: 1px solid var(--border-strong); border-radius: 0; background: rgba(8, 24, 39, 0.55); }
+[data-theme="blueprint"] .install-wrap::before {
+  content: 'DWG-001 · SCALE 1:1';
+  position: absolute; top: 16px; right: 24px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.12em; color: var(--accent); opacity: 0.7;
+}
+[data-theme="blueprint"] .install-cmd { border-radius: 0; border: 1px solid var(--border-strong); }
+[data-theme="blueprint"] .code-block { border-radius: 0; border: 1px solid var(--border-strong); }
+
+[data-theme="blueprint"] .control-bar { background: rgba(14, 35, 64, 0.85); backdrop-filter: blur(12px); border-bottom-color: var(--border-strong); }
+[data-theme="blueprint"] .chip { border-radius: 0; border-color: var(--border); background: rgba(79,213,255,0.04); }
+[data-theme="blueprint"] .chip.is-active { background: var(--accent); color: #081827; border-color: var(--accent); }
+[data-theme="blueprint"] .brand-mark { color: var(--accent); }
+[data-theme="blueprint"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs */
+[data-theme="blueprint"] .tabs-list { border-radius: 0; background: rgba(8,24,39,0.5); border: 1px dashed var(--border-strong); }
+[data-theme="blueprint"] .tab { border-radius: 0; }
+[data-theme="blueprint"] .tab.is-active { border: 1px dashed var(--accent); background: rgba(79,213,255,0.08); color: var(--accent); }
+
+/* Gallery */
+[data-theme="blueprint"] .gallery-card { border-radius: 0; background: rgba(8,24,39,0.55); border: 1px solid var(--border-strong); }
+[data-theme="blueprint"] .input,
+[data-theme="blueprint"] .select,
+[data-theme="blueprint"] textarea.input {
+  border-radius: 0;
+  background: rgba(0,0,0,0.3);
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+[data-theme="blueprint"] .input:focus { border-color: var(--accent-2); }
+[data-theme="blueprint"] .alert { border-radius: 0; background: rgba(8,24,39,0.6); }
+[data-theme="blueprint"] .badge { border-radius: 0; }
+[data-theme="blueprint"] .data-table th { color: var(--accent); }
+[data-theme="blueprint"] .data-table td { border-color: var(--border); }

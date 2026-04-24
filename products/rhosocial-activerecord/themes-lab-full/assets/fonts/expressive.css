@@ -1,0 +1,20 @@
+/**
+ * Font pack · Expressive
+ * ═══════════════════════════════════════════════════════════════════════
+ * Syne — a variable display face with a dramatic weight axis.
+ * At high weights each letter becomes a sculptural object.
+ * Pair with Inter Tight body for balance.
+ * Identifier: data-font="expressive"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Syne:wght@400;500;600;700;800
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="expressive"] {
+  --font-display:     'Syne', sans-serif;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   800;
+  --display-tracking: -0.03em;
+  --display-leading:  0.95;
+}

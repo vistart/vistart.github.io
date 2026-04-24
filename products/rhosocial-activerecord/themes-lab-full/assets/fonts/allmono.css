@@ -1,0 +1,13 @@
+/**
+ * Font pack · All Mono (JetBrains Mono everywhere)
+ * Terminal / developer aesthetic on any theme.
+ * Identifier: data-font="allmono"
+ */
+html[data-font="allmono"] {
+  --font-display:     'JetBrains Mono', monospace;
+  --font-body:        'JetBrains Mono', monospace;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.03em;
+  --display-leading:  1.05;
+}

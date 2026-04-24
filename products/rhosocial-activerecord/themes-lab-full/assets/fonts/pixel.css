@@ -1,0 +1,21 @@
+/**
+ * Font pack · Pixel
+ * ═══════════════════════════════════════════════════════════════════════
+ * VT323 pixel-bitmap font everywhere. Full-commitment retro CRT look.
+ * Renders LARGE at the same font-size as other fonts — intentional.
+ * Great for game-dev, retro-computing, demoscene tones.
+ * Identifier: data-font="pixel"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Append to themes.html fonts <link>:
+ *   &family=VT323
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="pixel"] {
+  --font-display:     'VT323', 'Courier New', monospace;
+  --font-body:        'VT323', 'Courier New', monospace;
+  --font-mono:        'VT323', 'Courier New', monospace;
+  --display-weight:   400;
+  --display-tracking: 0;
+  --display-leading:  0.92;
+}

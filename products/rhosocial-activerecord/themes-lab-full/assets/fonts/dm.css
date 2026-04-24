@@ -1,0 +1,21 @@
+/**
+ * Font pack · DM
+ * ═══════════════════════════════════════════════════════════════════════
+ * DM Sans + DM Mono by Colophon Foundry. Clean, precise, slightly
+ * technical. Different energy from Inter Tight (more neutral) and from
+ * Plex (more humanist). Excellent for data-dense layouts.
+ * Identifier: data-font="dm"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800
+ *   &family=DM+Mono:wght@400;500
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="dm"] {
+  --font-display:     'DM Sans', sans-serif;
+  --font-body:        'DM Sans', sans-serif;
+  --font-mono:        'DM Mono', 'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.025em;
+  --display-leading:  1.0;
+}

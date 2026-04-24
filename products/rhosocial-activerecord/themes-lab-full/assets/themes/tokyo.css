@@ -1,0 +1,117 @@
+/**
+ * Theme · Tokyo
+ * ═══════════════════════════════════════════════════════════════════════
+ * Inspired by the Tokyo Night code editor scheme — flat, deep blue-purple
+ * background with teal / pink / orange syntax accents. Feels like living
+ * inside a polished IDE. Differs from Aurora (which is dreamy gradients)
+ * by being crisp and flat.
+ * Identifier used in HTML: data-theme="tokyo"
+ *
+ * Google Fonts needed (already in default themes.html): Space Grotesk, JetBrains Mono
+ */
+
+[data-theme="tokyo"] {
+  --bg:           #1A1B26;
+  --bg-2:         #16161E;
+  --bg-elevated:  #24283B;
+
+  --fg:           #C0CAF5;
+  --fg-muted:     #7982A9;
+  --fg-faint:     #565F89;
+
+  --accent:       #7AA2F7;            /* Tokyo blue */
+  --accent-2:     #F7768E;            /* Tokyo pink */
+  --accent-3:     #FF9E64;            /* Tokyo orange */
+
+  --border:        #292E42;
+  --border-strong: #3B4261;
+  --radius:        6px;
+  --radius-sm:     4px;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.02em;
+  --display-leading:  1.02;
+
+  --code-bg:       #16161E;
+  --code-fg:       #C0CAF5;
+  --code-fg-muted: #565F89;
+  --code-border:   #292E42;
+  --tok-keyword:   #BB9AF7;
+  --tok-string:    #9ECE6A;
+  --tok-func:      #7AA2F7;
+  --tok-comment:   #565F89;
+  --tok-num:       #FF9E64;
+  --tok-class:     #F7768E;
+  --tok-self:      #E0AF68;
+  --tok-dec:       #7DCFFF;
+  --tok-attr:      #BB9AF7;
+}
+
+/* Hero — IDE bracket frame around titles */
+[data-theme="tokyo"] .hero-title em {
+  font-style: normal;
+  color: var(--accent-2);
+}
+[data-theme="tokyo"] .hero-title em::before { content: '<'; color: var(--accent); margin-right: 4px; }
+[data-theme="tokyo"] .hero-title em::after  { content: '/>'; color: var(--accent); margin-left: 4px; font-size: 0.85em; }
+[data-theme="tokyo"] .hero-eyebrow {
+  background: var(--bg-elevated); border-color: var(--accent); color: var(--accent);
+  border-radius: 4px;
+}
+
+[data-theme="tokyo"] .btn { border-radius: 4px; font-weight: 500; }
+[data-theme="tokyo"] .btn-primary { background: var(--accent); color: var(--bg); }
+[data-theme="tokyo"] .btn-ghost { border-color: var(--border-strong); color: var(--fg); background: var(--bg-elevated); }
+[data-theme="tokyo"] .btn-ghost:hover { background: var(--border-strong); }
+
+/* Features — flat IDE panels */
+[data-theme="tokyo"] .feature { border-radius: 6px; background: var(--bg-elevated); border: 1px solid var(--border); }
+[data-theme="tokyo"] .feature:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+[data-theme="tokyo"] .feature-num { color: var(--accent-3); font-family: var(--font-mono); }
+[data-theme="tokyo"] .feature-num::before { content: '// '; color: var(--fg-faint); }
+[data-theme="tokyo"] .feature-icon { color: var(--accent); }
+[data-theme="tokyo"] .feature-title em { font-style: italic; color: var(--accent-2); }
+[data-theme="tokyo"] .feature-tag { background: var(--bg); color: var(--accent); border: 1px solid var(--border-strong); border-radius: 4px; font-family: var(--font-mono); }
+
+[data-theme="tokyo"] .section-label { color: var(--accent); }
+[data-theme="tokyo"] .section-label::before { content: '# '; color: var(--fg-faint); font-family: var(--font-mono); }
+[data-theme="tokyo"] .section-title em { color: var(--accent-2); font-style: italic; }
+
+[data-theme="tokyo"] .stats-grid { background: var(--border); }
+[data-theme="tokyo"] .stat { background: var(--bg-elevated); }
+[data-theme="tokyo"] .stat:nth-child(1) .stat-num { color: var(--accent); }
+[data-theme="tokyo"] .stat:nth-child(2) .stat-num { color: var(--accent-2); }
+[data-theme="tokyo"] .stat:nth-child(3) .stat-num { color: var(--accent-3); }
+[data-theme="tokyo"] .stat:nth-child(4) .stat-num { color: #9ECE6A; }
+
+[data-theme="tokyo"] .install-wrap { background: var(--bg-elevated); border-color: var(--border-strong); border-radius: 8px; }
+[data-theme="tokyo"] .install-cmd { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; }
+[data-theme="tokyo"] .install-cmd .prompt { color: var(--accent-2); }
+[data-theme="tokyo"] .code-block { border-radius: 6px; }
+
+[data-theme="tokyo"] .control-bar { background: rgba(22, 22, 30, 0.85); border-bottom-color: var(--border); }
+[data-theme="tokyo"] .chip { border-radius: 4px; background: var(--bg-elevated); border-color: var(--border); }
+[data-theme="tokyo"] .chip.is-active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+[data-theme="tokyo"] .brand-mark { color: var(--accent); }
+[data-theme="tokyo"] .brand-mark sub { color: var(--accent-2); }
+
+/* Tabs — look like editor tab bar */
+[data-theme="tokyo"] .tabs-list { background: var(--code-bg); border-color: var(--border); border-radius: 6px 6px 0 0; padding: 0; gap: 0; }
+[data-theme="tokyo"] .tab { border-radius: 0; padding: 10px 16px; border-right: 1px solid var(--border); font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+[data-theme="tokyo"] .tab.is-active { background: var(--bg-elevated); color: var(--accent); border: none; border-top: 2px solid var(--accent); border-right: 1px solid var(--border); box-shadow: none; }
+
+/* Gallery */
+[data-theme="tokyo"] .gallery-card { border-radius: 6px; background: var(--bg-elevated); border-color: var(--border); }
+[data-theme="tokyo"] .input, [data-theme="tokyo"] .select, [data-theme="tokyo"] textarea.input {
+  background: var(--bg); border-color: var(--border-strong); color: var(--fg); border-radius: 4px; font-family: var(--font-mono);
+}
+[data-theme="tokyo"] .input:focus { border-color: var(--accent); }
+[data-theme="tokyo"] .alert { background: var(--bg); border-radius: 4px; }
+[data-theme="tokyo"] .badge { border-radius: 4px; font-family: var(--font-mono); }
+[data-theme="tokyo"] .data-table { font-family: var(--font-mono); font-size: 12px; }
+[data-theme="tokyo"] .data-table th { color: var(--accent); letter-spacing: 0.08em; }
+[data-theme="tokyo"] .data-table td { border-color: var(--border); }
+[data-theme="tokyo"] .data-table tbody tr:hover { background: var(--bg); }

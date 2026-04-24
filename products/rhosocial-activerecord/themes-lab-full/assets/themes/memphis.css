@@ -1,0 +1,172 @@
+/**
+ * Theme · Memphis
+ * ═══════════════════════════════════════════════════════════════════════
+ * 1980s Memphis Design group: white canvas, explosion of geometric patterns
+ * (squiggles, dots, triangles, checkerboards), bold primary accents.
+ * Chaotic joyful maximalism.
+ * Identifier used in HTML: data-theme="memphis"
+ *
+ * Google Fonts needed (already in default themes.html): Space Grotesk
+ */
+
+[data-theme="memphis"] {
+  --bg:           #FEFEFE;
+  --bg-2:         #F0EFEB;
+  --bg-elevated:  #FFFFFF;
+
+  --fg:           #0A0A0A;
+  --fg-muted:     #444444;
+  --fg-faint:     #888888;
+
+  --accent:       #EC407A;            /* hot pink */
+  --accent-2:     #26C6DA;            /* electric cyan */
+  --accent-3:     #FBC02D;            /* mustard yellow */
+
+  --border:        #0A0A0A;
+  --border-strong: #0A0A0A;
+  --radius:        12px;
+  --radius-sm:     6px;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.02em;
+  --display-leading:  0.95;
+
+  --code-bg:       #0A0A0A;
+  --code-fg:       #FEFEFE;
+  --code-fg-muted: #888888;
+  --code-border:   rgba(255,255,255,0.12);
+  --tok-keyword:   #EC407A;
+  --tok-string:    #26C6DA;
+  --tok-func:      #FBC02D;
+  --tok-comment:   #666666;
+  --tok-num:       #FBC02D;
+  --tok-class:     #F48FB1;
+  --tok-self:      #B0B0B0;
+  --tok-dec:       #26C6DA;
+  --tok-attr:      #B0B0B0;
+}
+
+/* Background — scattered shapes in SVG, tiled */
+[data-theme="memphis"] body {
+  background-image:
+    /* dots grid */
+    radial-gradient(circle, #EC407A 2px, transparent 2.5px),
+    /* squiggles layer (simulated with tiny dashes) */
+    linear-gradient(135deg, transparent 48%, #26C6DA 48% 52%, transparent 52%),
+    /* triangles layer */
+    linear-gradient(45deg, transparent 45%, #FBC02D 45% 50%, transparent 50%);
+  background-size: 80px 80px, 140px 140px, 180px 180px;
+  background-position: 0 0, 40px 20px, 90px 80px;
+  background-repeat: repeat;
+  background-attachment: fixed;
+  position: relative;
+}
+/* Soft overlay so content stays legible over the pattern chaos */
+[data-theme="memphis"] body::before {
+  content: ''; position: fixed; inset: 0;
+  background: rgba(254, 254, 254, 0.88); pointer-events: none; z-index: 0;
+}
+[data-theme="memphis"] .page { position: relative; z-index: 1; }
+
+[data-theme="memphis"] .hero-title em {
+  font-style: normal;
+  background: var(--accent-3);
+  color: var(--fg);
+  padding: 0 0.15em;
+  box-shadow: 6px 6px 0 var(--accent-2);
+  display: inline-block;
+  transform: rotate(-1deg);
+}
+[data-theme="memphis"] .hero-eyebrow {
+  background: var(--accent); color: #fff;
+  border: 3px solid var(--fg); border-radius: 999px;
+  box-shadow: 4px 4px 0 var(--fg);
+  font-weight: 700;
+  transform: rotate(-1deg);
+}
+[data-theme="memphis"] .hero-eyebrow::before { background: #fff; animation: none; }
+
+/* Buttons — rotated color blocks with hard shadows */
+[data-theme="memphis"] .btn {
+  border: 3px solid var(--fg); border-radius: 999px; font-weight: 700;
+  padding: 12px 24px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+[data-theme="memphis"] .btn-primary { background: var(--accent); color: #fff; box-shadow: 5px 5px 0 var(--fg); }
+[data-theme="memphis"] .btn-primary:hover { transform: translate(-1px, -1px); box-shadow: 6px 6px 0 var(--fg); }
+[data-theme="memphis"] .btn-ghost { background: var(--accent-3); color: var(--fg); box-shadow: 5px 5px 0 var(--fg); }
+[data-theme="memphis"] .btn-danger { background: var(--accent); color: #fff; box-shadow: 5px 5px 0 var(--accent-2); }
+
+/* Feature cards — each with its own pattern peek */
+[data-theme="memphis"] .feature {
+  border: 3px solid var(--fg); border-radius: 12px;
+  background: var(--bg-elevated);
+  box-shadow: 6px 6px 0 var(--accent);
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="memphis"] .feature:nth-child(6n+1) { box-shadow: 6px 6px 0 var(--accent); }
+[data-theme="memphis"] .feature:nth-child(6n+2) { box-shadow: 6px 6px 0 var(--accent-2); }
+[data-theme="memphis"] .feature:nth-child(6n+3) { box-shadow: 6px 6px 0 var(--accent-3); }
+[data-theme="memphis"] .feature:nth-child(6n+4) { box-shadow: 6px 6px 0 var(--accent); }
+[data-theme="memphis"] .feature:nth-child(6n+5) { box-shadow: 6px 6px 0 var(--accent-2); }
+[data-theme="memphis"] .feature:nth-child(6n+6) { box-shadow: 6px 6px 0 var(--accent-3); }
+[data-theme="memphis"] .feature:hover { transform: translate(-2px, -2px); }
+/* Decorative shape peek in corner */
+[data-theme="memphis"] .feature::after {
+  content: ''; position: absolute;
+  top: -20px; right: -20px;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--accent-3); opacity: 0.35;
+}
+[data-theme="memphis"] .feature:nth-child(6n+2)::after { background: var(--accent); border-radius: 0; transform: rotate(45deg); }
+[data-theme="memphis"] .feature:nth-child(6n+3)::after { background: var(--accent-2); border-radius: 50% 0 50% 0; }
+[data-theme="memphis"] .feature-num { display: inline-block; background: var(--fg); color: #fff; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+[data-theme="memphis"] .feature-title { text-transform: uppercase; font-size: 22px; letter-spacing: -0.01em; }
+[data-theme="memphis"] .feature-title em { font-style: normal; color: var(--accent); text-decoration: underline wavy var(--accent-2); text-decoration-thickness: 3px; text-underline-offset: 3px; }
+[data-theme="memphis"] .feature-icon { color: var(--accent-2); }
+[data-theme="memphis"] .feature-tag { background: var(--fg); color: #fff; border-radius: 999px; font-weight: 700; text-transform: uppercase; }
+
+[data-theme="memphis"] .section-title { text-transform: uppercase; }
+[data-theme="memphis"] .section-title em { font-style: normal; background: var(--accent-3); padding: 0 0.12em; color: var(--fg); display: inline-block; transform: rotate(-0.8deg); }
+
+[data-theme="memphis"] .stats-grid { border: 3px solid var(--fg); border-radius: 12px; background: var(--fg); gap: 3px; box-shadow: 8px 8px 0 var(--accent); }
+[data-theme="memphis"] .stat:nth-child(1) { background: var(--bg-elevated); }
+[data-theme="memphis"] .stat:nth-child(2) { background: var(--accent); color: #fff; }
+[data-theme="memphis"] .stat:nth-child(3) { background: var(--accent-3); }
+[data-theme="memphis"] .stat:nth-child(4) { background: var(--accent-2); }
+[data-theme="memphis"] .stat:nth-child(2) .stat-num,
+[data-theme="memphis"] .stat:nth-child(2) .stat-label { color: #fff; }
+[data-theme="memphis"] .stat-num { font-weight: 700; }
+
+[data-theme="memphis"] .install-wrap {
+  border: 3px solid var(--fg); border-radius: 16px;
+  background: var(--accent-3); box-shadow: 10px 10px 0 var(--fg);
+}
+[data-theme="memphis"] .install-cmd { border: 2px solid var(--fg); border-radius: 8px; background: var(--fg); color: #fff; }
+
+[data-theme="memphis"] .code-block { border: 3px solid var(--fg); border-radius: 12px; box-shadow: 8px 8px 0 var(--accent-2); }
+[data-theme="memphis"] .control-bar { border-bottom: 3px solid var(--fg); background: rgba(254,254,254,0.92); }
+[data-theme="memphis"] .chip { border: 2px solid var(--fg); border-radius: 999px; font-weight: 600; }
+[data-theme="memphis"] .chip.is-active { background: var(--accent); color: #fff; border-color: var(--fg); box-shadow: 2px 2px 0 var(--fg); }
+[data-theme="memphis"] .brand-mark { color: var(--accent); }
+[data-theme="memphis"] .brand-mark sub { background: var(--accent-3); padding: 0 3px; color: var(--fg); border-radius: 3px; }
+
+/* Tabs */
+[data-theme="memphis"] .tabs-list { border: 3px solid var(--fg); border-radius: 999px; padding: 4px; background: var(--bg-elevated); box-shadow: 4px 4px 0 var(--fg); }
+[data-theme="memphis"] .tab { border-radius: 999px; font-weight: 700; text-transform: uppercase; }
+[data-theme="memphis"] .tab.is-active { background: var(--accent-2); color: var(--fg); border: 2px solid var(--fg); }
+
+/* Gallery */
+[data-theme="memphis"] .gallery-card { border: 3px solid var(--fg); border-radius: 12px; box-shadow: 6px 6px 0 var(--accent-3); }
+[data-theme="memphis"] .input, [data-theme="memphis"] .select, [data-theme="memphis"] textarea.input {
+  border: 2px solid var(--fg); border-radius: 8px; background: var(--bg-elevated);
+}
+[data-theme="memphis"] .input:focus { border-color: var(--accent); box-shadow: 3px 3px 0 var(--accent); }
+[data-theme="memphis"] .alert { border: 2px solid var(--fg); border-left-width: 8px; border-radius: 8px; box-shadow: 3px 3px 0 var(--accent-3); }
+[data-theme="memphis"] .badge { border-radius: 999px; border: 2px solid currentColor; font-weight: 700; }
+[data-theme="memphis"] .check-box { border: 2px solid var(--fg); border-radius: 4px; }
+[data-theme="memphis"] .switch-track { border: 2px solid var(--fg); }
+[data-theme="memphis"] .data-table th { background: var(--fg); color: var(--bg-elevated); padding: 12px; }

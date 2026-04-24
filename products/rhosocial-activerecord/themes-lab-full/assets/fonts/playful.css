@@ -1,0 +1,21 @@
+/**
+ * Font pack · Playful
+ * ═══════════════════════════════════════════════════════════════════════
+ * Caveat handwriting for display + Inter Tight for body.
+ * Casual, friendly, good for hackathon / indie / kids-edu vibes.
+ * Identifier: data-font="playful"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Append to themes.html fonts <link>:
+ *   &family=Caveat:wght@400;600;700
+ * Falls back to Comic Sans MS if unavailable.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="playful"] {
+  --font-display:     'Caveat', 'Comic Sans MS', cursive;
+  --font-body:        'Inter Tight', sans-serif;
+  --font-mono:        'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: 0;
+  --display-leading:  1.0;
+}
