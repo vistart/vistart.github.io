@@ -1,0 +1,20 @@
+/**
+ * Font pack · Literata
+ * ═══════════════════════════════════════════════════════════════════════
+ * Screen-optimized serif by Google. More modern than Newsreader, more
+ * bookish than Crimson Pro. Designed for long-form reading. Pairs well
+ * with Editorial, Parchment, Nordic, Noir themes.
+ * Identifier: data-font="literata"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Literata:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="literata"] {
+  --font-display:    'Literata', serif;
+  --font-body:       'Literata', serif;
+  --font-mono:       'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.01em;
+  --display-leading:  1.05;
+}

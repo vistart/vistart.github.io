@@ -1,0 +1,241 @@
+/**
+ * Theme · Glassmorphism
+ * ═══════════════════════════════════════════════════════════════════════
+ * Frosted-glass modern UI. Gradient background, translucent white cards
+ * with backdrop-filter blur, thin bright borders. Light, airy, premium.
+ * Complements Wireframe (structural outlines) but adds depth + glass.
+ * Identifier: data-theme="glassmorphism"
+ *
+ * Google Fonts needed (already loaded): Inter Tight, JetBrains Mono
+ */
+
+[data-theme="glassmorphism"] {
+  --bg:           #EEF0F5;
+  --bg-2:         #E0E4EC;
+  --bg-elevated:  rgba(255, 255, 255, 0.55);
+
+  --fg:           #1A1C2B;
+  --fg-muted:     #5A5E76;
+  --fg-faint:     #9A9EB6;
+
+  --accent:       #6366F1;              /* indigo */
+  --accent-2:     #8B5CF6;              /* violet */
+  --accent-3:     #EC4899;              /* pink */
+
+  --border:        rgba(99, 102, 241, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.5);
+  --radius:        20px;
+  --radius-sm:     12px;
+
+  --font-display: 'Inter Tight', system-ui, sans-serif;
+  --font-body:    'Inter Tight', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.03em;
+  --display-leading:  1.02;
+
+  --code-bg:       #1A1C2B;
+  --code-fg:       #E4E6F0;
+  --code-fg-muted: #8A8EA6;
+  --code-border:   rgba(99,102,241,0.15);
+  --tok-keyword:   #A5B4FC;
+  --tok-string:    #6EE7B7;
+  --tok-func:      #F0ABFC;
+  --tok-comment:   #5A5E76;
+  --tok-num:       #FBCFE8;
+  --tok-class:     #C4B5FD;
+  --tok-self:      #8A8EA6;
+  --tok-dec:       #F0ABFC;
+  --tok-attr:      #8A8EA6;
+}
+
+/* ── Gradient mesh background ──────────────────────────────────────────── */
+[data-theme="glassmorphism"] body {
+  background:
+    radial-gradient(circle 300px at 15% 15%, rgba(99,102,241,0.15), transparent 70%),
+    radial-gradient(circle 250px at 85% 20%, rgba(139,92,246,0.12), transparent 70%),
+    radial-gradient(circle 280px at 75% 80%, rgba(236,72,153,0.1), transparent 70%),
+    radial-gradient(circle 200px at 10% 85%, rgba(99,102,241,0.1), transparent 70%),
+    linear-gradient(180deg, #EEF0F5 0%, #E0E4EC 100%);
+  background-attachment: fixed;
+}
+
+/* ── Hero — gradient text ──────────────────────────────────────────────── */
+[data-theme="glassmorphism"] .hero-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+[data-theme="glassmorphism"] .hero-eyebrow {
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
+  color: var(--accent);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.1);
+}
+[data-theme="glassmorphism"] .hero-eyebrow::before { background: var(--accent); }
+
+/* ── Buttons — frosted glass pills ────────────────────────────────────── */
+[data-theme="glassmorphism"] .btn {
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 12px 24px;
+}
+[data-theme="glassmorphism"] .btn-primary {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+}
+[data-theme="glassmorphism"] .btn-primary:hover {
+  box-shadow: 0 12px 32px rgba(99,102,241,0.45);
+  transform: translateY(-1px);
+}
+[data-theme="glassmorphism"] .btn-ghost {
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
+  color: var(--fg);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.06);
+}
+[data-theme="glassmorphism"] .btn-ghost:hover { background: rgba(255,255,255,0.65); }
+
+/* ── Features — glass cards ────────────────────────────────────────────── */
+[data-theme="glassmorphism"] .feature {
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(99,102,241,0.08);
+}
+[data-theme="glassmorphism"] .feature:hover {
+  box-shadow: 0 12px 40px rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.2);
+  transform: translateY(-2px);
+}
+[data-theme="glassmorphism"] .feature-num { color: var(--accent); font-weight: 700; }
+[data-theme="glassmorphism"] .feature-icon { color: var(--accent); }
+[data-theme="glassmorphism"] .feature-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+[data-theme="glassmorphism"] .feature-tag {
+  background: rgba(99,102,241,0.08);
+  color: var(--accent);
+  border: 1px solid rgba(99,102,241,0.15);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+[data-theme="glassmorphism"] .section-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, #6366F1, #EC4899);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Stats — glass grid ───────────────────────────────────────────────── */
+[data-theme="glassmorphism"] .stats-grid {
+  border-radius: 20px;
+  background: rgba(255,255,255,0.35);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.5);
+  gap: 1px;
+}
+[data-theme="glassmorphism"] .stat {
+  background: rgba(255,255,255,0.3);
+  border-right: 1px solid rgba(255,255,255,0.4);
+}
+[data-theme="glassmorphism"] .stat:last-child { border-right: none; }
+[data-theme="glassmorphism"] .stat-num { color: var(--accent); }
+
+/* ── Install — frosted banner ──────────────────────────────────────────── */
+[data-theme="glassmorphism"] .install-wrap {
+  background: rgba(255,255,255,0.4);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 28px;
+  box-shadow: 0 16px 48px rgba(99,102,241,0.1);
+}
+[data-theme="glassmorphism"] .install-cmd {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 999px;
+}
+[data-theme="glassmorphism"] .install-cmd .prompt { color: var(--accent-2); }
+
+[data-theme="glassmorphism"] .code-block {
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.1);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+/* ── Control bar ───────────────────────────────────────────────────────── */
+[data-theme="glassmorphism"] .control-bar {
+  background: rgba(238,240,245,0.65);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+}
+[data-theme="glassmorphism"] .chip {
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 999px;
+}
+[data-theme="glassmorphism"] .chip.is-active {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+}
+[data-theme="glassmorphism"] .brand-mark { color: var(--accent); }
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+[data-theme="glassmorphism"] .tabs-list {
+  border-radius: 999px;
+  background: rgba(255,255,255,0.35);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: 4px;
+}
+[data-theme="glassmorphism"] .tab { border-radius: 999px; }
+[data-theme="glassmorphism"] .tab.is-active {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(99,102,241,0.25);
+}
+
+/* ── Gallery ────────────────────────────────────────────────────────────── */
+[data-theme="glassmorphism"] .gallery-card {
+  background: rgba(255,255,255,0.4);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.55);
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.06);
+}
+[data-theme="glassmorphism"] .input,
+[data-theme="glassmorphism"] .select,
+[data-theme="glassmorphism"] textarea.input {
+  border-radius: 999px;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+}
+[data-theme="glassmorphism"] textarea.input { border-radius: 16px; }
+[data-theme="glassmorphism"] .input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+}
+[data-theme="glassmorphism"] .alert {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(8px);
+}
+[data-theme="glassmorphism"] .badge { border-radius: 999px; font-weight: 600; }
+[data-theme="glassmorphism"] .check-box { border-radius: 6px; }
+[data-theme="glassmorphism"] .progress { background: rgba(255,255,255,0.35); }

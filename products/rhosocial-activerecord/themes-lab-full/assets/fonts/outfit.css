@@ -1,0 +1,20 @@
+/**
+ * Font pack · Outfit
+ * ═══════════════════════════════════════════════════════════════════════
+ * Rounded geometric sans-serif. Friendlier than Space Grotesk, warmer
+ * than Inter, less quirky than Rubik. Great for on-screen body text and
+ * modern UIs. Pairs well with Candy, Anderson, Glassmorphism themes.
+ * Identifier: data-font="outfit"
+ *
+ * ━━ GOOGLE FONTS TO ADD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   &family=Outfit:wght@400;500;600;700;800
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+html[data-font="outfit"] {
+  --font-display:    'Outfit', sans-serif;
+  --font-body:       'Outfit', sans-serif;
+  --font-mono:       'JetBrains Mono', monospace;
+  --display-weight:   700;
+  --display-tracking: -0.02em;
+  --display-leading:  1.02;
+}
