@@ -1,0 +1,218 @@
+/**
+ * Theme · Parchment
+ * ═══════════════════════════════════════════════════════════════════════
+ * Medieval manuscript / aged parchment. Warm cream base, deep brown
+ * ink, aged-paper texture. Generous rounding, serif-heavy. Distinct
+ * from Newsprint (modern newspaper) — this is hand-written codex.
+ * Identifier: data-theme="parchment"
+ *
+ * Google Fonts needed (already loaded): EB Garamond, Inter Tight, JetBrains Mono
+ */
+
+[data-theme="parchment"] {
+  --bg:           #F5E6C8;
+  --bg-2:         #EDDBB0;
+  --bg-elevated:  #FBF3E4;
+
+  --fg:           #3B2413;
+  --fg-muted:     #7A5C3E;
+  --fg-faint:     #B09A7A;
+
+  --accent:       #8B4513;              /* saddle brown */
+  --accent-2:     #2E5E4E;              /* deep teal */
+  --accent-3:     #9B2335;              /* crimson */
+
+  --border:        rgba(59, 36, 19, 0.14);
+  --border-strong: rgba(59, 36, 19, 0.28);
+  --radius:        16px;
+  --radius-sm:     10px;
+
+  --font-display: 'EB Garamond', 'Cormorant Garamond', serif;
+  --font-body:    'EB Garamond', 'Cormorant Garamond', serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --display-weight:   600;
+  --display-tracking: -0.01em;
+  --display-leading:  1.05;
+
+  --code-bg:       #3B2413;
+  --code-fg:       #F5E6C8;
+  --code-fg-muted: #B09A7A;
+  --code-border:   rgba(245,230,200,0.1);
+  --tok-keyword:   #D4A06A;
+  --tok-string:    #7AAE8E;
+  --tok-func:      #C4886C;
+  --tok-comment:   #7A5C3E;
+  --tok-num:       #9B2335;
+  --tok-class:     #E8C88A;
+  --tok-self:      #B09A7A;
+  --tok-dec:       #C4886C;
+  --tok-attr:      #B09A7A;
+}
+
+/* ── Aged paper texture ───────────────────────────────────────────────── */
+[data-theme="parchment"] body {
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(139,69,19,0.06), transparent),
+    radial-gradient(ellipse 500px 300px at 85% 80%, rgba(139,69,19,0.05), transparent),
+    linear-gradient(180deg, #F5E6C8 0%, #EDDBB0 100%);
+  background-attachment: fixed;
+}
+
+/* ── Hero — manuscript style ──────────────────────────────────────────── */
+[data-theme="parchment"] .hero-title { font-family: var(--font-display); }
+[data-theme="parchment"] .hero-title em { font-style: italic; color: var(--accent-3); }
+[data-theme="parchment"] .hero-eyebrow {
+  background: var(--accent);
+  color: var(--bg-elevated);
+  border-color: var(--accent);
+  border-radius: 999px;
+  font-variant: small-caps;
+  letter-spacing: 0.12em;
+}
+[data-theme="parchment"] .hero-eyebrow::before { background: var(--bg-elevated); }
+
+/* ── Buttons — quill-shape pills ─────────────────────────────────────── */
+[data-theme="parchment"] .btn {
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+[data-theme="parchment"] .btn-primary {
+  background: var(--accent);
+  color: var(--bg-elevated);
+}
+[data-theme="parchment"] .btn-ghost {
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+[data-theme="parchment"] .btn-ghost:hover { background: rgba(139,69,19,0.06); }
+
+/* ── Features — vellum cards ──────────────────────────────────────────── */
+[data-theme="parchment"] .feature {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(59,36,19,0.08);
+}
+[data-theme="parchment"] .feature-num {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-style: italic;
+}
+[data-theme="parchment"] .feature-icon { color: var(--accent-2); }
+[data-theme="parchment"] .feature-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+[data-theme="parchment"] .feature-title em { color: var(--accent-3); font-style: italic; }
+[data-theme="parchment"] .feature-tag {
+  background: rgba(139,69,19,0.1);
+  color: var(--accent);
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-style: italic;
+}
+
+[data-theme="parchment"] .section-label {
+  font-family: var(--font-display);
+  font-style: italic;
+  letter-spacing: 0.15em;
+}
+[data-theme="parchment"] .section-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+[data-theme="parchment"] .section-title em { color: var(--accent-3); font-style: italic; }
+
+/* ── Stats ─────────────────────────────────────────────────────────────── */
+[data-theme="parchment"] .stats-grid {
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+}
+[data-theme="parchment"] .stat { border-right: 1px solid var(--border); }
+[data-theme="parchment"] .stat-num {
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Install ───────────────────────────────────────────────────────────── */
+[data-theme="parchment"] .install-wrap {
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent);
+  border-radius: 24px;
+  box-shadow: 0 12px 36px rgba(59,36,19,0.12);
+}
+[data-theme="parchment"] .install-cmd {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 999px;
+}
+[data-theme="parchment"] .install-cmd .prompt { color: var(--accent-3); }
+
+[data-theme="parchment"] .code-block {
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(59,36,19,0.1);
+}
+
+/* ── Control bar ────────────────────────────────────────────────────────── */
+[data-theme="parchment"] .control-bar {
+  background: rgba(245,230,200,0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-strong);
+}
+[data-theme="parchment"] .chip {
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-body);
+}
+[data-theme="parchment"] .chip.is-active {
+  background: var(--accent);
+  color: var(--bg-elevated);
+  border-color: var(--accent);
+}
+[data-theme="parchment"] .brand-mark { color: var(--accent); }
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+[data-theme="parchment"] .tabs-list {
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  padding: 4px;
+}
+[data-theme="parchment"] .tab { border-radius: 999px; font-family: var(--font-body); }
+[data-theme="parchment"] .tab.is-active {
+  background: var(--accent);
+  color: var(--bg-elevated);
+  border: none;
+}
+
+/* ── Gallery ────────────────────────────────────────────────────────────── */
+[data-theme="parchment"] .gallery-card {
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+}
+[data-theme="parchment"] .input,
+[data-theme="parchment"] .select,
+[data-theme="parchment"] textarea.input {
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-body);
+}
+[data-theme="parchment"] .input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139,69,19,0.1);
+}
+[data-theme="parchment"] .alert { border-radius: 14px; }
+[data-theme="parchment"] .badge {
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+[data-theme="parchment"] .progress { background: var(--bg-2); }
