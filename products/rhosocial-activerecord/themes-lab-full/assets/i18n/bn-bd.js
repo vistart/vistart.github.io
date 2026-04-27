@@ -66,12 +66,27 @@ window.I18N['bn-bd'] = {
     }
   },
   compare: {
-    label: 'তুলনা', title: 'প্ল্যান অনুযায়ী <em>ফিচার তুলনা</em>।',
-    col_feature: 'ফিচার',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle backend', row3: 'কাস্টম backend',
-    row4: 'সম্পূর্ণ sync / async API', row5: 'Audit log', row6: 'পড়া/লেখা বিভাজন',
-    row7: 'SSO / SAML / LDAP', row8: 'SLA প্রতিক্রিয়া', row8c: '— কমিউনিটি', row8t: '২৪ ঘণ্টা', row8e: '৪ ঘণ্টা',
-    row9: 'বার্ষিক মূল্য'
+    label: 'তুলনা',
+    title: 'অন্যান্য Python ORM-এর সাথে <em>তুলনা</em>।',
+    col_feature: 'বৈশিষ্ট্য',
+    row1: 'ডিজাইন প্যাটার্ন',
+    row1r: 'ActiveRecord',
+    row1sa: 'Data Mapper',
+    row1dj: 'ActiveRecord',
+    row1sm: 'Hybrid',
+    row1pw: 'ActiveRecord',
+    row1to: 'ActiveRecord',
+    row2: 'ব্যাকএন্ড স্বাধীনভাবে ব্যবহারযোগ্য',
+    row3: 'Session ধারণা নেই',
+    row4: 'সামঞ্জস্যপূর্ণ sync / async API',
+    row5: 'নেটিভ Pydantic ইন্টিগ্রেশন',
+    row6: 'রানটাইম ডেটা যাচাইকরণ',
+    row7: 'সম্পূর্ণ SQL এক্সপ্রেসিভনেস',
+    row8: 'ক্ষমতা ঘোষণা প্রক্রিয়া',
+    row9: 'SQL স্বচ্ছতা <code>.to_sql()</code>',
+    row10: 'বাধ্যতামূলক মাইগ্রেশন টুল নেই',
+    row11: 'ন্যূনতম নির্ভরতা',
+    row12: 'স্পষ্ট সম্পর্ক সংজ্ঞা'
   },
   gallery: {
     label: 'কম্পোনেন্ট গ্যালারি · UI উপাদান', title: 'প্রতিটি থিমে <em>UI উপাদান</em> কেমন দেখায়।',

@@ -48,10 +48,19 @@ window.I18N['vi-vn'] = {
           f4: 'SLA 4 giờ', f5: 'Đào tạo tại chỗ và giải pháp chuyên biệt', cta: 'Liên hệ bán hàng' }
   },
   compare: {
-    label: 'So sánh', title: 'So sánh <em>tính năng</em>.', col_feature: 'Tính năng',
-    row1: 'SQLite / Postgres / MySQL', row2: 'Backend MSSQL / Oracle', row3: 'Backend tùy biến',
-    row4: 'API sync / async đầy đủ', row5: 'Nhật ký kiểm toán', row6: 'Tách đọc/ghi', row7: 'SSO / SAML / LDAP',
-    row8: 'Phản hồi SLA', row8c: '— cộng đồng', row8t: '24 giờ', row8e: '4 giờ', row9: 'Giá hàng năm'
+    label: 'So sánh', title: 'So sánh với các ORM Python khác.', col_feature: 'Tính năng',
+    row1: 'Mẫu thiết kế', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend dùng độc lập',
+    row3: 'Không khái niệm session',
+    row4: 'API sync / async nhất quán',
+    row5: 'Tích hợp Pydantic native',
+    row6: 'Xác thực dữ liệu runtime',
+    row7: 'Khả năng biểu đạt SQL đầy đủ',
+    row8: 'Khai báo khả năng',
+    row9: 'Minh bạch SQL <code>.to_sql()</code>',
+    row10: 'Không công cụ di chuyển bắt buộc',
+    row11: 'Phụ thuộc tối thiểu',
+    row12: 'Định nghĩa quan hệ rõ ràng'
   },
   gallery: {
     label: 'Thư viện thành phần · nguyên tố', title: 'Mỗi chủ đề xử lý <em>nguyên tố UI</em> như thế nào.',

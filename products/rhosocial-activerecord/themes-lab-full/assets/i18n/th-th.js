@@ -66,12 +66,27 @@ window.I18N['th-th'] = {
     }
   },
   compare: {
-    label: 'เปรียบเทียบ', title: 'เปรียบเทียบ<em>ฟีเจอร์</em>ตามแพ็กเกจ',
-    col_feature: 'ฟีเจอร์',
-    row1: 'SQLite / Postgres / MySQL', row2: 'backend MSSQL / Oracle', row3: 'backend แบบกำหนดเอง',
-    row4: 'API sync / async เต็มรูปแบบ', row5: 'audit log', row6: 'แยกอ่าน/เขียน',
-    row7: 'SSO / SAML / LDAP', row8: 'การตอบ SLA', row8c: '— ชุมชน', row8t: '24 ชั่วโมง', row8e: '4 ชั่วโมง',
-    row9: 'ราคาต่อปี'
+    label: 'เปรียบเทียบ',
+    title: 'เปรียบเทียบกับ ORM ของ Python อื่นๆ',
+    col_feature: 'คุณลักษณะ',
+    row1: 'รูปแบบการออกแบบ',
+    row1r: 'ActiveRecord',
+    row1sa: 'Data Mapper',
+    row1dj: 'ActiveRecord',
+    row1sm: 'Hybrid',
+    row1pw: 'ActiveRecord',
+    row1to: 'ActiveRecord',
+    row2: 'Backend ใช้แยกอิสระ',
+    row3: 'ไม่มีแนวคิด Session',
+    row4: 'API sync / async สอดคล้องกัน',
+    row5: 'การรวม Pydantic แบบ native',
+    row6: 'การตรวจสอบข้อมูลขณะทำงาน',
+    row7: 'พลัง SQL ครบถ้วน',
+    row8: 'กลไกประกาศความสามารถ',
+    row9: 'ความโปร่งใส SQL <code>.to_sql()</code>',
+    row10: 'ไม่บังคับเครื่องมือย้ายข้อมูล',
+    row11: 'การพึ่งพาขั้นต่ำ',
+    row12: 'การกำหนดความสัมพันธ์ชัดเจน'
   },
   gallery: {
     label: 'คลัง component · ส่วน UI', title: 'ลักษณะ<em>ตัวควบคุม</em>ภายใต้แต่ละธีม',

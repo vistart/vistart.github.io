@@ -448,24 +448,27 @@ html[lang="bn-bd"] { font-family: 'Noto Sans Bengali', var(--font-body); }
   <section class="section">
     <div class="container">
       <div class="section-header">
-        <div class="section-label" data-i18n="compare.label">Compare</div>
-        <h2 class="section-title" data-i18n="compare.title">各档位<em>特性对比</em>。</h2>
-      </div>
-      <div class="feature-compare">
-        <table>
-          <thead><tr><th data-i18n="compare.col_feature">功能</th><th>Community</th><th class="col-featured">Team</th><th>Enterprise</th></tr></thead>
-          <tbody>
-            <tr><td data-i18n="compare.row1">...</td><td><span class="check-yes">&check;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row2">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row3">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row4">...</td><td><span class="check-yes">&check;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row5">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row6">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row7">...</td><td><span class="check-no">&mdash;</span></td><td class="col-featured"><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td></tr>
-            <tr><td data-i18n="compare.row8">...</td><td data-i18n="compare.row8c">&mdash;</td><td class="col-featured" data-i18n="compare.row8t">24h</td><td><strong data-i18n="compare.row8e">4h</strong></td></tr>
-            <tr><td data-i18n="compare.row9">...</td><td>$0</td><td class="col-featured">$348 / user</td><td>$20k+</td></tr>
-          </tbody>
-        </table>
+<div class="section-label" data-i18n="compare.label">Compare</div>
+<h2 class="section-title" data-i18n="compare.title">与其它 Python ORM <em>对比</em>。</h2>
+</div>
+<div class="feature-compare">
+<table>
+<thead><tr><th data-i18n="compare.col_feature">特性</th><th class="col-featured">ρAR</th><th>SQLAlchemy</th><th>Django ORM</th><th>SQLModel</th><th>Peewee</th><th>Tortoise</th></tr></thead>
+<tbody>
+<tr><td data-i18n="compare.row1">设计模式</td><td class="col-featured" data-i18n="compare.row1r">ActiveRecord</td><td data-i18n="compare.row1sa">Data Mapper</td><td data-i18n="compare.row1dj">ActiveRecord</td><td data-i18n="compare.row1sm">Hybrid</td><td data-i18n="compare.row1pw">ActiveRecord</td><td data-i18n="compare.row1to">ActiveRecord</td></tr>
+<tr><td data-i18n="compare.row2">后端可独立使用</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row3">无 Session 概念</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-warn">&half;</span></td></tr>
+<tr><td data-i18n="compare.row4">同步 / 异步 API 一致</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row5">原生 Pydantic 集成</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row6">运行时数据验证</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row7">完整 SQL 表达力</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row8">能力声明机制</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row9">SQL 透明 .to_sql()</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+<tr><td data-i18n="compare.row10">零强制迁移依赖</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td></tr>
+<tr><td data-i18n="compare.row11">最小依赖</td><td class="col-featured">Pydantic</td><td>Self-contained</td><td>Django</td><td>SQLAlchemy</td><td>Self-contained</td><td>None</td></tr>
+<tr><td data-i18n="compare.row12">显式关系定义</td><td class="col-featured"><span class="check-yes">&check;</span></td><td><span class="check-yes">&check;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-warn">&half;</span></td><td><span class="check-no">&mdash;</span></td><td><span class="check-no">&mdash;</span></td></tr>
+</tbody>
+</table>
       </div>
     </div>
   </section>

@@ -48,11 +48,19 @@ window.I18N['en-us'] = {
           f4: '4-hour SLA response', f5: 'On-site training and dedicated solutions', cta: 'Contact Sales' }
   },
   compare: {
-    label: 'Compare', title: 'Feature <em>comparison</em>.', col_feature: 'Feature',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle backends', row3: 'Custom backends',
-    row4: 'Full async / sync API', row5: 'Audit log', row6: 'Read-write splitting', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA response', row8c: '— community', row8t: '24 hours', row8e: '4 hours',
-    row9: 'Annual price'
+    label: 'Compare', title: 'Compared to other Python ORMs.', col_feature: 'Feature',
+    row1:  'Design pattern',       row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2:  'Backend usable standalone',
+    row3:  'No session concept',
+    row4:  'Consistent sync / async API',
+    row5:  'Native Pydantic integration',
+    row6:  'Runtime data validation',
+    row7:  'Full SQL expressiveness',
+    row8:  'Capability declaration',
+    row9:  'SQL transparency <code>.to_sql()</code>',
+    row10: 'No forced migration tool',
+    row11: 'Minimal dependencies',
+    row12: 'Explicit relation definition'
   },
   gallery: {
     label: 'Component Gallery · primitives', title: 'How each theme handles <em>UI primitives</em>.',

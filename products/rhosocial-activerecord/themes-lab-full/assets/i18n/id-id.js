@@ -48,10 +48,19 @@ window.I18N['id-id'] = {
           f4: 'SLA 4 jam', f5: 'Pelatihan di tempat dan solusi khusus', cta: 'Hubungi sales' }
   },
   compare: {
-    label: 'Bandingkan', title: 'Perbandingan <em>fitur</em>.', col_feature: 'Fitur',
-    row1: 'SQLite / Postgres / MySQL', row2: 'Backend MSSQL / Oracle', row3: 'Backend kustom',
-    row4: 'API sync / async lengkap', row5: 'Log audit', row6: 'Pemisahan baca/tulis', row7: 'SSO / SAML / LDAP',
-    row8: 'Respons SLA', row8c: '— komunitas', row8t: '24 jam', row8e: '4 jam', row9: 'Harga tahunan'
+    label: 'Bandingkan', title: 'Dibandingkan dengan ORM Python lainnya.', col_feature: 'Fitur',
+    row1: 'Pola desain', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend dapat digunakan sendiri',
+    row3: 'Tanpa konsep session',
+    row4: 'API sync / async yang konsisten',
+    row5: 'Integrasi Pydantic native',
+    row6: 'Validasi data saat runtime',
+    row7: 'Ekspresivitas SQL penuh',
+    row8: 'Deklarasi kapabilitas',
+    row9: 'Transparansi SQL <code>.to_sql()</code>',
+    row10: 'Tanpa alat migrasi wajib',
+    row11: 'Dependensi minimal',
+    row12: 'Definisi relasi eksplisit'
   },
   gallery: {
     label: 'Galeri Komponen · primitif', title: 'Bagaimana setiap tema memperlakukan <em>primitif UI</em>.',

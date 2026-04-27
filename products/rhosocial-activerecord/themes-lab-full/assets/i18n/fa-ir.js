@@ -66,12 +66,27 @@ window.I18N['fa-ir'] = {
     }
   },
   compare: {
-    label: 'مقایسه', title: 'مقایسه <em>ویژگی‌ها</em> بر اساس طرح.',
+    label: 'مقایسه',
+    title: 'مقایسه با سایر ORM های پایتون.',
     col_feature: 'ویژگی',
-    row1: 'SQLite / Postgres / MySQL', row2: 'بک‌اند MSSQL / Oracle', row3: 'بک‌اند اختصاصی',
-    row4: 'API کامل sync / async', row5: 'حسابرسی', row6: 'جداسازی خواندن/نوشتن',
-    row7: 'SSO / SAML / LDAP', row8: 'پاسخ SLA', row8c: '— انجمن', row8t: '۲۴ ساعت', row8e: '۴ ساعت',
-    row9: 'قیمت سالانه'
+    row1: 'الگوی طراحی',
+    row1r: 'ActiveRecord',
+    row1sa: 'Data Mapper',
+    row1dj: 'ActiveRecord',
+    row1sm: 'Hybrid',
+    row1pw: 'ActiveRecord',
+    row1to: 'ActiveRecord',
+    row2: 'بک‌اند قابل استفاده مستقل',
+    row3: 'بدون مفهوم Session',
+    row4: 'API sync / async سازگار',
+    row5: 'یکپارچه‌سازی بومی Pydantic',
+    row6: 'اعتبارسنجی داده در زمان اجرا',
+    row7: 'قدرت بیان کامل SQL',
+    row8: 'مکانیسم اعلام قابلیت',
+    row9: 'شفافیت SQL <code>.to_sql()</code>',
+    row10: 'بدون ابزار مهاجرت اجباری',
+    row11: 'حداقل وابستگی',
+    row12: 'تعریف صریح روابط'
   },
   gallery: {
     label: 'گالری مؤلفه · عناصر UI', title: 'نحوه رفتار هر تم با <em>عناصر UI</em>.',

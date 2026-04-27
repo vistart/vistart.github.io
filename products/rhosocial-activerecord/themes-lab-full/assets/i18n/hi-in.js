@@ -48,10 +48,19 @@ window.I18N['hi-in'] = {
           f4: '4 घंटे SLA', f5: 'ऑन-साइट प्रशिक्षण और समर्पित समाधान', cta: 'सेल्स से संपर्क करें' }
   },
   compare: {
-    label: 'तुलना', title: 'फ़ीचर <em>तुलना</em>।', col_feature: 'फ़ीचर',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle बैकएंड', row3: 'कस्टम बैकएंड',
-    row4: 'पूर्ण sync / async API', row5: 'ऑडिट लॉग', row6: 'read/write विभाजन', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA प्रतिक्रिया', row8c: '— कम्युनिटी', row8t: '24 घंटे', row8e: '4 घंटे', row9: 'वार्षिक क़ीमत'
+    label: 'तुलना', title: 'अन्य Python ORM से <em>तुलना</em>।', col_feature: 'विशेषता',
+    row1: 'डिज़ाइन पैटर्न', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'बैकएंड स्वतंत्र उपयोग',
+    row3: 'Session अवधारणा नहीं',
+    row4: 'सुसंगत sync / async API',
+    row5: 'नेटिव Pydantic एकीकरण',
+    row6: 'रनटाइम डेटा सत्यापन',
+    row7: 'पूर्ण SQL अभिव्यक्ति',
+    row8: 'Capability घोषणा तंत्र',
+    row9: 'SQL पारदर्शिता <code>.to_sql()</code>',
+    row10: 'अनिवार्य प्रवास उपकरण नहीं',
+    row11: 'न्यूनतम निर्भरता',
+    row12: 'स्पष्ट संबंध परिभाषा'
   },
   gallery: {
     label: 'कंपोनेंट गैलरी · प्रिमिटिव', title: 'हर थीम <em>UI प्रिमिटिव</em> को कैसे दिखाती है।',

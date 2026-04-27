@@ -85,17 +85,20 @@ window.I18N['zh-cn'] = {
 
   compare: {
     label: 'Compare',
-    title: '各档位<em>特性对比</em>。',
-    col_feature:  '功能',
-    row1: 'SQLite / Postgres / MySQL',
-    row2: 'MSSQL / Oracle 后端',
-    row3: '自定义后端',
-    row4: '完整 async / sync API',
-    row5: '审计日志',
-    row6: '读写分离',
-    row7: 'SSO / SAML / LDAP',
-    row8: 'SLA 响应保证',  row8c: '— 社区', row8t: '24 小时', row8e: '4 小时',
-    row9: '每年价格'
+    title: '与其它 Python ORM <em>对比</em>。',
+    col_feature:  '特性',
+    row1:  '设计模式',   row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2:  '后端可独立使用',
+    row3:  '无 Session 概念',
+    row4:  '同步 / 异步 API 一致',
+    row5:  '原生 Pydantic 集成',
+    row6:  '运行时数据验证',
+    row7:  '完整 SQL 表达力',
+    row8:  '能力声明机制',
+    row9:  'SQL 透明 <code>.to_sql()</code>',
+    row10: '零强制迁移依赖',
+    row11: '最小依赖',
+    row12: '显式关系定义'
   },
 
   gallery: {

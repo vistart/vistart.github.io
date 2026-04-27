@@ -558,6 +558,17 @@
   font-size: 14px;
   font-weight: 400;
 }
+.check-warn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    I · LOGIN / AUTH CARD

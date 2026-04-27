@@ -48,10 +48,19 @@ window.I18N['ko-kr'] = {
           f4: '4시간 SLA', f5: '방문 교육 및 전담 솔루션', cta: '영업 문의' }
   },
   compare: {
-    label: 'Compare', title: '플랜별 <em>기능 비교</em>.', col_feature: '기능',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle 백엔드', row3: '커스텀 백엔드',
-    row4: '전체 동기 / 비동기 API', row5: '감사 로그', row6: '읽기/쓰기 분리', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA 응답', row8c: '— 커뮤니티', row8t: '24시간', row8e: '4시간', row9: '연간 가격'
+    label: 'Compare', title: '다른 Python ORM과 <em>비교</em>.', col_feature: '기능',
+    row1: '설계 패턴', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: '백엔드 독립 사용 가능',
+    row3: 'Session 개념 없음',
+    row4: '동기 / 비동기 API 일관성',
+    row5: '네이티브 Pydantic 통합',
+    row6: '런타임 데이터 검증',
+    row7: '완전한 SQL 표현력',
+    row8: 'Capability 선언 메커니즘',
+    row9: 'SQL 투명성 <code>.to_sql()</code>',
+    row10: '마이그레이션 도구 강제 없음',
+    row11: '최소 의존성',
+    row12: '명시적 관계 정의'
   },
   gallery: {
     label: 'Component Gallery · UI 프리미티브', title: '각 테마에서의 <em>컨트롤 표현</em>.',

@@ -66,12 +66,20 @@ f4: 'SLA 4 hodiny', f5: 'Onsite školení a dedikovaná řešení', cta: 'Kontak
 }
 },
 compare: {
-label: 'Porovnat', title: 'Porovnání <em>funkcí</em> podle plánů.',
-col_feature: 'Funkce',
-row1: 'SQLite / Postgres / MySQL', row2: 'Backendy MSSQL / Oracle', row3: 'Vlastní backendy',
-row4: 'Plné API sync / async', row5: 'Auditní log', row6: 'Oddělení čtení/zápisu',
-row7: 'SSO / SAML / LDAP', row8: 'Odpověď SLA', row8c: '— komunita', row8t: '24 hodin', row8e: '4 hodiny',
-row9: 'Roční cena'
+label: 'Porovnat', title: 'Srovnání s dalšími Python ORM.',
+col_feature: 'Charakteristika',
+row1: 'Návrhový vzor', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+row2: 'Backend lze používat samostatně',
+row3: 'Bez konceptu session',
+row4: 'Konzistentní sync / async API',
+row5: 'Nativní integrace Pydantic',
+row6: 'Validace dat za běhu',
+row7: 'Plná expresivita SQL',
+row8: 'Mechanismus deklarace schopností',
+row9: 'Transparentnost SQL <code>.to_sql()</code>',
+row10: 'Bez povinného nástroje pro migraci',
+row11: 'Minimální závislosti',
+row12: 'Explicitní definice vztahů'
 },
 gallery: {
 label: 'Galerie komponent · primitivy', title: 'Jak každé téma zachází s <em>UI primitivami</em>.',
