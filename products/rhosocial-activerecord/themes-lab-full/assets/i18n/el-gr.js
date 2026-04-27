@@ -48,10 +48,19 @@ window.I18N['el-gr'] = {
           f4: 'SLA 4 ωρών', f5: 'Επιτόπια εκπαίδευση και αφιερωμένες λύσεις', cta: 'Επικοινωνία πωλήσεων' }
   },
   compare: {
-    label: 'Σύγκριση', title: '<em>Σύγκριση</em> χαρακτηριστικών.', col_feature: 'Χαρακτηριστικό',
-    row1: 'SQLite / Postgres / MySQL', row2: 'Backends MSSQL / Oracle', row3: 'Προσαρμοσμένα backends',
-    row4: 'Πλήρες sync / async API', row5: 'Αρχείο ελέγχου', row6: 'Διαχωρισμός ανάγνωσης/εγγραφής', row7: 'SSO / SAML / LDAP',
-    row8: 'Απόκριση SLA', row8c: '— κοινότητα', row8t: '24 ώρες', row8e: '4 ώρες', row9: 'Ετήσια τιμή'
+    label: 'Σύγκριση', title: 'Σύγκριση με άλλα Python ORM.', col_feature: 'Χαρακτηριστικό',
+    row1: 'Μοτίβο σχεδίασης', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend αυτόνομα χρησιμοποιήσιμο',
+    row3: 'Χωρίς έννοια session',
+    row4: 'Συνεπές sync / async API',
+    row5: 'Εγγενής ενσωμάτωση Pydantic',
+    row6: 'Επικύρωση δεδομένων κατά την εκτέλεση',
+    row7: 'Πλήρης εκφραστικότητα SQL',
+    row8: 'Δήλωση δυνατοτήτων',
+    row9: 'Διαφάνεια SQL <code>.to_sql()</code>',
+    row10: 'Χωρίς υποχρεωτικό εργαλείο μετεγκατάστασης',
+    row11: 'Ελάχιστες εξαρτήσεις',
+    row12: 'Ρητός ορισμός σχέσεων'
   },
   gallery: {
     label: 'Γκαλερί συστατικών · πρωτογενή', title: 'Πώς κάθε θέμα χειρίζεται τα <em>πρωτογενή UI</em>.',

@@ -66,12 +66,27 @@ window.I18N['uk-ua'] = {
     }
   },
   compare: {
-    label: 'Порівняти', title: 'Порівняння <em>функцій</em> за планами.',
-    col_feature: 'Функція',
-    row1: 'SQLite / Postgres / MySQL', row2: 'Backend\'и MSSQL / Oracle', row3: 'Кастомні backend\'и',
-    row4: 'Повне API sync / async', row5: 'Аудит-журнал', row6: 'Розділ читання/запису',
-    row7: 'SSO / SAML / LDAP', row8: 'Відповідь SLA', row8c: '— спільнота', row8t: '24 години', row8e: '4 години',
-    row9: 'Ціна за рік'
+    label: 'Порівняти',
+    title: 'Порівняння з іншими Python ORM.',
+    col_feature: 'Характеристика',
+    row1: 'Патерн проєктування',
+    row1r: 'ActiveRecord',
+    row1sa: 'Data Mapper',
+    row1dj: 'ActiveRecord',
+    row1sm: 'Hybrid',
+    row1pw: 'ActiveRecord',
+    row1to: 'ActiveRecord',
+    row2: 'Backend використовується окремо',
+    row3: 'Без концепції сесії',
+    row4: 'Узгоджене sync / async API',
+    row5: 'Нативна інтеграція з Pydantic',
+    row6: 'Валідація даних під час виконання',
+    row7: 'Повна виразність SQL',
+    row8: 'Механізм оголошення можливостей',
+    row9: 'Прозорість SQL <code>.to_sql()</code>',
+    row10: 'Без обов\'язкового інструменту міграції',
+    row11: 'Мінімальні залежності',
+    row12: 'Явне визначення зв\'язків'
   },
   gallery: {
     label: 'Галерея компонентів · примітиви', title: 'Як кожна тема обробляє <em>примітиви UI</em>.',

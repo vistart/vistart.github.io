@@ -48,10 +48,19 @@ window.I18N['nl-nl'] = {
           f4: '4 uur SLA', f5: 'Training op locatie en toegewijde oplossingen', cta: 'Contact verkoop' }
   },
   compare: {
-    label: 'Vergelijken', title: 'Functie<em>vergelijking</em>.', col_feature: 'Functie',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle backends', row3: 'Eigen backends',
-    row4: 'Volledige sync / async API', row5: 'Auditlogboek', row6: 'Read-write splitsing', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA-respons', row8c: '— community', row8t: '24 uur', row8e: '4 uur', row9: 'Jaarprijs'
+    label: 'Vergelijken', title: 'Vergeleken met andere Python ORM\'s.', col_feature: 'Functie',
+    row1: 'Ontwerppatroon', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend zelfstandig bruikbaar',
+    row3: 'Geen session-concept',
+    row4: 'Consistente sync / async API',
+    row5: 'Native Pydantic-integratie',
+    row6: 'Runtime datavalidatie',
+    row7: 'Volledige SQL-expressiviteit',
+    row8: 'Capaciteitsdeclaratie',
+    row9: 'SQL-transparantie <code>.to_sql()</code>',
+    row10: 'Geen verplichte migratietool',
+    row11: 'Minimale afhankelijkheden',
+    row12: 'Explliciete relationsdefinitie'
   },
   gallery: {
     label: 'Componentgalerij · primitieven', title: 'Hoe elk thema omgaat met <em>UI-primitieven</em>.',

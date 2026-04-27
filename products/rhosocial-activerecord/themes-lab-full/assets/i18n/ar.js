@@ -49,10 +49,19 @@ window.I18N['ar'] = {
           f4: 'SLA 4 ساعات', f5: 'تدريب في الموقع وحلول مخصصة', cta: 'تواصل مع المبيعات' }
   },
   compare: {
-    label: 'قارن', title: 'مقارنة <em>الميزات</em>.', col_feature: 'الميزة',
-    row1: 'SQLite / Postgres / MySQL', row2: 'خلفيات MSSQL / Oracle', row3: 'خلفيات مخصصة',
-    row4: 'واجهة sync / async كاملة', row5: 'سجل التدقيق', row6: 'فصل قراءة/كتابة', row7: 'SSO / SAML / LDAP',
-    row8: 'استجابة SLA', row8c: '— المجتمع', row8t: '24 ساعة', row8e: '4 ساعات', row9: 'السعر السنوي'
+    label: 'قارن', title: 'مقارنة مع أطر ORM أخرى في بايثون.', col_feature: 'الميزة',
+    row1: 'نمط التصميم', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'الخلفية قابلة للاستخدام المستقل',
+    row3: 'بدون مفهوم الجلسة',
+    row4: 'تناسق واجهة sync / async',
+    row5: 'تكامل أصلي مع Pydantic',
+    row6: 'تحقق البيانات في وقت التشغيل',
+    row7: 'قدرة تعبيرية SQL كاملة',
+    row8: 'آلية إعلان القدرات',
+    row9: 'شفافية SQL <code>.to_sql()</code>',
+    row10: 'بدون أداة ترحيل إلزامية',
+    row11: 'الحد الأدنى من التبعيات',
+    row12: 'تعريف العلاقات صريح'
   },
   gallery: {
     label: 'معرض المكونات · الأوليات', title: 'كيف تتعامل كل سمة مع <em>أوليات الواجهة</em>.',

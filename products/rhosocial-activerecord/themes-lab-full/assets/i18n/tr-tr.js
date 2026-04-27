@@ -48,10 +48,19 @@ window.I18N['tr-tr'] = {
           f4: '4 saat SLA', f5: 'Yerinde eğitim ve özel çözümler', cta: 'Satışa ulaşın' }
   },
   compare: {
-    label: 'Karşılaştır', title: '<em>Özellik</em> karşılaştırması.', col_feature: 'Özellik',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle arka uçları', row3: 'Özel arka uçlar',
-    row4: 'Tam sync / async API', row5: 'Denetim günlüğü', row6: 'Okuma/yazma ayrımı', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA yanıtı', row8c: '— topluluk', row8t: '24 saat', row8e: '4 saat', row9: 'Yıllık fiyat'
+    label: 'Karşılaştır', title: 'Diğer Python ORM\'leriyle karşılaştırma.', col_feature: 'Özellik',
+    row1: 'Tasarım deseni', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend bağımsız kullanılabilir',
+    row3: 'Session kavramı yok',
+    row4: 'Tutarlı sync / async API',
+    row5: 'Yerel Pydantic entegrasyonu',
+    row6: 'Çalışma zamanı veri doğrulama',
+    row7: 'Tam SQL ifade gücü',
+    row8: 'Kapasite bildirimi',
+    row9: 'SQL şeffaflığı <code>.to_sql()</code>',
+    row10: 'Zorunlu geçiş aracı yok',
+    row11: 'Minimum bağımlılık',
+    row12: 'Açık ilişki tanımı'
   },
   gallery: {
     label: 'Bileşen Galerisi · ilkeller', title: 'Her tema <em>UI ilkellerini</em> nasıl ele alır.',

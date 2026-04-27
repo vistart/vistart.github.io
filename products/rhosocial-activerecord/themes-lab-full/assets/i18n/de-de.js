@@ -48,10 +48,19 @@ window.I18N['de-de'] = {
           f4: '4-Stunden-SLA', f5: 'Vor-Ort-Schulungen und dedizierte Lösungen', cta: 'Vertrieb kontaktieren' }
   },
   compare: {
-    label: 'Vergleich', title: 'Funktions<em>vergleich</em>.', col_feature: 'Funktion',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle Backends', row3: 'Eigene Backends',
-    row4: 'Vollständige Sync-/Async-API', row5: 'Audit-Log', row6: 'Read-Write-Splitting', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA-Antwort', row8c: '— Community', row8t: '24 Stunden', row8e: '4 Stunden', row9: 'Jahrespreis'
+    label: 'Vergleich', title: 'Im Vergleich zu anderen Python ORMs.', col_feature: 'Merkmal',
+    row1: 'Entwurfsmuster', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend unabhängig nutzbar',
+    row3: 'Kein Session-Konzept',
+    row4: 'Konsistente Sync-/Async-API',
+    row5: 'Native Pydantic-Integration',
+    row6: 'Laufzeitdatenvalidierung',
+    row7: 'Volle SQL-Ausdrucksfähigkeit',
+    row8: 'Capability-Deklaration',
+    row9: 'SQL-Transparenz <code>.to_sql()</code>',
+    row10: 'Kein erzwungenes Migrations-Tool',
+    row11: 'Minimale Abhängigkeiten',
+    row12: 'Explizite Relationsdefinition'
   },
   gallery: {
     label: 'Component Gallery · Primitive', title: 'Wie jedes Design mit <em>UI-Primitiven</em> umgeht.',

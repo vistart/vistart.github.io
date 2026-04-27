@@ -48,10 +48,19 @@ window.I18N['ja-jp'] = {
           f4: '4 時間 SLA', f5: '訪問研修と専任ソリューション', cta: '営業へ連絡' }
   },
   compare: {
-    label: 'Compare', title: 'プラン別<em>機能比較</em>。', col_feature: '機能',
-    row1: 'SQLite / Postgres / MySQL', row2: 'MSSQL / Oracle', row3: 'カスタムバックエンド',
-    row4: '同期 / 非同期 API 完全版', row5: '監査ログ', row6: '読み書き分離', row7: 'SSO / SAML / LDAP',
-    row8: 'SLA 応答', row8c: '— コミュニティ', row8t: '24 時間', row8e: '4 時間', row9: '年額'
+    label: 'Compare', title: '他の Python ORM と<em>比較</em>。', col_feature: '機能',
+    row1: '設計パターン', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'バックエンド単体利用可',
+    row3: 'Session 概念なし',
+    row4: '同期 / 非同期 API の一貫性',
+    row5: 'ネイティブ Pydantic 統合',
+    row6: '実行時データ検証',
+    row7: '完全な SQL 表現力',
+    row8: 'Capability 宣言機構',
+    row9: 'SQL 透過性 <code>.to_sql()</code>',
+    row10: '移行ツール強制なし',
+    row11: '最小依存',
+    row12: '明示的なリレーション定義'
   },
   gallery: {
     label: 'Component Gallery · UI 部品', title: '各テーマ下の<em>コントロール表現</em>。',

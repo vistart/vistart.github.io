@@ -66,12 +66,20 @@ window.I18N['ro-ro'] = {
     }
   },
   compare: {
-    label: 'Comparare', title: 'Compararea <em>funcționalităților</em> pe planuri.',
-    col_feature: 'Funcționalitate',
-    row1: 'SQLite / Postgres / MySQL', row2: 'Backend-uri MSSQL / Oracle', row3: 'Backend-uri custom',
-    row4: 'API complet sync / async', row5: 'Jurnal audit', row6: 'Separare citire/scriere',
-    row7: 'SSO / SAML / LDAP', row8: 'Răspuns SLA', row8c: '— comunitate', row8t: '24 ore', row8e: '4 ore',
-    row9: 'Preț anual'
+    label: 'Comparare', title: 'Comparat cu alte ORM-uri Python.',
+    col_feature: 'Caracteristică',
+    row1: 'Model de proiectare', row1r: 'ActiveRecord', row1sa: 'Data Mapper', row1dj: 'ActiveRecord', row1sm: 'Hybrid', row1pw: 'ActiveRecord', row1to: 'ActiveRecord',
+    row2: 'Backend utilizabil independent',
+    row3: 'Fără concept de sesiune',
+    row4: 'API sync / async consistent',
+    row5: 'Integrare nativă Pydantic',
+    row6: 'Validare date la execuție',
+    row7: 'Expresivitate SQL completă',
+    row8: 'Mecanism de declarare a capacităților',
+    row9: 'Transparență SQL <code>.to_sql()</code>',
+    row10: 'Fără instrument de migrare obligatoriu',
+    row11: 'Dependențe minime',
+    row12: 'Definiție explicită a relațiilor'
   },
   gallery: {
     label: 'Galerie componente · primitive UI', title: 'Cum tratează fiecare temă <em>primitivele UI</em>.',
