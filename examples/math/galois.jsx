@@ -1,0 +1,2295 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+/* ==========================================================================
+   伽罗瓦理论演示  ——  GALOIS THEORY · A Visual Essay
+   ========================================================================== */
+
+const Stylesheet = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --parchment:        #ede1c8;
+      --parchment-warm:   #e8d8b8;
+      --parchment-deep:   #d8c69e;
+      --ink:              #1a1410;
+      --ink-soft:         #2a2218;
+      --ink-muted:        #5d4f3d;
+      --crimson:          #7a1f1c;
+      --crimson-deep:     #4d1310;
+      --gold:             #8b6914;
+      --gold-warm:        #b8893d;
+      --navy:             #1e2a44;
+      --line:             rgba(26, 20, 16, 0.22);
+      --line-soft:        rgba(26, 20, 16, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+
+    .galois-app {
+      font-family: 'EB Garamond', 'Noto Serif SC', Georgia, serif;
+      font-size: 19px;
+      line-height: 1.65;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 1200px 800px at 20% 10%, rgba(184,137,61,0.10), transparent 60%),
+        radial-gradient(ellipse 800px 600px at 80% 90%, rgba(122,31,28,0.06), transparent 60%),
+        var(--parchment);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* paper grain */
+    .galois-app::before {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 25% 30%, rgba(60,40,20,0.04) 0, transparent 2px),
+        radial-gradient(circle at 70% 60%, rgba(60,40,20,0.04) 0, transparent 2px),
+        radial-gradient(circle at 50% 80%, rgba(60,40,20,0.03) 0, transparent 1.5px);
+      background-size: 7px 7px, 11px 11px, 13px 13px;
+      opacity: 0.6;
+      z-index: 0;
+      mix-blend-mode: multiply;
+    }
+
+    .galois-app > * { position: relative; z-index: 1; }
+
+    /* ---------- typography ---------- */
+    h1, h2, h3, .display {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      color: var(--ink);
+    }
+    .cn { font-family: 'Noto Serif SC', 'EB Garamond', serif; }
+
+    .small-caps {
+      font-family: 'Cormorant Garamond', serif;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      font-size: 0.72em;
+      font-weight: 500;
+      color: var(--crimson);
+    }
+
+    .ornament {
+      display: inline-block;
+      font-family: 'Cormorant Garamond', serif;
+      color: var(--gold-warm);
+      letter-spacing: 0.4em;
+    }
+
+    .rule {
+      border: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--line), transparent);
+      margin: 2em 0;
+    }
+    .rule-thick {
+      border: 0;
+      height: 0;
+      border-top: 1px solid var(--ink);
+      border-bottom: 3px double var(--ink);
+      padding-top: 2px;
+      margin: 1.5em 0;
+    }
+
+    .math {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-style: italic;
+      font-feature-settings: "lnum" 1, "tnum" 1;
+    }
+    .mathup { font-family: 'EB Garamond', Georgia, serif; font-style: normal; }
+
+    /* ---------- reveal animation ---------- */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 1.1s cubic-bezier(.2,.7,.2,1), transform 1.1s cubic-bezier(.2,.7,.2,1); }
+    .reveal.in { opacity: 1; transform: none; }
+    .reveal.d1 { transition-delay: 0.12s; }
+    .reveal.d2 { transition-delay: 0.24s; }
+    .reveal.d3 { transition-delay: 0.36s; }
+    .reveal.d4 { transition-delay: 0.48s; }
+
+    /* ---------- nav ---------- */
+    .nav {
+      position: fixed;
+      top: 50%;
+      right: 28px;
+      transform: translateY(-50%);
+      z-index: 50;
+      display: flex; flex-direction: column; gap: 14px;
+      background: rgba(237, 225, 200, 0.55);
+      backdrop-filter: blur(6px);
+      padding: 18px 14px;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+    }
+    .nav button {
+      background: none; border: none; cursor: pointer; padding: 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      transition: color 0.3s;
+      text-align: center;
+    }
+    .nav button:hover, .nav button.active { color: var(--crimson); }
+    .nav button.active::before {
+      content: '·';
+      display: block;
+      color: var(--crimson);
+      font-size: 24px;
+      line-height: 0.4;
+      margin-bottom: 4px;
+      transform: rotate(180deg);
+    }
+    @media (max-width: 900px) { .nav { display: none; } }
+
+    /* ---------- containers ---------- */
+    section.chapter {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 8vh 32px;
+      position: relative;
+    }
+    .chapter-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--crimson);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .chapter-title {
+      font-size: clamp(36px, 5vw, 58px);
+      line-height: 1.05;
+      margin: 0 0 8px 0;
+      font-weight: 500;
+    }
+    .chapter-title em {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--crimson);
+    }
+    .chapter-sub {
+      font-style: italic;
+      color: var(--ink-muted);
+      max-width: 56ch;
+      margin: 12px 0 36px 0;
+    }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 32px;
+      max-width: 1080px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .hero-meta {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding-top: 32px;
+      border-bottom: 1px solid var(--ink);
+      padding-bottom: 18px;
+      margin-bottom: 8vh;
+    }
+    .hero-meta .left { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; color: var(--ink); }
+    .hero-meta .right { font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-muted); }
+
+    .hero-title {
+      font-size: clamp(56px, 9vw, 124px);
+      line-height: 0.95;
+      margin: 0;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+    .hero-title .line2 {
+      display: block;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--crimson);
+      padding-left: 1.2em;
+    }
+    .hero-title .line3 {
+      display: block;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 0.42em;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+      margin-top: 0.6em;
+      font-weight: 400;
+    }
+
+    .hero-question {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(20px, 2.4vw, 30px);
+      line-height: 1.5;
+      max-width: 640px;
+      margin-top: 6vh;
+      color: var(--ink-soft);
+      border-left: 2px solid var(--crimson);
+      padding-left: 28px;
+    }
+    .hero-question .cn { font-style: normal; font-weight: 400; }
+
+    .hero-foot {
+      margin-top: auto;
+      padding: 32px 0 24px 0;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      font-size: 13px; color: var(--ink-muted);
+      letter-spacing: 0.18em; text-transform: uppercase;
+      border-top: 1px solid var(--line);
+    }
+    .scroll-cue {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      letter-spacing: 0.28em;
+      font-size: 12px;
+      color: var(--crimson);
+      text-transform: none;
+    }
+    .scroll-cue::after {
+      content: '';
+      display: block;
+      width: 1px; height: 60px;
+      background: linear-gradient(to bottom, var(--crimson), transparent);
+      margin: 16px auto 0;
+      transform: rotate(180deg);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%,100% { opacity: 0.3; transform: rotate(180deg) scaleY(0.7); transform-origin: top; }
+      50%     { opacity: 1;   transform: rotate(180deg) scaleY(1); }
+    }
+
+    /* ---------- TIMELINE ---------- */
+    .timeline {
+      position: relative;
+      margin: 60px 0;
+      padding-left: 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 80px; top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, var(--line) 5%, var(--line) 95%, transparent);
+    }
+    .tl-event {
+      display: grid;
+      grid-template-columns: 80px 28px 1fr;
+      gap: 28px;
+      margin-bottom: 56px;
+      cursor: pointer;
+      align-items: start;
+    }
+    .tl-year {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 22px;
+      color: var(--crimson);
+      text-align: right;
+      padding-top: 4px;
+      font-feature-settings: "lnum" 1;
+    }
+    .tl-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--ink);
+      background: var(--parchment);
+      margin: 12px auto 0;
+      transition: all 0.3s;
+    }
+    .tl-event:hover .tl-dot {
+      background: var(--crimson);
+      border-color: var(--crimson);
+      transform: scale(1.2);
+    }
+    .tl-event.active .tl-dot {
+      background: var(--crimson);
+      border-color: var(--crimson);
+      box-shadow: 0 0 0 4px rgba(122,31,28,0.18);
+    }
+    .tl-content { padding-top: 0; }
+    .tl-figure { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 500; color: var(--ink); margin: 0 0 4px 0; }
+    .tl-figure em { font-style: italic; color: var(--ink-muted); font-weight: 400; font-size: 0.7em; margin-left: 8px; letter-spacing: 0.05em; }
+    .tl-headline { font-style: italic; color: var(--ink-soft); margin: 0 0 8px 0; }
+    .tl-body {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.6s cubic-bezier(.2,.7,.2,1), opacity 0.4s;
+      opacity: 0;
+    }
+    .tl-event.active .tl-body { max-height: 600px; opacity: 1; padding-top: 12px; }
+    .tl-body p { margin: 0 0 10px 0; }
+    .tl-body .formula {
+      background: rgba(255,250,235,0.6);
+      border-left: 2px solid var(--gold-warm);
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 18px;
+      overflow-x: auto;
+    }
+
+    /* ---------- formula gallery ---------- */
+    .formula-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .formula-card {
+      background: rgba(255,250,235,0.4);
+      border: 1px solid var(--line);
+      padding: 32px 28px;
+      position: relative;
+      transition: transform 0.4s ease;
+    }
+    .formula-card:hover { transform: translateY(-4px); }
+    .formula-card .deg {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--crimson);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+    .formula-card h3 {
+      font-size: 26px; margin: 6px 0 18px 0; font-weight: 500;
+    }
+    .formula-card .eqn {
+      font-size: 17px;
+      line-height: 1.9;
+      color: var(--ink-soft);
+      min-height: 100px;
+    }
+    .formula-card .meta {
+      font-style: italic; font-size: 14px; color: var(--ink-muted);
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .formula-card.unsolvable {
+      background: rgba(122,31,28,0.06);
+      border: 1px solid rgba(122,31,28,0.3);
+    }
+    .formula-card.unsolvable .deg { color: var(--crimson-deep); }
+
+    /* ---------- math notation ---------- */
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      text-align: center;
+      margin: 0 0.15em;
+      font-size: 0.92em;
+    }
+    .frac .num { border-bottom: 1px solid currentColor; padding: 0 0.3em; }
+    .frac .den { padding: 0 0.3em; }
+    .sqrt {
+      display: inline-flex; align-items: center;
+    }
+    .sqrt-sym {
+      font-style: normal;
+      margin-right: -2px;
+    }
+    .sqrt-content {
+      border-top: 1px solid currentColor;
+      padding-top: 1px;
+      padding-left: 2px;
+      padding-right: 2px;
+      margin-top: -3px;
+    }
+
+    /* ---------- permutation playground ---------- */
+    .perm-stage {
+      background: rgba(255,250,235,0.5);
+      border: 1px solid var(--line);
+      padding: 32px;
+      margin-top: 32px;
+    }
+    .perm-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+    .perm-controls .label {
+      font-style: italic;
+      color: var(--ink-muted);
+      font-size: 15px;
+      margin-right: 6px;
+    }
+    .pill {
+      background: var(--parchment);
+      border: 1px solid var(--ink);
+      padding: 8px 16px;
+      font-family: 'EB Garamond', serif;
+      font-size: 15px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: all 0.2s;
+    }
+    .pill:hover { background: var(--ink); color: var(--parchment); }
+    .pill.active { background: var(--ink); color: var(--parchment); }
+
+    .root-row {
+      display: flex; gap: 0;
+      justify-content: center;
+      align-items: center;
+      margin: 28px 0;
+      min-height: 130px;
+      position: relative;
+      overflow-x: auto;
+      padding: 6px 0;
+    }
+    .root-row::-webkit-scrollbar { height: 4px; }
+    .root-row::-webkit-scrollbar-thumb { background: var(--line); }
+    .root-bead {
+      width: 76px; height: 76px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--ink);
+      border-radius: 50%;
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: 30px;
+      background: var(--parchment-warm);
+      transition: transform 0.7s cubic-bezier(.4,.1,.2,1.2), background 0.4s;
+      position: relative;
+    }
+    .root-bead .sub {
+      font-size: 0.45em;
+      vertical-align: sub;
+      margin-left: -2px;
+    }
+    .root-bead.highlight { background: var(--crimson); color: var(--parchment); border-color: var(--crimson); }
+
+    .perm-info {
+      text-align: center;
+      margin-top: 18px;
+      font-style: italic;
+      color: var(--ink-muted);
+    }
+    .perm-info strong {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: normal;
+      color: var(--ink);
+      font-size: 1.2em;
+      margin-right: 6px;
+    }
+
+    .group-orders {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .order-cell {
+      text-align: center;
+      padding: 18px 8px;
+      background: rgba(255,250,235,0.4);
+      border: 1px solid var(--line);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .order-cell:hover { background: rgba(122,31,28,0.06); border-color: var(--crimson); }
+    .order-cell.danger { background: rgba(122,31,28,0.10); border-color: var(--crimson); }
+    .order-cell .gp {
+      font-family: 'EB Garamond', serif; font-style: italic; font-size: 24px;
+    }
+    .order-cell .num { font-family: 'Cormorant Garamond', serif; font-size: 32px; margin-top: 4px; color: var(--ink); }
+    .order-cell.danger .num { color: var(--crimson); }
+    .order-cell .lbl { font-size: 12px; color: var(--ink-muted); letter-spacing: 0.18em; text-transform: uppercase; margin-top: 6px; font-style: italic; }
+
+    /* ---------- group lattice ---------- */
+    .lattice-stage {
+      background: rgba(255,250,235,0.5);
+      border: 1px solid var(--line);
+      padding: 36px 24px;
+      margin-top: 32px;
+    }
+    .lattice-flex {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 700px) { .lattice-flex { grid-template-columns: 1fr; } }
+    .lattice-panel {
+      text-align: center;
+    }
+    .lattice-panel h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 500;
+      margin: 0 0 4px 0;
+    }
+    .lattice-panel .verdict {
+      display: inline-block;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+    }
+    .verdict.solvable { background: rgba(139,105,20,0.15); color: var(--gold); border: 1px solid var(--gold); }
+    .verdict.notsolvable { background: rgba(122,31,28,0.10); color: var(--crimson); border: 1px solid var(--crimson); }
+
+    /* ---------- final theorem ---------- */
+    .theorem-box {
+      background: var(--ink);
+      color: var(--parchment);
+      padding: 56px 48px;
+      margin-top: 48px;
+      position: relative;
+    }
+    .theorem-box::before, .theorem-box::after {
+      content: '';
+      position: absolute;
+      left: 8px; right: 8px;
+      height: 1px;
+      background: var(--gold-warm);
+    }
+    .theorem-box::before { top: 8px; }
+    .theorem-box::after { bottom: 8px; }
+    .theorem-box .label {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold-warm);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    .theorem-box h2 {
+      color: var(--parchment);
+      font-size: 36px;
+      margin: 0 0 18px 0;
+      font-weight: 500;
+    }
+    .theorem-box .body {
+      font-size: 19px;
+      line-height: 1.8;
+      max-width: 64ch;
+    }
+    .theorem-box .body em { color: var(--gold-warm); font-style: italic; }
+    .theorem-box .signature {
+      margin-top: 32px;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--gold-warm);
+      letter-spacing: 0.15em;
+    }
+
+    /* ---------- biography ---------- */
+    .bio-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 48px;
+      margin-top: 40px;
+      align-items: start;
+    }
+    @media (max-width: 720px) { .bio-grid { grid-template-columns: 1fr; } }
+    .bio-portrait {
+      aspect-ratio: 3 / 4;
+      background: var(--parchment-deep);
+      border: 1px solid var(--line);
+      padding: 16px;
+      position: relative;
+    }
+    .bio-portrait .name {
+      position: absolute;
+      bottom: 16px; left: 16px; right: 16px;
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--ink);
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+    .bio-portrait .dates {
+      font-size: 13px; letter-spacing: 0.18em; color: var(--ink-muted); margin-top: 4px;
+    }
+
+    .bio-text p { margin: 0 0 16px 0; }
+    .bio-text p::first-letter {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    .bio-text .pullquote {
+      border-left: 2px solid var(--crimson);
+      padding-left: 24px;
+      margin: 24px 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 22px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+    .bio-text .pullquote .attr {
+      display: block;
+      font-size: 14px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-top: 12px;
+      font-style: normal;
+    }
+
+    /* ---------- footer ---------- */
+    .colophon {
+      max-width: 1080px;
+      margin: 12vh auto 0;
+      padding: 48px 32px 64px;
+      border-top: 3px double var(--ink);
+      text-align: center;
+    }
+    .colophon .ornament { font-size: 24px; }
+    .colophon p {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--ink-muted);
+      font-size: 16px;
+      max-width: 56ch;
+      margin: 16px auto 8px;
+      line-height: 1.6;
+    }
+
+    /* drop cap */
+    .dropcap::first-letter {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 4.4em;
+      float: left;
+      line-height: 0.85;
+      padding: 4px 12px 0 0;
+      color: var(--crimson);
+      font-weight: 500;
+    }
+
+    /* ================================================================
+       新增：初学者展开讲解的样式
+       ================================================================ */
+
+    /* —— 章节副标题（小节标题） —— */
+    .subhead {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      font-size: 28px;
+      font-weight: 500;
+      margin: 48px 0 8px;
+      color: var(--ink);
+      display: flex; align-items: baseline; gap: 14px;
+    }
+    .subhead::before {
+      content: '§';
+      font-style: italic;
+      color: var(--crimson);
+      font-size: 0.85em;
+    }
+    .subhead .en {
+      font-style: italic;
+      font-size: 0.62em;
+      color: var(--ink-muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* —— 概念词典：卡片网格 —— */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin: 32px 0;
+    }
+    .concept-card {
+      background: rgba(255, 250, 235, 0.5);
+      border: 1px solid var(--line);
+      padding: 26px 24px 22px;
+      position: relative;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(26,20,16,0.08);
+    }
+    .concept-card .num {
+      position: absolute;
+      top: -10px; left: 18px;
+      background: var(--parchment);
+      padding: 0 10px;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--crimson);
+      font-size: 14px;
+      letter-spacing: 0.18em;
+    }
+    .concept-card .term {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0 0 2px;
+    }
+    .concept-card .term .en {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--ink-muted);
+      font-size: 0.7em;
+      letter-spacing: 0.04em;
+      margin-left: 8px;
+    }
+    .concept-card .role {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 6px 0 14px;
+    }
+    .concept-card .body {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+    .concept-card .body p { margin: 0 0 10px; }
+    .concept-card .body em { color: var(--crimson); font-style: italic; }
+    .concept-card .body strong { color: var(--ink); }
+    .concept-card .ex {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line-soft);
+      font-style: italic;
+      color: var(--ink-muted);
+      font-size: 14px;
+    }
+    .concept-card .ex::before {
+      content: '比如 · ';
+      color: var(--crimson);
+      font-style: normal;
+      letter-spacing: 0.08em;
+      font-size: 0.85em;
+    }
+
+    /* —— 群公理列表 —— */
+    .axiom-list {
+      counter-reset: axiom;
+      list-style: none;
+      padding: 0; margin: 24px 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .axiom-list li {
+      counter-increment: axiom;
+      background: rgba(255, 250, 235, 0.4);
+      border-left: 2px solid var(--gold-warm);
+      padding: 16px 18px 14px 22px;
+      position: relative;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .axiom-list li::before {
+      content: 'AXIOM ' counter(axiom);
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      letter-spacing: 0.22em;
+      font-size: 11px;
+      color: var(--crimson);
+      margin-bottom: 6px;
+    }
+    .axiom-list li strong {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      font-size: 17px;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .axiom-list li .formula {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-style: italic;
+      color: var(--crimson-deep);
+      display: block;
+      margin-top: 4px;
+      font-size: 15px;
+    }
+
+    /* —— 引子句 / 边注 —— */
+    .callout {
+      background: linear-gradient(180deg, rgba(184,137,61,0.08), rgba(184,137,61,0.03));
+      border: 1px solid rgba(184,137,61,0.3);
+      border-left: 3px solid var(--gold-warm);
+      padding: 20px 26px;
+      margin: 24px 0;
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+      position: relative;
+    }
+    .callout::before {
+      content: '✦';
+      position: absolute;
+      top: -10px; left: 18px;
+      background: var(--parchment);
+      color: var(--gold-warm);
+      padding: 0 8px;
+      font-size: 16px;
+    }
+    .callout strong { color: var(--ink); }
+    .callout em { color: var(--crimson); font-style: italic; }
+
+    /* —— "剥开 S₄" 分步演示 —— */
+    .peel-stage {
+      background: rgba(255, 250, 235, 0.5);
+      border: 1px solid var(--line);
+      padding: 32px 24px;
+      margin: 28px 0;
+    }
+    .peel-stage h5 {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      font-size: 20px;
+      margin: 0 0 22px;
+      font-weight: 500;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .peel-stage h5 em { color: var(--crimson); font-style: italic; }
+    .peel-list {
+      list-style: none;
+      padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .peel-step {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 18px;
+      align-items: start;
+      padding: 14px 16px;
+      background: var(--parchment);
+      border: 1px solid var(--line-soft);
+      position: relative;
+    }
+    .peel-step .gp {
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: 22px;
+      color: var(--crimson);
+      text-align: center;
+      padding-top: 4px;
+    }
+    .peel-step .gp .ord {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: normal;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+    .peel-step .desc {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink-soft);
+    }
+    .peel-step .desc strong { color: var(--ink); }
+    .peel-step .desc em { color: var(--crimson); font-style: italic; }
+    .peel-step .arrow {
+      position: absolute;
+      left: 39px; bottom: -14px;
+      width: 0; height: 0;
+      transform: translateX(-50%);
+      color: var(--gold-warm);
+      font-size: 18px;
+      line-height: 1;
+      font-family: 'EB Garamond', serif;
+      z-index: 2;
+    }
+    .peel-step:last-child .arrow { display: none; }
+    .peel-step.dead {
+      background: rgba(122,31,28,0.08);
+      border-color: rgba(122,31,28,0.3);
+    }
+    .peel-step.dead .gp { color: var(--crimson-deep); }
+
+    /* —— 证明脉络：流程图 —— */
+    .proof-flow {
+      background: var(--parchment);
+      border: 1px solid var(--ink);
+      padding: 36px 32px 28px;
+      margin: 32px 0;
+      position: relative;
+    }
+    .proof-flow::before, .proof-flow::after {
+      content: '';
+      position: absolute;
+      left: 6px; right: 6px;
+      height: 1px;
+      background: var(--gold-warm);
+      opacity: 0.5;
+    }
+    .proof-flow::before { top: 6px; }
+    .proof-flow::after { bottom: 6px; }
+    .proof-flow .header {
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--gold);
+      margin-bottom: 26px;
+    }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 20px;
+      align-items: start;
+      padding: 18px 0;
+      border-bottom: 1px dashed var(--line-soft);
+      position: relative;
+    }
+    .flow-step:last-child { border-bottom: none; }
+    .flow-step .roman {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 26px;
+      color: var(--crimson);
+      text-align: center;
+      padding-top: 2px;
+    }
+    .flow-step .text {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+    .flow-step .text .lead {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .flow-step .text strong { color: var(--ink); }
+    .flow-step .text em { color: var(--crimson); font-style: italic; }
+    .flow-step .arrow-down {
+      position: absolute;
+      left: 28px; bottom: -10px;
+      transform: translateX(-50%);
+      color: var(--gold-warm);
+      font-family: 'EB Garamond', serif;
+      font-size: 20px;
+      background: var(--parchment);
+      padding: 0 4px;
+      line-height: 1;
+      z-index: 2;
+    }
+    .flow-step:last-child .arrow-down { display: none; }
+    .flow-step.conclusion {
+      background: rgba(122,31,28,0.06);
+      margin: 8px -16px 0;
+      padding: 22px 16px 18px;
+      border-top: 2px solid var(--crimson);
+      border-bottom: none;
+    }
+    .flow-step.conclusion .roman { color: var(--crimson-deep); }
+    .flow-step.conclusion .text .lead { color: var(--crimson-deep); }
+
+    /* —— 简单内联术语（带浅色下划线，提示这是术语） —— */
+    .term-inline {
+      border-bottom: 1px dotted var(--gold-warm);
+      cursor: help;
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    /* —— 直觉示例小框 —— */
+    .intuition {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: start;
+      background: rgba(184,137,61,0.06);
+      border: 1px dashed var(--gold-warm);
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--ink-soft);
+    }
+    .intuition .icon {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 28px;
+      color: var(--gold-warm);
+      line-height: 1;
+      padding-top: 2px;
+    }
+    .intuition .body strong { color: var(--ink); }
+    .intuition .body em { color: var(--crimson); font-style: italic; }
+    .intuition .body .label {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: var(--crimson);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* responsive tweaks */
+    @media (max-width: 600px) {
+      .galois-app { font-size: 17px; }
+      .timeline::before { left: 60px; }
+      .tl-event { grid-template-columns: 60px 20px 1fr; gap: 16px; }
+      .tl-year { font-size: 18px; }
+      section.chapter { padding: 6vh 22px; }
+      .theorem-box { padding: 36px 28px; }
+      .root-bead { width: 60px; height: 60px; font-size: 22px; }
+      .group-orders { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+      .order-cell { padding: 10px 4px; }
+      .order-cell .num { font-size: 22px; }
+      .order-cell .lbl { font-size: 10px; }
+
+      .subhead { font-size: 22px; }
+      .concept-card { padding: 22px 18px 18px; }
+      .concept-card .term { font-size: 19px; }
+      .axiom-list { grid-template-columns: 1fr; }
+      .peel-step { grid-template-columns: 60px 1fr; gap: 12px; padding: 12px; }
+      .peel-step .gp { font-size: 19px; }
+      .flow-step { grid-template-columns: 40px 1fr; gap: 14px; padding: 14px 0; }
+      .flow-step .roman { font-size: 22px; }
+      .flow-step .text { font-size: 15px; }
+      .proof-flow { padding: 24px 18px 18px; }
+      .callout { padding: 16px 18px; font-size: 15px; }
+      .intuition { padding: 14px 16px; font-size: 15px; grid-template-columns: 1fr; gap: 8px; }
+    }
+  `}</style>
+);
+
+/* ----------- helpers: math notation ----------- */
+const Frac = ({ n, d }) => (
+  <span className="frac"><span className="num">{n}</span><span className="den">{d}</span></span>
+);
+const Sqrt = ({ children, root }) => (
+  <span className="sqrt">
+    {root && <sup style={{ fontSize: '0.6em', marginRight: '-4px' }}>{root}</sup>}
+    <span className="sqrt-sym">√</span>
+    <span className="sqrt-content">{children}</span>
+  </span>
+);
+const I = ({ children }) => <span className="math">{children}</span>;
+const Sup = ({ children }) => <sup style={{ fontSize: '0.7em' }}>{children}</sup>;
+
+/* ===========================================================
+   useReveal — observe and add 'in' class
+   =========================================================== */
+const useReveal = () => {
+  useEffect(() => {
+    const els = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+};
+
+/* ===========================================================
+   Hero
+   =========================================================== */
+const Hero = () => (
+  <section className="hero" id="hero">
+    <div className="hero-meta">
+      <div className="left">A Visual Essay · Anno MMXXVI</div>
+      <div className="right">No. I — On the Insolubility of the Quintic</div>
+    </div>
+
+    <h1 className="hero-title">
+      <span>GALOIS</span>
+      <span className="line2">Théorie</span>
+      <span className="line3 cn">为什么五次方程没有求根公式</span>
+    </h1>
+
+    <div className="hero-question cn">
+      <span style={{ fontStyle: 'normal' }}>
+        二次、三次、四次方程，皆有以加减乘除与开方写成的求根公式。
+        然而到了五次，公式忽然消失了。
+      </span>
+      <br /><br />
+      <span style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', color: 'var(--crimson)' }}>
+        — 这并非人类聪明不够，而是在数学的深处，藏着一道不可逾越的墙。
+      </span>
+    </div>
+
+    <div className="hero-foot">
+      <div>· 一段从巴比伦到伽罗瓦的旅程 ·</div>
+      <div className="scroll-cue">Scroll · 启程</div>
+    </div>
+  </section>
+);
+
+/* ===========================================================
+   Chapter 1 — Timeline of the Quest
+   =========================================================== */
+const TIMELINE = [
+  {
+    year: '约前1700',
+    figure: 'Babylonians',
+    cn: '巴比伦泥板',
+    headline: '人类已知的最古老求根法',
+    body: (
+      <>
+        <p>泥板上刻着几何化的"二次方程"问题：求长宽之差与面积同时给定的矩形。
+        他们并未写下抽象公式，但实际操作的步骤，与我们今天学的求根公式完全等价。</p>
+        <div className="formula">
+          <I>x</I><Sup>2</Sup> + <I>bx</I> = <I>c</I> &nbsp;⟹&nbsp;
+          <I>x</I> = <Sqrt><I>b</I><Sup>2</Sup>/4 + <I>c</I></Sqrt> − <I>b</I>/2
+        </div>
+        <p>从这一刻起，人类便习惯了一种期待：<strong>方程总该能"开方"解出</strong>。</p>
+      </>
+    ),
+  },
+  {
+    year: '约 825',
+    figure: 'al-Khwārizmī',
+    cn: '花拉子米',
+    headline: '《代数》一书 ——「algebra」的诞生',
+    body: (
+      <>
+        <p>巴格达智慧宫的学者，把巴比伦人的几何方法整理为一套有系统的"还原与对消"。
+        他书的拉丁名 <em>al-jabr</em>，即今日 <strong>algebra</strong> 的字源。</p>
+        <p>到此为止，二次的求根问题彻底解决了。下一步，是三次。</p>
+      </>
+    ),
+  },
+  {
+    year: '1535',
+    figure: 'Tartaglia',
+    cn: '塔尔塔利亚',
+    headline: '三次方程的暴风雨',
+    body: (
+      <>
+        <p>意大利数学家在公开比赛中，独立解出了三次方程
+        <I>x</I><Sup>3</Sup> + <I>px</I> = <I>q</I>。
+        他将解法写成一首隐秘的诗，发誓不外传。</p>
+        <p>故事的下一章，是这首诗被卡尔达诺套了出来。</p>
+      </>
+    ),
+  },
+  {
+    year: '1545',
+    figure: 'Cardano',
+    cn: '卡尔达诺',
+    headline: '《大术》—— 三次与四次的胜利',
+    body: (
+      <>
+        <p>卡尔达诺在《Ars Magna》中公布了三次方程的求根公式（信誉问题至今争议）。
+        他的学生 <em>Ferrari</em> 紧接着把四次方程也解了。</p>
+        <div className="formula">
+          <I>x</I> = <Sqrt root="3">−<Frac n={<I>q</I>} d="2" /> + <Sqrt><Frac n={<><I>q</I><Sup>2</Sup></>} d="4" /> + <Frac n={<><I>p</I><Sup>3</Sup></>} d="27" /></Sqrt></Sqrt>
+          &nbsp;+&nbsp;
+          <Sqrt root="3">−<Frac n={<I>q</I>} d="2" /> − <Sqrt><Frac n={<><I>q</I><Sup>2</Sup></>} d="4" /> + <Frac n={<><I>p</I><Sup>3</Sup></>} d="27" /></Sqrt></Sqrt>
+        </div>
+        <p>从此，所有人相信：<strong>五次方程的公式只是迟早的事。</strong>
+        没人想到，这一等就是 250 年，且最终等来一句"不存在"。</p>
+      </>
+    ),
+  },
+  {
+    year: '1770',
+    figure: 'Lagrange',
+    cn: '拉格朗日',
+    headline: '换一种眼光：根的对称',
+    body: (
+      <>
+        <p>拉格朗日仔细审视前人的所有求根公式，发现一个共同点：
+        <strong>它们都通过"根的某种对称组合"达成</strong>。</p>
+        <p>他构造的 <em>Lagrange resolvents</em> 把根 <I>x</I><sub>1</sub>, <I>x</I><sub>2</sub>, <I>x</I><sub>3</sub> 的每一种排列，
+        变成可计算的辅助式。这在他自己看来只是技术，但实际上——
+        他第一次把"<strong>根的置换</strong>"放到了求根理论的中心。</p>
+      </>
+    ),
+  },
+  {
+    year: '1799',
+    figure: 'Ruffini',
+    cn: '鲁菲尼',
+    headline: '第一次断言：五次不可解',
+    body: (
+      <>
+        <p>意大利医生兼数学家 Paolo Ruffini 写下五百页的论证，宣称：<em>一般的五次方程，
+        无法由根式表达。</em> 主流数学界基本无视了他——他的论证有缺陷，且太长太晦涩。</p>
+        <p>但是，方向是对的。</p>
+      </>
+    ),
+  },
+  {
+    year: '1824',
+    figure: 'Abel',
+    cn: '阿贝尔',
+    headline: '严格的不可能性',
+    body: (
+      <>
+        <p>挪威青年阿贝尔补足了 Ruffini 的漏洞，给出第一个严格的证明：
+        <strong>一般五次方程不可由根式求解</strong>。这便是著名的 <em>Abel–Ruffini 定理</em>。</p>
+        <p>但他的论证仍是"反证某条件不成立"，没有解释——
+        <em>为什么</em>不可解？什么样的方程才<em>可解</em>？</p>
+      </>
+    ),
+  },
+  {
+    year: '1832',
+    figure: 'Galois',
+    cn: '伽罗瓦',
+    headline: '决斗前夜：理论的诞生',
+    body: (
+      <>
+        <p>20 岁的伽罗瓦，在巴黎一场决斗的前夜，
+        匆匆把多年的思考誊写于纸上。寄给朋友的信中他写道：
+        "我没有时间了……"</p>
+        <p>他的洞见是：每一个多项式方程，都对应一个由"<strong>根的合法置换</strong>"
+        构成的<em>群</em>；而方程能否由根式求解，
+        完全取决于这个群是否<em>可解</em>。</p>
+        <p>翌晨，他被击中腹部。两日后离世。</p>
+      </>
+    ),
+  },
+];
+
+const Timeline = () => {
+  const [open, setOpen] = useState(7); // open Galois by default
+
+  return (
+    <section className="chapter" id="quest">
+      <div className="reveal">
+        <div className="chapter-num">— Chapter I —</div>
+        <h2 className="chapter-title">The Quest <em>for a Formula</em></h2>
+        <p className="chapter-sub cn">从巴比伦到伽罗瓦：求根公式的四千年寻找。点击任一项展开。</p>
+      </div>
+
+      <div className="timeline reveal d1">
+        {TIMELINE.map((e, i) => (
+          <div
+            key={i}
+            className={`tl-event${open === i ? ' active' : ''}`}
+            onClick={() => setOpen(open === i ? -1 : i)}
+          >
+            <div className="tl-year">{e.year}</div>
+            <div><div className="tl-dot" /></div>
+            <div className="tl-content">
+              <div className="tl-figure">{e.figure} <em className="cn">{e.cn}</em></div>
+              <div className="tl-headline cn">{e.headline}</div>
+              <div className="tl-body">{e.body}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ===========================================================
+   Chapter 2 — Formulas of growing complexity
+   =========================================================== */
+const FormulaGallery = () => (
+  <section className="chapter" id="formulas">
+    <div className="reveal">
+      <div className="chapter-num">— Chapter II —</div>
+      <h2 className="chapter-title">The Growing <em>Labyrinth</em></h2>
+      <p className="chapter-sub cn">公式越写越长，越写越深，直至五次——它消失了。</p>
+    </div>
+
+    <div className="formula-grid reveal d1">
+      <div className="formula-card">
+        <div className="deg">Degree 2 · 二次</div>
+        <h3>Quadratic</h3>
+        <div className="eqn">
+          <I>x</I> = <Frac
+            n={<>−<I>b</I> ± <Sqrt><I>b</I><Sup>2</Sup> − 4<I>ac</I></Sqrt></>}
+            d={<>2<I>a</I></>}
+          />
+        </div>
+        <div className="meta">公元前 ~1700，巴比伦</div>
+      </div>
+
+      <div className="formula-card">
+        <div className="deg">Degree 3 · 三次</div>
+        <h3>Cubic</h3>
+        <div className="eqn">
+          <I>x</I> = <Sqrt root="3">−<Frac n={<I>q</I>} d="2" /> + <Sqrt><Frac n={<><I>q</I><Sup>2</Sup></>} d="4" /> + <Frac n={<><I>p</I><Sup>3</Sup></>} d="27" /></Sqrt></Sqrt>
+          + <Sqrt root="3">−<Frac n={<I>q</I>} d="2" /> − <Sqrt><Frac n={<><I>q</I><Sup>2</Sup></>} d="4" /> + <Frac n={<><I>p</I><Sup>3</Sup></>} d="27" /></Sqrt></Sqrt>
+        </div>
+        <div className="meta">1545，Cardano</div>
+      </div>
+
+      <div className="formula-card">
+        <div className="deg">Degree 4 · 四次</div>
+        <h3>Quartic</h3>
+        <div className="eqn" style={{ fontSize: 15 }}>
+          通过引入"<I>立方分解式</I>"（cubic resolvent），将四次方程化归为一个三次方程，
+          再回代求出。完整公式横跨数行，但仍然只用<em>有理运算与开方</em>。
+        </div>
+        <div className="meta">1545，Ferrari</div>
+      </div>
+
+      <div className="formula-card unsolvable">
+        <div className="deg">Degree 5 · 五次</div>
+        <h3>Quintic ?</h3>
+        <div className="eqn" style={{ fontStyle: 'italic', color: 'var(--crimson-deep)' }}>
+          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1em' }}>
+            没有这样的公式。
+          </span>
+          <br /><br />
+          <span style={{ fontSize: 15, color: 'var(--ink-soft)', fontStyle: 'normal' }}>
+          无论你写多长——只要它仅由 <em>+ − × ÷</em> 与
+          <em> ⁿ√</em> 组成，便<strong>不可能</strong>对所有五次方程成立。
+          </span>
+        </div>
+        <div className="meta" style={{ color: 'var(--crimson)' }}>1832，Galois 给出原因</div>
+      </div>
+    </div>
+
+    <hr className="rule" />
+
+    <p className="reveal d2 cn" style={{ fontSize: 19, fontStyle: 'italic', color: 'var(--ink-soft)', maxWidth: '60ch' }}>
+      奇怪的是——这并非"还没找到"，而是"<strong>不可能找到</strong>"。
+      这种"不可能性"，需要一种新的语言来表达。那语言的名字，是<strong>群</strong>。
+    </p>
+  </section>
+);
+
+/* ===========================================================
+   Chapter 3 — Permutation playground
+   =========================================================== */
+const PERMS = {
+  2: [
+    { name: 'e', map: [0,1] },
+    { name: '(1 2)', map: [1,0] },
+  ],
+  3: [
+    { name: 'e', map: [0,1,2] },
+    { name: '(1 2)', map: [1,0,2] },
+    { name: '(1 3)', map: [2,1,0] },
+    { name: '(2 3)', map: [0,2,1] },
+    { name: '(1 2 3)', map: [1,2,0] },
+    { name: '(1 3 2)', map: [2,0,1] },
+  ],
+  4: [
+    { name: 'e', map: [0,1,2,3] },
+    { name: '(1 2)', map: [1,0,2,3] },
+    { name: '(1 2 3 4)', map: [1,2,3,0] },
+    { name: '(1 3)(2 4)', map: [2,3,0,1] },
+    { name: '(1 4 3 2)', map: [3,0,1,2] },
+    { name: '(2 3 4)', map: [0,2,3,1] },
+  ],
+  5: [
+    { name: 'e', map: [0,1,2,3,4] },
+    { name: '(1 2)', map: [1,0,2,3,4] },
+    { name: '(1 2 3 4 5)', map: [1,2,3,4,0] },
+    { name: '(1 3)(2 5)', map: [2,4,0,3,1] },
+    { name: '(2 3 5)', map: [0,2,4,3,1] },
+    { name: '(1 5 4 3 2)', map: [4,0,1,2,3] },
+  ],
+};
+
+const PermutationStage = () => {
+  const [n, setN] = useState(3);
+  const [perm, setPerm] = useState(0);
+
+  const labels = Array.from({ length: n }, (_, i) => i);
+  const cur = PERMS[n][Math.min(perm, PERMS[n].length - 1)];
+
+  // gap between bead centers
+  const gap = 92;
+  const totalWidth = (n - 1) * gap;
+
+  // each label i is shown in position cur.map.indexOf(i) (after permutation, label i goes to where ?)
+  // Actually let's interpret: cur.map[k] = label that ends up at position k.
+
+  const positionOfLabel = (lbl) => cur.map.indexOf(lbl);
+
+  return (
+    <div className="perm-stage">
+      <div className="perm-controls">
+        <span className="label cn">根的个数 n =</span>
+        {[2,3,4,5].map(k => (
+          <button
+            key={k}
+            className={`pill${n === k ? ' active' : ''}`}
+            onClick={() => { setN(k); setPerm(0); }}
+          >{k}</button>
+        ))}
+        <span style={{ width: 24 }} />
+        <span className="label cn">置换：</span>
+        {PERMS[n].map((p, i) => (
+          <button
+            key={i}
+            className={`pill${perm === i ? ' active' : ''}`}
+            onClick={() => setPerm(i)}
+          >{p.name}</button>
+        ))}
+      </div>
+
+      <div className="root-row" style={{ width: '100%' }}>
+        <div style={{ position: 'relative', width: totalWidth + 76, height: 100 }}>
+          {labels.map(i => {
+            const pos = positionOfLabel(i);
+            const x = pos * gap;
+            return (
+              <div
+                key={i}
+                className={`root-bead${cur.map[pos] !== pos ? ' highlight' : ''}`}
+                style={{
+                  position: 'absolute',
+                  left: x,
+                  top: 12,
+                }}
+              >
+                <span><I>x</I><span className="sub">{i+1}</span></span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="perm-info cn">
+        <strong>S<sub>{n}</sub></strong>
+        共有 <strong>{factorial(n)}</strong> 种置换 ·
+        当前所示：<span style={{ fontFamily: "'EB Garamond', serif", fontStyle: 'italic', color: 'var(--crimson)' }}>{cur.name}</span>
+      </div>
+    </div>
+  );
+};
+
+const factorial = (n) => n <= 1 ? 1 : n * factorial(n - 1);
+
+const Permutations = () => (
+  <section className="chapter" id="permutations">
+    <div className="reveal">
+      <div className="chapter-num">— Chapter III —</div>
+      <h2 className="chapter-title">The Insight <em>of Symmetry</em></h2>
+      <p className="chapter-sub cn">
+        伽罗瓦的关键观察：根的"<em>合法置换</em>"构成一个群。
+        点击下方按钮，亲手置换 <I>x</I><sub>1</sub> … <I>x</I><sub>n</sub>。
+      </p>
+    </div>
+
+    <div className="reveal d1">
+      <PermutationStage />
+    </div>
+
+    <hr className="rule reveal d2" />
+
+    <div className="reveal d2 cn" style={{ maxWidth: '64ch' }}>
+      <p className="dropcap">
+        若一个公式仅用<em> + − × ÷ </em>与<em> ⁿ√ </em>把根写出来，那么它必须
+        <strong>不区分根之间的对称</strong>——因为方程本身并不告诉你哪个根是
+        "<I>x</I><sub>1</sub>"，哪个是 "<I>x</I><sub>2</sub>"。
+      </p>
+      <p>
+        换句话说：所有"合法的根的置换"，构成一个集合，且具有结构——
+        两个置换可以复合，每个置换都有逆，构成一个群（<em>group</em>）。
+        这个群，称作方程的 <strong>Galois 群</strong>。
+      </p>
+    </div>
+
+    {/* —— 新增：什么是"群" —— */}
+    <h3 className="subhead reveal d2 cn">
+      什么是"群"？<span className="en">What is a group, exactly?</span>
+    </h3>
+
+    <div className="reveal d2 cn" style={{ maxWidth: '68ch' }}>
+      <p style={{ fontSize: 17, lineHeight: 1.75 }}>
+        "群"听起来抽象，其实非常具体。<strong>一个群，就是"一组可以彼此结合的操作"</strong>，
+        且这种结合满足四条最基本的常识。
+      </p>
+
+      <div className="intuition">
+        <span className="icon">✦</span>
+        <div className="body">
+          <span className="label">最熟悉的例子</span>
+          想象一个魔方。每一次"转动"是一个操作；连续转两次，仍是一次（更复杂的）转动；
+          每一次转动都可以"<em>转回去</em>"；什么都不转，是合法的"无操作"。
+          所有这些转动合起来，就是一个群——<strong>Rubik's Cube Group</strong>，含约 <I>4.3 × 10</I><Sup>19</Sup> 个元素。
+        </div>
+      </div>
+
+      <p>
+        把魔方换成"<I>n</I> 个球互换位置"，便得到我们要讨论的<strong>对称群 <I>S</I><sub>n</sub></strong>。
+        群的四条公理如下——它们其实是"操作"应当具备的最小结构：
+      </p>
+    </div>
+
+    <ol className="axiom-list reveal d3">
+      <li>
+        <strong>封闭 · Closure</strong>
+        两个操作复合，结果仍是一个操作（不会跑出群外）。
+        <span className="formula">a · b ∈ G</span>
+      </li>
+      <li>
+        <strong>结合律 · Associativity</strong>
+        三个操作连续做，先并前两个、再并后一个，结果一样。
+        <span className="formula">(a · b) · c = a · (b · c)</span>
+      </li>
+      <li>
+        <strong>单位元 · Identity</strong>
+        存在"什么也不做"，记作 <I>e</I>，与谁结合都不改变谁。
+        <span className="formula">e · a = a · e = a</span>
+      </li>
+      <li>
+        <strong>逆元 · Inverse</strong>
+        每个操作都可以"撤回"，存在 <I>a</I><Sup>−1</Sup> 把它抵消回 <I>e</I>。
+        <span className="formula">a · a⁻¹ = a⁻¹ · a = e</span>
+      </li>
+    </ol>
+
+    <div className="reveal d3 cn" style={{ maxWidth: '68ch' }}>
+      <p style={{ fontStyle: 'italic', color: 'var(--ink-muted)', fontSize: 16 }}>
+        注意：群<em>不要求</em>交换律——<I>a</I> · <I>b</I> 与 <I>b</I> · <I>a</I> 可以不同。
+        若恰好对所有元素都相等，群就叫<strong>阿贝尔群</strong>（abelian），
+        是"最听话"的一种。后面会反复用到这个词。
+      </p>
+    </div>
+
+    {/* —— 置换的具体例子 —— */}
+    <h3 className="subhead reveal d3 cn">
+      把"置换"看清楚 <span className="en">Permutations, made concrete</span>
+    </h3>
+
+    <div className="reveal d3 cn" style={{ maxWidth: '68ch' }}>
+      <p>
+        所谓<strong>置换</strong>（permutation），就是把
+        <I> 1, 2, …, n </I>这些标号<strong>重新排一次</strong>。比如把 <I>(1,2,3)</I> 排成 <I>(2,3,1)</I>，
+        这就是一个置换。
+        我们用循环记号写它：<I>(1 2 3)</I>，意思是
+        "1 跑到 2 的位置、2 跑到 3、3 跑回 1"。
+      </p>
+      <p>
+        <I>n</I> 个对象的所有置换，正好有 <I>n!</I> 种（阶乘），
+        它们彼此之间可以复合（先做一个置换，再做一个），
+        刚好构成上面说的群。这就是<strong>对称群 <I>S</I><sub>n</sub></strong> ——
+        本文的核心主角。
+      </p>
+      <p style={{ fontStyle: 'italic', color: 'var(--ink-soft)' }}>
+        伽罗瓦的关键洞见：方程的根 <I>x</I><sub>1</sub>, <I>x</I><sub>2</sub>, …, <I>x</I><sub>n</sub> 是
+        "无名的"——方程不区分它们。所以可以置换它们的标号；但不是<em>所有</em>置换都"合法"，
+        只有那些<strong>保持方程的所有代数关系</strong>的置换才算数。
+        这些"合法置换"构成的子群，就是方程的 <strong>Galois 群</strong>。
+      </p>
+    </div>
+
+    <div className="group-orders reveal d3">
+      {[2,3,4,5,6].map(k => (
+        <div key={k} className={`order-cell${k>=5 ? ' danger' : ''}`}>
+          <div className="gp">S<sub>{k}</sub></div>
+          <div className="num">{factorial(k)}</div>
+          <div className="lbl">|S<sub>{k}</sub>|</div>
+        </div>
+      ))}
+    </div>
+
+    <p className="reveal d4 cn" style={{ marginTop: 32, fontStyle: 'italic', color: 'var(--ink-muted)', textAlign: 'center' }}>
+      五个根的对称群 <I>S</I><sub>5</sub> 拥有 <strong>120</strong> 个元素——这一跃迁，是问题的关键。
+    </p>
+  </section>
+);
+
+/* ===========================================================
+   Chapter 4 — Solvable groups
+   =========================================================== */
+const ChainSVG = ({ groups, w = 380, h = 220, danger = false }) => {
+  // groups: array of {label, size}
+  const n = groups.length;
+  const cx = w / 2;
+  const ys = groups.map((_, i) => 24 + (i * (h - 48)) / Math.max(1, n - 1));
+  const accent = danger ? 'var(--crimson)' : 'var(--gold)';
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', maxWidth: w }}>
+      {/* central spine */}
+      <line x1={cx} y1={ys[0]} x2={cx} y2={ys[n-1]} stroke="var(--line)" strokeWidth={1} strokeDasharray="2 4" />
+      {groups.map((g, i) => (
+        <g key={i}>
+          {i > 0 && (
+            <text x={cx + 18} y={(ys[i-1] + ys[i]) / 2 + 4}
+              fontFamily="'Cormorant Garamond', serif" fontStyle="italic" fontSize="13" fill="var(--ink-muted)">
+              {g.quotient}
+            </text>
+          )}
+          <circle cx={cx} cy={ys[i]} r={Math.min(28, 6 + Math.sqrt(g.size) * 3)} fill="var(--parchment)" stroke={accent} strokeWidth={1.5} />
+          <text x={cx} y={ys[i] + 5} textAnchor="middle"
+            fontFamily="'EB Garamond', serif" fontStyle="italic" fontSize="16" fill="var(--ink)">
+            {g.label}
+          </text>
+          <text x={cx + 60} y={ys[i] + 5}
+            fontFamily="'Cormorant Garamond', serif" fontSize="13" fill="var(--ink-muted)">
+            |·| = {g.size}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+const Solvable = () => (
+  <section className="chapter" id="solvable">
+    <div className="reveal">
+      <div className="chapter-num">— Chapter IV —</div>
+      <h2 className="chapter-title">Solvable <em>Groups</em></h2>
+      <p className="chapter-sub cn">
+        伽罗瓦发现：方程"由根式可解" ⟺ 它的 Galois 群是"可解群"。
+        而<em>可解</em>，意味着群能被一层层"剥开"，每一层都是简单的循环群。
+      </p>
+    </div>
+
+    <div className="reveal d1 cn" style={{ maxWidth: '64ch' }}>
+      <p>
+        在进入证明之前，我们必须先<strong>建立一些词汇</strong>。
+        伽罗瓦理论的难处不在它的逻辑，而在它的语言——
+        每个名词背后都是一个明确的对象。下面 7 张卡片，足以读懂整个论证。
+      </p>
+    </div>
+
+    {/* —— 7 个核心概念 —— */}
+    <h3 className="subhead reveal d1 cn">
+      七个核心概念 <span className="en">A small dictionary</span>
+    </h3>
+
+    <div className="concept-grid reveal d1">
+
+      <div className="concept-card">
+        <span className="num">i</span>
+        <div className="term">子群<span className="en">Subgroup</span></div>
+        <div className="role">从属关系</div>
+        <div className="body">
+          <p>
+            群 <I>G</I> 里若有<strong>一部分元素</strong> <I>H</I>，自身也满足群的四条公理
+            （封闭、结合、有单位元、有逆元），就叫 <em>G</em> 的子群，记作 <I>H</I> ≤ <I>G</I>。
+          </p>
+          <div className="ex">
+            <I>S</I><sub>3</sub> 里所有"偶置换"（即 <I>e</I>、<I>(1 2 3)</I>、<I>(1 3 2)</I>），
+            构成它的一个子群 <I>A</I><sub>3</sub>。
+          </div>
+        </div>
+      </div>
+
+      <div className="concept-card">
+        <span className="num">ii</span>
+        <div className="term">阿贝尔群<span className="en">Abelian</span></div>
+        <div className="role">最听话的群</div>
+        <div className="body">
+          <p>
+            群中的运算若满足<em>交换律</em>——即 <I>a · b</I> = <I>b · a</I> 对所有元素成立——
+            就叫<strong>阿贝尔群</strong>。
+          </p>
+          <div className="ex">
+            整数加法 <I>(ℤ, +)</I>。但 <I>S</I><sub>3</sub> 已经<strong>非阿贝尔</strong>：
+            先 <I>(1 2)</I> 再 <I>(1 3)</I> ≠ 先 <I>(1 3)</I> 再 <I>(1 2)</I>。
+          </div>
+        </div>
+      </div>
+
+      <div className="concept-card">
+        <span className="num">iii</span>
+        <div className="term">循环群<span className="en">Cyclic Group</span></div>
+        <div className="role">最简单的群</div>
+        <div className="body">
+          <p>
+            若整个群都由<strong>一个元素</strong>反复"自身复合"生成，称为循环群，记作 <I>ℤ</I><sub>n</sub>。
+            它必然是阿贝尔群。
+          </p>
+          <div className="ex">
+            钟面的 12 小时是 <I>ℤ</I><sub>12</sub>：从 1 出发，加 1、加 2、加 3 ……
+            走遍 12 个数后回到原点。<strong>开 n 次方对应的，就是 <I>ℤ</I><sub>n</sub>。</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="concept-card">
+        <span className="num">iv</span>
+        <div className="term">正规子群<span className="en">Normal Subgroup</span></div>
+        <div className="role">关键 · 最微妙</div>
+        <div className="body">
+          <p>
+            子群 <I>N</I> 若<strong>"无论从哪边乘"都不变</strong>——
+            即 <I>g · N · g</I><Sup>−1</Sup> = <I>N</I> 对一切 <I>g</I> ∈ <I>G</I> 成立——
+            就叫正规子群，记作 <I>N</I> ⊲ <I>G</I>。
+          </p>
+          <p>
+            <em>直觉</em>：它在群里"<strong>居中</strong>"，从任何角度看都对称。
+            只有正规子群可以做下一步的"商运算"。
+          </p>
+          <div className="ex">
+            <I>A</I><sub>n</sub> 总是 <I>S</I><sub>n</sub> 的正规子群（因为偶置换×任何置换×逆，仍是偶的）。
+          </div>
+        </div>
+      </div>
+
+      <div className="concept-card">
+        <span className="num">v</span>
+        <div className="term">商群<span className="en">Quotient Group</span></div>
+        <div className="role">"剥掉一层"</div>
+        <div className="body">
+          <p>
+            把正规子群 <I>N</I> 的所有元素当作"一个整体"压缩为一点，
+            <I>G</I> 的剩余结构便构成<strong>商群</strong>，记作 <I>G/N</I>。
+            其元素个数是 <I>|G|/|N|</I>。
+          </p>
+          <p>
+            <em>直觉</em>：把 <I>G</I> 按 <I>N</I> 的"陪集"分块、再把每块视作一点。
+            <strong><I>G/N</I> 就是"剥掉 N 后剩下的形状"</strong>。
+          </p>
+          <div className="ex">
+            <I>ℤ</I> 模 12 = <I>ℤ</I>/12<I>ℤ</I> = <I>ℤ</I><sub>12</sub>，正是钟面。
+          </div>
+        </div>
+      </div>
+
+      <div className="concept-card">
+        <span className="num">vi</span>
+        <div className="term">单群<span className="en">Simple Group</span></div>
+        <div className="role">"原子"</div>
+        <div className="body">
+          <p>
+            一个群，若<strong>除了 {`{e}`} 与自身之外，再无任何正规子群</strong>，
+            就叫单群——意为"<em>不可分</em>"。
+          </p>
+          <p>
+            循环群 <I>ℤ</I><sub>p</sub>（p 为素数）是单群，但是阿贝尔的；
+            <strong><I>A</I><sub>5</sub> 是最小的<em>非</em>阿贝尔单群</strong>——它将是整个故事的"<strong>恶魔</strong>"。
+          </p>
+          <div className="ex">
+            单群之于群论，正如素数之于整数：是"不可再分的基本砖块"。
+          </div>
+        </div>
+      </div>
+
+      <div className="concept-card">
+        <span className="num">vii</span>
+        <div className="term">可解群<span className="en">Solvable Group</span></div>
+        <div className="role">★ 主角</div>
+        <div className="body">
+          <p>一个群 <I>G</I> 称为<strong>可解</strong>，若存在一条<em>子群链</em>：</p>
+          <p style={{ textAlign: 'center', fontFamily: "'EB Garamond', serif", fontStyle: 'italic', color: 'var(--crimson)', fontSize: 17, margin: '6px 0' }}>
+            <I>G</I> ⊳ <I>G</I><sub>1</sub> ⊳ <I>G</I><sub>2</sub> ⊳ … ⊳ {`{e}`}
+          </p>
+          <p>
+            其中<strong>每一步都是正规子群</strong>，且<strong>每一段商群 <I>G</I><sub>i</sub>/<I>G</I><sub>i+1</sub> 都是阿贝尔的</strong>
+            （事实上可加强为循环的）。
+          </p>
+          <div className="ex">
+            通俗说：可解 = "可以一层一层<em>剥到光</em>，每剥一层都极简单"。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* —— 把"剥开"的语义讲清 —— */}
+    <h3 className="subhead reveal d2 cn">
+      "剥开"是什么意思？<span className="en">What does "peeling" really mean?</span>
+    </h3>
+
+    <div className="reveal d2 cn" style={{ maxWidth: '68ch' }}>
+      <p>
+        "剥开"两字背后的形式动作是：<strong>选一个正规子群 <I>N</I>，把它压成一点，看剩下的 <I>G/N</I></strong>。
+        若 <I>G/N</I> 仍非平凡，再在 <I>G/N</I> 内继续选正规子群、再压成一点……如此往复，直到只剩 {`{e}`}。
+      </p>
+
+      <div className="callout">
+        每一次开 <em>n 次方</em>，在 Galois 群上恰好<strong>剥掉了一层"循环"</strong>——
+        留下的商群是 <I>ℤ</I><sub>n</sub>。
+        所以"由根式可解"对应"群可剥到 {`{e}`}"，而剥的每一层都得是<em>循环（阿贝尔）</em>的。
+        这便是<strong>伽罗瓦理论的中心桥梁</strong>。
+      </div>
+
+      <p>
+        现在我们手里有了所有词汇。请看 <I>S</I><sub>4</sub> 与 <I>S</I><sub>5</sub> 的对照——
+        前者剥得动，后者一刀就停。
+      </p>
+    </div>
+
+    <div className="lattice-stage reveal d2">
+      <div className="lattice-flex">
+        <div className="lattice-panel">
+          <h4>S<sub>4</sub> &nbsp;<span style={{ fontStyle: 'italic', color: 'var(--ink-muted)', fontSize: 16 }}>四次方程</span></h4>
+          <span className="verdict solvable">Solvable · 可解</span>
+          <ChainSVG groups={[
+            { label: 'S₄',          size: 24, quotient: '/ A₄ ≅ ℤ₂' },
+            { label: 'A₄',          size: 12, quotient: '/ V ≅ ℤ₃' },
+            { label: 'V',           size: 4,  quotient: '/ ℤ₂ ≅ ℤ₂' },
+            { label: 'ℤ₂',          size: 2,  quotient: '/ {e} ≅ ℤ₂' },
+            { label: '{e}',         size: 1, quotient: '' },
+          ]} />
+          <p style={{ marginTop: 12, fontStyle: 'italic', color: 'var(--ink-muted)', fontSize: 15 }} className="cn">
+            可一层层剥到 <strong>{'{e}'}</strong> ——故四次方程<strong>可解</strong>。
+          </p>
+        </div>
+        <div className="lattice-panel">
+          <h4>S<sub>5</sub> &nbsp;<span style={{ fontStyle: 'italic', color: 'var(--ink-muted)', fontSize: 16 }}>五次方程</span></h4>
+          <span className="verdict notsolvable">Not Solvable · 不可解</span>
+          <ChainSVG danger groups={[
+            { label: 'S₅',          size: 120, quotient: '/ A₅ ≅ ℤ₂' },
+            { label: 'A₅',          size: 60, quotient: '⤬ 单群 · 无正规子群' },
+            { label: '⨯',           size: 1, quotient: '' },
+          ]} />
+          <p style={{ marginTop: 12, fontStyle: 'italic', color: 'var(--crimson)', fontSize: 15 }} className="cn">
+            <strong>A<sub>5</sub></strong> 是非阿贝尔单群，无法继续剥开。
+          </p>
+        </div>
+      </div>
+
+      <hr className="rule" style={{ margin: '12px 0 24px' }} />
+
+      <p className="cn" style={{ textAlign: 'center', fontStyle: 'italic', color: 'var(--ink-soft)', maxWidth: '54ch', margin: '0 auto' }}>
+        左边的链每一节都是循环群；右边在 <strong>A<sub>5</sub></strong> 处<em>戛然而止</em>。
+        这"剥不开"，便是五次方程没有求根公式的<strong>真正原因</strong>。
+      </p>
+    </div>
+
+    {/* —— S₄ 是怎样被剥开的 —— */}
+    <h3 className="subhead reveal d3 cn">
+      S<sub>4</sub> 是怎样被剥开的 <span className="en">Peeling S₄, step by step</span>
+    </h3>
+
+    <div className="reveal d3 cn" style={{ maxWidth: '68ch' }}>
+      <p>
+        我们一步步走完左边那条链——这正对应着<em>解四次方程时，逐次开方的过程</em>。
+      </p>
+    </div>
+
+    <div className="peel-stage reveal d3">
+      <h5>四次方程的剥皮过程 · <em>S<sub>4</sub> → {`{e}`}</em></h5>
+      <ol className="peel-list">
+        <li className="peel-step">
+          <div className="gp">S<sub>4</sub><span className="ord">|·| = 24</span></div>
+          <div className="desc">
+            <strong>起点：四个根 x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub>, x<sub>4</sub> 的全部置换。</strong>
+            其中"偶置换"（即可由偶数次相邻交换得到的）构成正规子群 <strong>A<sub>4</sub></strong>，
+            它的指数是 2，所以<em>商群 S<sub>4</sub>/A<sub>4</sub> ≅ ℤ<sub>2</sub></em>——剥掉的第一层。
+          </div>
+          <span className="arrow">↓</span>
+        </li>
+        <li className="peel-step">
+          <div className="gp">A<sub>4</sub><span className="ord">|·| = 12</span></div>
+          <div className="desc">
+            <strong>偶置换群 A<sub>4</sub>。</strong>
+            它内部恰有一个正规子群叫 <strong>克莱因四元群 V</strong>
+            （由 e 和三个"<I>双对换</I>" <I>(1 2)(3 4)、(1 3)(2 4)、(1 4)(2 3)</I> 构成）。
+            <em>商群 A<sub>4</sub>/V ≅ ℤ<sub>3</sub></em>——剥掉的第二层。
+          </div>
+          <span className="arrow">↓</span>
+        </li>
+        <li className="peel-step">
+          <div className="gp">V<span className="ord">|·| = 4</span></div>
+          <div className="desc">
+            <strong>克莱因四元群。</strong>它本身是阿贝尔的，里面任何二元子群都是正规的。
+            选一个 <I>ℤ<sub>2</sub></I>，<em>商群 V/ℤ<sub>2</sub> ≅ ℤ<sub>2</sub></em>——剥掉的第三层。
+          </div>
+          <span className="arrow">↓</span>
+        </li>
+        <li className="peel-step">
+          <div className="gp">ℤ<sub>2</sub><span className="ord">|·| = 2</span></div>
+          <div className="desc">
+            <strong>只剩两个元素 {`{e, σ}`}。</strong>它的唯一非平凡子群只有自己，
+            进一步剥则得 <em>商群 ℤ<sub>2</sub>/{`{e}`} ≅ ℤ<sub>2</sub></em>——剥掉的第四层。
+          </div>
+          <span className="arrow">↓</span>
+        </li>
+        <li className="peel-step">
+          <div className="gp">{`{e}`}<span className="ord">terminus</span></div>
+          <div className="desc">
+            <strong>归于平凡。</strong>四步剥完，每一步的商都是阿贝尔的（甚至是循环的）。
+            <em>结论：S<sub>4</sub> 可解。</em>
+          </div>
+        </li>
+      </ol>
+      <p style={{ marginTop: 18, fontStyle: 'italic', color: 'var(--ink-muted)', fontSize: 14, textAlign: 'center' }} className="cn">
+        每一步的"剥"，对应着<strong>解四次方程时多写一层 ⁿ√</strong>。
+        共四步——所以四次的求根公式<em>四次嵌套</em>已足。
+      </p>
+    </div>
+
+    {/* —— A₅ 为什么剥不开 —— */}
+    <h3 className="subhead reveal d3 cn">
+      A<sub>5</sub> 为什么剥不开 <span className="en">Why A₅ refuses to break</span>
+    </h3>
+
+    <div className="reveal d3 cn" style={{ maxWidth: '68ch' }}>
+      <p>
+        <I>S</I><sub>5</sub> 起步并无问题——同样可以剥掉 <strong>A<sub>5</sub></strong>，
+        商群依然是 <I>ℤ<sub>2</sub></I>。
+        困境在第二步：<strong>A<sub>5</sub> 是单群</strong>。
+      </p>
+      <p>
+        所谓单群，意味着：<em>除了 {`{e}`} 和它自己，A<sub>5</sub> 没有任何正规子群</em>——
+        没有可剥的"中间层"。即便它有许多子群（120 个 A<sub>5</sub> 的子群中，
+        子群形如 <I>ℤ</I><sub>2</sub>、<I>ℤ</I><sub>3</sub>、<I>ℤ</I><sub>5</sub>、<I>D</I><sub>5</sub>、<I>A</I><sub>4</sub>），
+        但<strong>没有一个是正规的</strong>。
+      </p>
+      <p>
+        而单群本身又<em>不是阿贝尔的</em>——
+        阿贝尔的单群必为 <I>ℤ<sub>p</sub></I> （素数阶循环群），但 |A<sub>5</sub>| = 60 不是素数。
+        所以"<em>把它当成最后一步</em>"也行不通——
+        要可解，最后那一步的商必须阿贝尔。
+      </p>
+
+      <div className="callout">
+        <strong>这就是死结：</strong>
+        A<sub>5</sub> 既<em>不能再剥</em>（无正规子群），也<em>本身不阿贝尔</em>（不能直接当作末层）。
+        于是 <I>S</I><sub>5</sub> 的"剥皮链"在它面前永远停下。
+        <br /><br />
+        <strong>S<sub>5</sub> 不可解 ⟹ 一般五次方程没有求根公式。</strong>
+      </div>
+
+      <p style={{ fontStyle: 'italic', color: 'var(--ink-muted)' }}>
+        附注：n ≥ 5 时，<I>A</I><sub>n</sub> 始终是非阿贝尔单群，故 <I>S</I><sub>n</sub> 也始终不可解。
+        因此<strong>不仅五次，所有 ≥ 5 次的一般方程都没有求根公式</strong>。
+      </p>
+    </div>
+  </section>
+);
+
+/* ===========================================================
+   Chapter 5 — The Theorem
+   =========================================================== */
+const Theorem = () => (
+  <section className="chapter" id="theorem">
+    <div className="reveal">
+      <div className="chapter-num">— Chapter V —</div>
+      <h2 className="chapter-title">The <em>Theorem</em></h2>
+      <p className="chapter-sub cn">伽罗瓦理论的中心定理，及其对五次方程的判决。</p>
+    </div>
+
+    {/* —— 证明的整条逻辑链 —— */}
+    <h3 className="subhead reveal d1 cn">
+      证明的脉络 <span className="en">Outline of the proof</span>
+    </h3>
+
+    <div className="reveal d1 cn" style={{ maxWidth: '68ch' }}>
+      <p>
+        从"<strong>求根公式</strong>"到"<strong>S<sub>5</sub> 不可解</strong>"，
+        中间隔着五座桥。下面把这五座桥依次摆出来——
+        每一座，伽罗瓦都给了对应的证明。
+      </p>
+    </div>
+
+    <div className="proof-flow reveal d1">
+      <div className="header">— The Five Bridges —</div>
+
+      <div className="flow-step">
+        <div className="roman">I</div>
+        <div className="text">
+          <span className="lead">"由根式求解"是什么意思</span>
+          一个方程<em>由根式可解</em>，意为：从有理数 <I>ℚ</I> 出发，
+          经过<strong>有限次</strong>"<I>+ − × ÷</I>"和"<strong>开 n 次方</strong>"，
+          能写出方程的所有根。每开一次方，便把当前的"<em>数域</em>"扩张了一层。
+        </div>
+        <span className="arrow-down">↓</span>
+      </div>
+
+      <div className="flow-step">
+        <div className="roman">II</div>
+        <div className="text">
+          <span className="lead">数域扩张 ↔ 群的剥皮</span>
+          每一层"<em>开 n 次方的扩张</em>"，对应着 Galois 群中
+          <strong>剥掉一个正规子群、商出一个 ℤ<sub>n</sub></strong>。
+          这个对应——叫"<em>Galois 对应</em>"——把代数运算，翻译成了群论操作。
+        </div>
+        <span className="arrow-down">↓</span>
+      </div>
+
+      <div className="flow-step">
+        <div className="roman">III</div>
+        <div className="text">
+          <span className="lead">由根式可解 ⟺ 群可解</span>
+          于是："方程能由根式解出来"等价于
+          "<strong>它的 Galois 群能被一层层剥到 {`{e}`}</strong>"——
+          后者正是<em>可解群</em>的定义。这便是<strong>伽罗瓦中心定理</strong>。
+        </div>
+        <span className="arrow-down">↓</span>
+      </div>
+
+      <div className="flow-step">
+        <div className="roman">IV</div>
+        <div className="text">
+          <span className="lead">一般五次方程的 Galois 群是 S<sub>5</sub></span>
+          "一般"指系数取作<em>独立变量</em>。
+          在这种最一般的情形下，五个根之间没有任何额外代数关系——
+          所有 5! = 120 种置换都"合法"。因此 Galois 群<strong>就是整个对称群 S<sub>5</sub></strong>。
+        </div>
+        <span className="arrow-down">↓</span>
+      </div>
+
+      <div className="flow-step">
+        <div className="roman">V</div>
+        <div className="text">
+          <span className="lead">S<sub>5</sub> 不可解</span>
+          已在第四章证明：剥到 <I>A</I><sub>5</sub> 时，由于它是<em>非阿贝尔单群</em>，
+          再没有正规子群可以剥。<strong>剥皮链断裂。</strong>
+        </div>
+        <span className="arrow-down">↓</span>
+      </div>
+
+      <div className="flow-step conclusion">
+        <div className="roman">∴</div>
+        <div className="text">
+          <span className="lead">结论：一般五次方程没有求根公式</span>
+          由 III + IV + V 立得：一般五次方程的 Galois 群<em>不</em>可解，
+          故不存在仅由 + − × ÷ 与 ⁿ√ 写成、对所有五次方程通用的求根公式。
+          <strong>同样的论证适用于一切 n ≥ 5。</strong>
+        </div>
+      </div>
+    </div>
+
+    <hr className="rule reveal d2" />
+
+    <div className="theorem-box reveal d2">
+      <div className="label">Galois — Théorème central</div>
+      <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic' }}>
+        A polynomial equation is solvable by radicals
+        <br />
+        <em>if and only if</em> its Galois group is solvable.
+      </h2>
+      <div className="body cn">
+        <p>多项式方程<em> 可由根式解 </em>，当且仅当其 Galois 群是<em> 可解群 </em>。</p>
+        <p>
+          一般五次方程 <I>ax</I><Sup>5</Sup> + <I>bx</I><Sup>4</Sup> + <I>cx</I><Sup>3</Sup> + <I>dx</I><Sup>2</Sup> + <I>ex</I> + <I>f</I> = 0 的 Galois 群是 <em>S<sub>5</sub></em>。
+          而 <em>S<sub>5</sub> 不可解</em>。因此——
+        </p>
+        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontSize: 26, color: 'var(--gold-warm)', textAlign: 'center', margin: '28px 0 0' }}>
+          没有任何由 + − × ÷ 与 ⁿ√ 写成的公式，能解一切五次方程。 <span className="ornament">❦</span>
+        </p>
+      </div>
+      <div className="signature">— É. Galois，1832 五月廿九日夜</div>
+    </div>
+
+    {/* —— 几条余韵讲解 —— */}
+    <h3 className="subhead reveal d3 cn">
+      几条容易误解的余韵 <span className="en">A few clarifications</span>
+    </h3>
+
+    <div className="reveal d3 cn" style={{ maxWidth: '68ch' }}>
+      <div className="intuition">
+        <span className="icon">①</span>
+        <div className="body">
+          <span className="label">"无解"还是"无公式"</span>
+          五次方程<strong>不是无解</strong>——代数基本定理保证它在复数域内必有 5 个根。
+          伽罗瓦说的是：<em>没有一种"统一公式"</em>能用四则与开方写出这些根。
+          数值算法（如牛顿法）依然能逼近任意精度地求出它们。
+        </div>
+      </div>
+
+      <div className="intuition">
+        <span className="icon">②</span>
+        <div className="body">
+          <span className="label">"一般"vs"特殊"</span>
+          特殊的五次方程仍然可以有公式——例如 <I>x</I><Sup>5</Sup> = 32 的根就是 2 与四个复根，
+          直接 <I>x</I> = 32<Sup>1/5</Sup> · <I>ω</I><Sup>k</Sup> 即可。
+          它的 Galois 群只是 <I>ℤ</I><sub>5</sub>（循环群），<em>当然可解</em>。
+          伽罗瓦否定的是<strong>统一</strong>公式。
+        </div>
+      </div>
+
+      <div className="intuition">
+        <span className="icon">③</span>
+        <div className="body">
+          <span className="label">放宽工具：另一种解法</span>
+          若允许<em>椭圆模函数</em>等超越函数，五次方程同样可以"<em>显式</em>"求解
+          （Hermite，1858）。但若坚守 + − × ÷ 与 ⁿ√ 这五件工具——
+          这扇门被群论永远关上了。
+        </div>
+      </div>
+
+      <div className="intuition">
+        <span className="icon">④</span>
+        <div className="body">
+          <span className="label">为什么 S<sub>n</sub> 在 n ≥ 5 都不可解</span>
+          对任意 n ≥ 5，<I>A</I><sub>n</sub> 都是非阿贝尔单群（这一事实可独立证明）。
+          故 <I>S</I><sub>n</sub> 的剥皮链总在 <I>A</I><sub>n</sub> 处断裂。
+          <strong>不仅五次，所有 ≥ 5 次的"一般方程"皆无求根公式。</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+/* ===========================================================
+   Chapter 6 — Galois the Person
+   =========================================================== */
+const Bio = () => (
+  <section className="chapter" id="galois">
+    <div className="reveal">
+      <div className="chapter-num">— Coda —</div>
+      <h2 className="chapter-title">The <em>Boy</em> Who Saw It</h2>
+      <p className="chapter-sub cn">他写下这一切时，只有 20 岁。</p>
+    </div>
+
+    <div className="bio-grid reveal d1">
+      <div className="bio-portrait">
+        <svg viewBox="0 0 120 160" width="100%" height="100%" style={{ display: 'block' }}>
+          {/* stylized line-art portrait */}
+          <rect x="0" y="0" width="120" height="160" fill="var(--parchment-warm)" />
+          <g stroke="var(--ink)" strokeWidth="0.8" fill="none" strokeLinecap="round">
+            {/* head */}
+            <ellipse cx="60" cy="58" rx="22" ry="26" />
+            {/* hair */}
+            <path d="M40 42 Q42 26 60 24 Q78 26 80 44 Q82 36 78 32 Q72 22 60 22 Q48 22 44 30 Q40 36 40 42 Z" fill="var(--ink)" stroke="none" />
+            <path d="M40 42 Q44 38 50 38" />
+            {/* face features */}
+            <path d="M50 56 q3 -2 6 0" />
+            <path d="M64 56 q3 -2 6 0" />
+            <path d="M58 64 q2 4 4 0" />
+            <path d="M55 72 q5 3 10 0" />
+            {/* neck and collar */}
+            <path d="M52 84 v8 q0 4 8 4 q8 0 8 -4 v-8" />
+            <path d="M40 96 Q40 110 50 116 L50 158" />
+            <path d="M80 96 Q80 110 70 116 L70 158" />
+            {/* coat */}
+            <path d="M50 116 L40 158" />
+            <path d="M70 116 L80 158" />
+            <path d="M60 96 L60 158" stroke="var(--crimson)" strokeWidth="0.6" />
+            {/* cravat */}
+            <path d="M55 96 q5 6 10 0 l-2 6 h-6 z" fill="var(--crimson)" stroke="var(--crimson)" />
+          </g>
+        </svg>
+        <div className="name">
+          Évariste Galois
+          <div className="dates">1811 — 1832</div>
+        </div>
+      </div>
+
+      <div className="bio-text cn" style={{ fontSize: 18 }}>
+        <p>
+          伽罗瓦生于巴黎南郊。少年早慧，却两次落榜于巴黎理工——传说面试时
+          他不耐烦了，把黑板擦砸向考官。他厌烦平庸，行事激烈，
+          政治上是激进的共和派，因此屡遭逮捕。
+        </p>
+
+        <div className="pullquote">
+          "我没有时间了。"
+          <span className="attr">— 1832 年 5 月 29 日 · 决斗前夜的信</span>
+        </div>
+
+        <p>
+          他在 16 岁前后开始构想群与置换的语言；
+          论文寄给法兰西科学院，被柯西"暂存"，不久阴差阳错地遗失。
+          再投，傅立叶审稿期间去世，论文随之消散。
+          最后一份手稿，被泊松评为"<em>不可理解</em>"。
+        </p>
+
+        <p>
+          1832 年 5 月 29 日深夜，伽罗瓦匆匆把毕生工作写在数页信纸上，
+          边页处反复涂写"<em>我没有时间</em>"。
+          翌晨于决斗中腹部中弹，两日后亡。
+        </p>
+
+        <p>
+          他寄给朋友 Auguste Chevalier 的信件，便是后世群论的源头。
+          十四年后（1846），刘维尔将其整理出版——人类终于读懂这个 20 岁青年留下的世界。
+        </p>
+
+        <hr className="rule" />
+
+        <p style={{ fontStyle: 'italic', color: 'var(--ink-muted)' }}>
+          他证明的，不只是"五次方程没有公式"。
+          他奠定的，是抽象代数全部的语法。
+          一切现代数学——从晶体到密码学，从粒子物理到拓扑——都说着<strong>群</strong>的语言。
+        </p>
+      </div>
+    </div>
+  </section>
+);
+
+/* ===========================================================
+   Nav
+   =========================================================== */
+const SECTIONS = [
+  { id: 'hero',          label: 'Prologue' },
+  { id: 'quest',         label: 'Quest' },
+  { id: 'formulas',      label: 'Formulas' },
+  { id: 'permutations',  label: 'Symmetry' },
+  { id: 'solvable',      label: 'Solvable' },
+  { id: 'theorem',       label: 'Theorem' },
+  { id: 'galois',        label: 'Galois' },
+];
+
+const Nav = () => {
+  const [active, setActive] = useState('hero');
+  useEffect(() => {
+    const onScroll = () => {
+      let cur = 'hero';
+      for (const s of SECTIONS) {
+        const el = document.getElementById(s.id);
+        if (el && el.getBoundingClientRect().top < 220) cur = s.id;
+      }
+      setActive(cur);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return (
+    <nav className="nav">
+      {SECTIONS.map(s => (
+        <button
+          key={s.id}
+          className={active === s.id ? 'active' : ''}
+          onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })}
+        >{s.label}</button>
+      ))}
+    </nav>
+  );
+};
+
+/* ===========================================================
+   Colophon (footer)
+   =========================================================== */
+const Colophon = () => (
+  <footer className="colophon">
+    <div className="ornament">❦ ❦ ❦</div>
+    <p>
+      An interactive essay on Galois Theory, set in EB Garamond &amp; Cormorant.
+    </p>
+    <p style={{ fontSize: 13, marginTop: 24, letterSpacing: '0.18em', color: 'var(--ink-muted)' }}>
+      FINIS ·&nbsp; <span style={{ color: 'var(--crimson)' }}>x⁵ + ax + b ≠ 0 by radicals</span>
+    </p>
+  </footer>
+);
+
+/* ===========================================================
+   Main
+   =========================================================== */
+export default function App() {
+  useReveal();
+  return (
+    <div className="galois-app">
+      <Stylesheet />
+      <Nav />
+      <Hero />
+      <Timeline />
+      <FormulaGallery />
+      <Permutations />
+      <Solvable />
+      <Theorem />
+      <Bio />
+      <Colophon />
+    </div>
+  );
+}
