@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑洞研究 - 时空尽头的几何与代数</title>
+    
+    <!-- 引入字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@300;400;500&family=Noto+Serif+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js -->
+    <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+    
+    <!-- React 和 Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* 从原 JSX 中提取的 CSS 样式 */
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@300;400;500&family=Noto+Serif+SC:wght@300;400;500;600&display=swap');
+
+        :root {
+          --void:    #06060a;
+          --ink:     #0a0a12;
+          --char:    #0d0d14;
+          --ash:     #1a1a24;
+          --smoke:   #4a4a55;
+          --dust:    #6b6b78;
+          --paper:   #a39580;
+          --bone:    #d8cfb8;
+          --pearl:   #f0e7d6;
+          --ember:   #ff7a3a;
+          --flame:   #ff9a5a;
+          --gold:    #d4a857;
+          --plasma:  #6ec6d4;
+          --cyan:    #6ec6d4;
+        }
+
+        .bh-root {
+          background: var(--void);
+          color: var(--pearl);
+          font-family: 'Noto Serif SC', 'Cormorant Garamond', serif;
+          font-weight: 300;
+          min-height: 100vh;
+          overflow-x: hidden;
+          position: relative;
+        }
+
+        /* typography helpers */
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 400; }
+        .kicker { font-size: 10px; text-transform: uppercase; letter-spacing: 0.3em; color: var(--ember); }
+        .tracked { letter-spacing: 0.4em; }
+        .accent-gold { color: var(--gold); }
+        .accent-ember { color: var(--ember); }
+        .accent-cyan { color: var(--cyan); }
+        .dot-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--smoke); display: inline-block; }
+        .rule { display: inline-block; width: 64px; height: 1px; vertical-align: middle; margin-right: 1rem; }
+        .rule-gold { background: var(--gold); }
+
+        /* italic accent */
+        .bh-root i { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--ember); font-weight: 400; }
+
+        /* grain */
+        .grain {
+          pointer-events: none;
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          opacity: 0.05;
+          mix-blend-mode: overlay;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+        }
+
+        /* reveal animation */
+        @keyframes reveal {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .reveal { animation: reveal 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+
+        /* header */
+        .masthead {
+          position: relative;
+          z-index: 20;
+          max-width: 1400px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1.75rem 2rem;
+        }
+        @media (min-width: 768px) { .masthead { padding: 1.75rem 4rem; } }
+        .masthead-l { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-mark {
+          position: relative;
+          width: 22px; height: 22px;
+          border-radius: 50%;
+          background: #000;
+          box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(212, 168, 87, 0.25);
+        }
+        .logo-dot {
+          position: absolute; inset: 4px;
+          border-radius: 50%;
+          background: var(--void);
+          box-shadow: inset 0 0 6px rgba(212, 168, 87, 0.5);
+        }
+        .masthead-r { display: none; gap: 1.5rem; align-items: center; color: var(--paper); font-size: 10px; text-transform: uppercase; letter-spacing: 0.3em; }
+        @media (min-width: 768px) { .masthead-r { display: flex; } }
+
+        /* HERO */
+        .hero {
+          position: relative;
+          min-height: 100vh;
+          overflow: hidden;
+          isolation: isolate;
+        }
+        .hero-canvas-wrap {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+        }
+        .hero-canvas-wrap::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse at 65% 50%, transparent 30%, rgba(6, 6, 10, 0.85) 80%);
+          z-index: 2;
+          pointer-events: none;
+        }
+        .hero-overlay {
+          position: relative;
+          z-index: 3;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 4rem 2rem 8rem;
+          min-height: calc(100vh - 5rem);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        @media (min-width: 768px) { .hero-overlay { padding: 6rem 4rem 10rem; } }
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+        @media (min-width: 1024px) {
+          .hero-grid { grid-template-columns: 6fr 6fr; }
+        }
+        .hero-text { padding-right: 0; max-width: 640px; }
+
+        .hero-title {
+          font-family: 'Noto Serif SC', 'Cormorant Garamond', serif;
+          font-weight: 300;
+          font-size: clamp(2.5rem, 8vw, 5.4rem);
+          line-height: 1.0;
+          letter-spacing: -0.01em;
+          margin-top: 2rem;
+        }
+        .hero-title .line-1, .hero-title .line-3 { display: block; color: var(--pearl); }
+        .hero-title .line-2 {
+          display: block;
+          font-style: italic;
+          color: var(--ember);
+          font-family: 'Cormorant Garamond', serif;
+          font-weight: 400;
+          text-shadow: 0 0 32px rgba(255, 122, 58, 0.35), 0 0 64px rgba(255, 122, 58, 0.15);
+        }
+        .hero-title i { color: var(--ember); }
+        .hero-sub {
+          margin-top: 2.5rem;
+          font-size: 1.05rem;
+          line-height: 1.85;
+          color: var(--paper);
+          max-width: 580px;
+          font-weight: 300;
+        }
+        .hero-stats {
+          margin-top: 3rem;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 0 1.75rem;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.3em;
+          color: var(--dust);
+        }
+        .hero-stats > span { padding: 0.25rem 0; }
+        .hero-scroll-cue {
+          position: absolute;
+          bottom: 2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--dust);
+          animation: pulse 2.5s ease-in-out infinite;
+        }
+
+        /* generic section */
+        .bh-section {
+          position: relative;
+          z-index: 5;
+          border-top: 1px solid var(--ash);
+          background: var(--void);
+        }
+        .bh-section:nth-of-type(even) { background: var(--ink); }
+        .section-inner {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 7rem 2rem;
+        }
+        @media (min-width: 768px) { .section-inner { padding: 8rem 4rem; } }
+
+        .section-head { margin-bottom: 4rem; max-width: 760px; }
+        .big-title {
+          margin-top: 1.25rem;
+          font-family: 'Noto Serif SC', serif;
+          font-weight: 300;
+          font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+          line-height: 1.05;
+          letter-spacing: -0.01em;
+          color: var(--pearl);
+        }
+        .big-title i { color: var(--ember); }
+        .section-intro {
+          margin-top: 1.25rem;
+          font-size: 1rem;
+          line-height: 1.85;
+          color: var(--paper);
+          font-weight: 300;
+          max-width: 640px;
+        }
+
+        /* timeline */
+        .timeline {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          position: relative;
+        }
+        .timeline::before {
+          content: '';
+          position: absolute;
+          left: 15.5px;
+          top: 2.2rem;
+          bottom: 2.2rem;
+          width: 1px;
+          background: linear-gradient(180deg,
+            transparent 0%,
+            rgba(255, 122, 58, 0.35) 5%,
+            rgba(255, 122, 58, 0.35) 95%,
+            transparent 100%);
+          z-index: 0;
+        }
+        @media (min-width: 768px) {
+          .timeline::before {
+            left: 19.5px;
+            top: 3rem;
+            bottom: 3rem;
+          }
+        }
+        .timeline-row {
+          display: grid;
+          grid-template-columns: 32px 80px 1fr;
+          gap: 1.5rem;
+          padding: 1.75rem 0;
+          border-top: 1px solid var(--ash);
+          position: relative;
+          z-index: 1;
+        }
+        .timeline-row:last-child { border-bottom: 1px solid var(--ash); }
+        @media (min-width: 768px) {
+          .timeline-row {
+            grid-template-columns: 40px 110px 1fr;
+            gap: 2.5rem;
+            padding: 2.5rem 0;
+          }
+        }
+
+        .timeline-dot-col {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          padding-top: 0.5rem;
+        }
+        .timeline-dot {
+          width: 11px;
+          height: 11px;
+          border-radius: 50%;
+          background: var(--ember);
+          box-shadow:
+            0 0 0 4px var(--void),
+            0 0 0 5px rgba(255, 122, 58, 0.35),
+            0 0 18px rgba(255, 122, 58, 0.6);
+          flex-shrink: 0;
+          z-index: 2;
+        }
+        .bh-section:nth-of-type(even) .timeline-dot {
+          box-shadow:
+            0 0 0 4px var(--ink),
+            0 0 0 5px rgba(255, 122, 58, 0.35),
+            0 0 18px rgba(255, 122, 58, 0.6);
+        }
+
+        .timeline-year {
+          color: var(--gold);
+          font-size: 0.95rem;
+          padding-top: 0.1rem;
+          font-weight: 500;
+        }
+        .timeline-content { min-width: 0; }
+        .timeline-who { color: var(--dust); margin-bottom: 0.5rem; }
+        .timeline-title {
+          font-family: 'Noto Serif SC', serif;
+          font-weight: 500;
+          font-size: 1.25rem;
+          color: var(--pearl);
+          margin-bottom: 0.85rem;
+          line-height: 1.4;
+        }
+        @media (min-width: 768px) {
+          .timeline-title { font-size: 1.5rem; }
+        }
+        .timeline-text {
+          font-size: 0.95rem;
+          line-height: 1.85;
+          color: var(--paper);
+          font-weight: 300;
+          margin-bottom: 1rem;
+        }
+
+        /* inline equation in timeline */
+        .inline-eq {
+          display: inline-flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 0.4rem 0.6rem;
+          margin-top: 0.5rem;
+          max-width: 100%;
+          padding: 0.55rem 1rem;
+          border: 1px solid var(--ash);
+          border-left: 2px solid var(--cyan);
+          background: rgba(110, 198, 212, 0.05);
+          font-family: 'Cormorant Garamond', serif;
+          font-style: italic;
+          font-size: 1.1rem;
+          color: var(--bone);
+          letter-spacing: 0.02em;
+          line-height: 1.5;
+        }
+        .inline-eq-lhs { color: var(--cyan); font-weight: 500; }
+        .inline-eq-eq { color: var(--dust); font-style: normal; padding: 0 0.1rem; }
+        .inline-eq-rhs { word-break: break-word; }
+        .inline-eq sub { font-size: 0.7em; }
+        .inline-eq sup { font-size: 0.7em; }
+
+        /* footer */
+        .footer {
+          position: relative;
+          z-index: 5;
+          border-top: 1px solid var(--ash);
+          background: var(--char);
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 6rem 2rem 3rem;
+        }
+        @media (min-width: 768px) { .footer { padding: 7rem 4rem 3rem; } }
+        .footer-quote {
+          font-family: 'Cormorant Garamond', serif;
+          font-style: italic;
+          font-weight: 300;
+          font-size: clamp(1.5rem, 3.5vw, 2.6rem);
+          line-height: 1.35;
+          color: var(--bone);
+          max-width: 800px;
+          letter-spacing: 0.01em;
+        }
+        .footer-end {
+          margin-top: 4rem;
+          padding-top: 2rem;
+          border-top: 1px solid var(--ash);
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        @media (min-width: 768px) {
+          .footer-end { flex-direction: row; justify-content: space-between; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <!-- 使用 Babel 编译 JSX -->
+    <script type="text/babel">
+        // 从全局 React 获取 hooks
+        const { useState, useEffect, useRef } = React;
+        
+        // 动态导入 JSX 文件
+        import('./black-hole-research.jsx').then(module => {
+            const BlackHoleResearch = module.default;
+            
+            // 创建 React 根节点并渲染
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<BlackHoleResearch />);
+        }).catch(error => {
+            console.error('加载 JSX 文件失败:', error);
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 2rem; text-align: center; color: #ff7a3a;">
+                    <h1>加载失败</h1>
+                    <p>无法加载黑洞研究组件，请检查文件路径和网络连接。</p>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
